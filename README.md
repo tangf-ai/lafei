@@ -112,9 +112,9 @@ pnpm desktop:build   # 生成 .app / .dmg（macOS）或对应平台安装包
 macOS 构建产物：
 
 ```text
-Lafei-0.3.0-macOS-arm64.dmg                                      # 可直接分发的安装包
+Lafei-0.3.1-macOS-arm64.dmg                                      # 可直接分发的安装包
 src-tauri/target/release/bundle/macos/Lafei.app                  # 未打包的应用
-src-tauri/target/release/bundle/dmg/Lafei_0.3.0_aarch64.dmg      # Tauri 原始产物
+src-tauri/target/release/bundle/dmg/Lafei_0.3.1_aarch64.dmg      # Tauri 原始产物
 ```
 
 > 构建产物（`.app` / `.dmg`）不进入 Git，正式版本请通过 GitHub Releases 分发。当前本地产物是 Apple Silicon（arm64）版本，使用 ad-hoc 签名，未做 Apple 公证；若系统提示无法验证，右键应用选择「打开」，或在终端执行：
@@ -190,14 +190,19 @@ Lafei/
 | --- | --- | --- | --- |
 | DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` | 默认选项，国内直连 |
 | OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` | 需要可访问 OpenAI |
-| LM Studio | `http://127.0.0.1:1234/v1` | 已加载的模型名 | Key 可留空，需开启 CORS |
-| Ollama | `http://127.0.0.1:11434/v1` | `qwen2.5:7b` 等 | Key 可留空，需允许跨域 |
+| LM Studio | `http://127.0.0.1:1234/v1` | 已加载的模型名 | Key 可留空 |
+| Ollama | `http://127.0.0.1:11434/v1` | `qwen2.5:7b` 等 | Key 可留空 |
 | 其他 | 任何 OpenAI 兼容 `/v1` 接口 | 服务商的模型 ID | 会自动补全 `/chat/completions` |
 
 - Base URL 以 `/v1` 结尾时会自动补 `/chat/completions`；也可以直接填完整端点。
 - 本地接口的 API Key 可以留空。
-- AI 请求从当前 WebView 直接发往你填写的地址，不经过 Lafei 中转。浏览器 / WebView 的跨域策略仍然生效；如果本地模型拒绝跨域，需要在模型服务里开启 CORS，或使用一个允许跨域的代理。
+- 桌面版通过 Tauri 的原生 HTTP/SSE 通道请求 AI 服务，**不受 WebView CORS 限制**，局域网 HTTP 网关也能使用；网页 / PWA 版仍由浏览器直接请求，接口需要允许跨域。
+- AI 请求不经过 Lafei 中转。某些公司网络或代理会拦截局域网请求，必要时检查系统代理和本地网络权限。
 - **API Key 保存在本机应用存储（localStorage）中，未做系统钥匙串加密。** 这是当前版本的已知限制，请不要在共享设备的浏览器里保存生产 Key。
+- 如果连接自定义网关时报“连接不上”，先看「测试连接」返回的是网络错误还是 HTTP 状态：
+  - `401 / 403`：Key 或权限问题；
+  - `404`：Base URL 或模型名问题；
+  - 浏览器 / PWA 下出现网络错误：多半是接口未允许 CORS；桌面版已使用原生网络通道，不受此限制。
 
 ## 数据与隐私
 
@@ -282,7 +287,7 @@ scripts/mock-ai.mjs 本地 AI 演示服务
 
 ## 已知限制
 
-这是 `0.3.0`，一个可以真实日用的本地 MVP，但不是完成品：
+这是 `0.3.1`，一个可以真实日用的本地 MVP，但不是完成品：
 
 - 文件夹同步是文件级的、最终一致的，不是实时协作；冲突采用更新时间优先，没有逐行合并
 - 手机 PWA 不能直接读取 iCloud Drive；目前需要备份迁移，原生 iOS 版尚未生成

@@ -3,6 +3,18 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.3.1] - 2026-10-20
+
+### Fixed
+
+- 桌面版的自定义 AI 接口改走 Tauri 原生 HTTP/SSE 通道，修复局域网网关因为 CORS 预检 403 而无法连接的问题
+- 原生通道支持流式输出、取消、HTTP 状态码与网络错误提示
+- AI 设置页与 README 明确区分桌面原生网络与 Web/PWA 的跨域限制
+
+### Added
+
+- macOS 本地网络用途说明（`NSLocalNetworkUsageDescription`），首次连接局域网 AI 服务时可由系统授权
+
 ## [0.3.0] - 2026-10-20
 
 ### Added

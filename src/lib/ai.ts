@@ -1,5 +1,5 @@
 import type { AIProvider, AISettings, ChatSource, Note, Priority } from "../types";
-import { noteTitle, stripMarkdown } from "./util";
+import { isTauri, newId, noteTitle, stripMarkdown } from "./util";
 
 export interface AIMessage {
   role: "system" | "user" | "assistant";
@@ -103,6 +103,133 @@ async function requestError(response: Response): Promise<AIError> {
   return friendlyHTTPError(response.status, String(detail || ""));
 }
 
+function abortError() {
+  const error = new Error("The operation was aborted.");
+  error.name = "AbortError";
+  return error;
+}
+
+function nativeError(error: unknown): AIError {
+  const raw = typeof error === "string" ? error : error instanceof Error ? error.message : String(error);
+  const http = raw.match(/^HTTP\s+(\d{3})\s*:\s*([\s\S]*)$/);
+  if (http) return friendlyHTTPError(Number(http[1]), http[2]);
+  if (raw.startsWith("NETWORK:")) {
+    const detail = raw.slice("NETWORK:".length).trim();
+    return new AIError(
+      `桌面端连接不上 AI 服务。${detail ? `${detail}。` : ""}请检查接口地址、网络或代理设置。`,
+      "network",
+    );
+  }
+  if (raw.startsWith("CONFIG:")) return new AIError(raw.slice("CONFIG:".length).trim(), "config");
+  if (raw.startsWith("EMPTY:")) return new AIError(raw.slice("EMPTY:".length).trim(), "empty");
+  if (raw.startsWith("SERVER:")) return new AIError(raw.slice("SERVER:".length).trim(), "server");
+  if (raw.startsWith("CHANNEL:")) return new AIError(raw.slice("CHANNEL:".length).trim(), "channel");
+  return new AIError(raw || "AI 请求失败", "server");
+}
+
+interface NativeRequestArgs {
+  endpoint: string;
+  settings: AISettings;
+  messages: AIMessage[];
+  signal?: AbortSignal;
+  temperature: number;
+  maxTokens: number;
+}
+
+async function streamChatNative({
+  endpoint,
+  settings,
+  messages,
+  signal,
+  temperature,
+  maxTokens,
+  onDelta,
+}: NativeRequestArgs & { onDelta: (delta: string) => void }): Promise<string> {
+  if (signal?.aborted) throw abortError();
+  const { Channel, invoke } = await import("@tauri-apps/api/core");
+  const id = newId();
+  const channel = new Channel<string>();
+  let full = "";
+  let cancelled = false;
+
+  channel.onmessage = (delta) => {
+    if (typeof delta !== "string" || !delta) return;
+    full += delta;
+    onDelta(delta);
+  };
+
+  const cancel = () => {
+    if (cancelled) return;
+    cancelled = true;
+    void invoke("ai_cancel", { id }).catch(() => undefined);
+  };
+  signal?.addEventListener("abort", cancel, { once: true });
+
+  try {
+    await invoke("ai_stream", {
+      request: {
+        id,
+        endpoint,
+        apiKey: settings.apiKey.trim(),
+        model: settings.model.trim(),
+        messages,
+        temperature,
+        maxTokens,
+      },
+      channel,
+    });
+    if (cancelled || signal?.aborted) throw abortError();
+    if (!full.trim()) throw new AIError("AI 没有返回文字，请换一个模型或稍后再试。", "empty");
+    return full;
+  } catch (error) {
+    if (cancelled || signal?.aborted || String(error).includes("CANCELLED")) throw abortError();
+    throw nativeError(error);
+  } finally {
+    signal?.removeEventListener("abort", cancel);
+  }
+}
+
+async function completeChatNative({
+  endpoint,
+  settings,
+  messages,
+  signal,
+  temperature,
+  maxTokens,
+}: NativeRequestArgs): Promise<string> {
+  if (signal?.aborted) throw abortError();
+  const { invoke } = await import("@tauri-apps/api/core");
+  const id = newId();
+  let cancelled = false;
+  const cancel = () => {
+    if (cancelled) return;
+    cancelled = true;
+    void invoke("ai_cancel", { id }).catch(() => undefined);
+  };
+  signal?.addEventListener("abort", cancel, { once: true });
+
+  try {
+    const content = await invoke<string>("ai_complete", {
+      request: {
+        id,
+        endpoint,
+        apiKey: settings.apiKey.trim(),
+        model: settings.model.trim(),
+        messages,
+        temperature,
+        maxTokens,
+      },
+    });
+    if (cancelled || signal?.aborted) throw abortError();
+    return content;
+  } catch (error) {
+    if (cancelled || signal?.aborted || String(error).includes("CANCELLED")) throw abortError();
+    throw nativeError(error);
+  } finally {
+    signal?.removeEventListener("abort", cancel);
+  }
+}
+
 interface StreamOptions {
   settings: AISettings;
   messages: AIMessage[];
@@ -124,6 +251,10 @@ export async function streamChat({
   const endpoint = resolveEndpoint(settings.baseUrl);
   if (!endpoint) throw new AIError("请填写 AI 接口地址。", "not_configured");
 
+  if (isTauri) {
+    return streamChatNative({ endpoint, settings, messages, signal, temperature, maxTokens, onDelta });
+  }
+
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (settings.apiKey.trim()) headers.Authorization = `Bearer ${settings.apiKey.trim()}`;
 
@@ -144,7 +275,7 @@ export async function streamChat({
   } catch (error) {
     if ((error as Error).name === "AbortError") throw error;
     throw new AIError(
-      "连接不上 AI 服务。请检查网络、Base URL，以及该服务是否允许浏览器跨域访问。",
+      "连接不上 AI 服务。请检查网络和 Base URL。网页/PWA 版还要求接口允许跨域；桌面版会使用原生网络请求。",
       "network",
     );
   }
@@ -216,6 +347,12 @@ export async function completeChat({
 }: CompleteOptions): Promise<string> {
   assertConfigured(settings);
   const endpoint = resolveEndpoint(settings.baseUrl);
+  if (!endpoint) throw new AIError("请填写 AI 接口地址。", "not_configured");
+
+  if (isTauri) {
+    return completeChatNative({ endpoint, settings, messages, signal, temperature, maxTokens });
+  }
+
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (settings.apiKey.trim()) headers.Authorization = `Bearer ${settings.apiKey.trim()}`;
 
@@ -236,7 +373,7 @@ export async function completeChat({
   } catch (error) {
     if ((error as Error).name === "AbortError") throw error;
     throw new AIError(
-      "连接不上 AI 服务。请检查网络、Base URL，以及该服务是否允许浏览器跨域访问。",
+      "连接不上 AI 服务。请检查网络和 Base URL。网页/PWA 版还要求接口允许跨域；桌面版会使用原生网络请求。",
       "network",
     );
   }

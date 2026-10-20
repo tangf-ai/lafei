@@ -281,7 +281,7 @@ export function SettingsView() {
               </div>
               <div>
                 <strong>设置</strong>
-                <span>lafei · v0.3</span>
+                <span>lafei · v0.3.1</span>
               </div>
             </div>
             <div className="settings-nav-items">
@@ -436,7 +436,10 @@ export function SettingsView() {
                           placeholder="https://api.deepseek.com/v1"
                           spellCheck={false}
                         />
-                        <p className="hint">一般以 /v1 结尾，会自动补全 /chat/completions。</p>
+                        <p className="hint">
+                          一般以 /v1 结尾，会自动补全 /chat/completions。桌面版使用原生网络，局域网 HTTP
+                          接口也可以直接连接。
+                        </p>
                       </div>
                       <div className="form-field">
                         <label className="field-label" htmlFor="model">
@@ -501,8 +504,9 @@ export function SettingsView() {
                     <div>
                       <strong>你的 Key 是如何被使用的？</strong>
                       <p>
-                        Key 存放在本机应用存储中，仅用于从当前设备直接调用你选择的服务商。AI 请求不会经过任何 Lafei
-                        中转服务器。若使用本地模型（如 LM Studio、Ollama），Key 可以留空。
+                        Key 存放在本机应用存储中，仅用于从当前设备直接调用你选择的服务商。桌面版通过系统原生 HTTP
+                        通道发送请求，不受浏览器 CORS 限制；网页 / PWA 版仍要求接口允许跨域。AI
+                        请求不会经过任何 Lafei 中转服务器。若使用本地模型（如 LM Studio、Ollama），Key 可以留空。
                       </p>
                     </div>
                   </div>
@@ -727,7 +731,7 @@ export function SettingsView() {
                       <i />
                     </div>
                     <div>
-                      <span className="eyebrow">Lafei · v0.3.0</span>
+                      <span className="eyebrow">Lafei · v0.3.1</span>
                       <h3 className="display">把知识收好，把行动理清。</h3>
                       <p>一个本地优先的笔记与任务应用，AI 是内置的，不是后装的外挂。</p>
                     </div>

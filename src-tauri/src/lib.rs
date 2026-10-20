@@ -1,7 +1,13 @@
-use serde::Serialize;
+use futures_util::StreamExt;
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
-use std::time::UNIX_EPOCH;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, OnceLock};
+use std::time::{Duration, UNIX_EPOCH};
+use tauri::ipc::Channel;
 use tauri_plugin_dialog::DialogExt;
 
 const MAX_FILE_BYTES: u64 = 16 * 1024 * 1024;
@@ -385,6 +391,33 @@ mod tests {
     }
 
     #[test]
+    fn parses_ai_response_helpers() {
+        let value: Value =
+            serde_json::from_str(r#"{"choices":[{"message":{"content":"hello"}}]}"#).unwrap();
+        assert_eq!(ai_content_from_json(&value).as_deref(), Some("hello"));
+        assert_eq!(ai_error_from_json(&value), None);
+        assert_eq!(
+            ai_body_detail(r#"{"error":{"message":"bad key"}}"#),
+            "bad key"
+        );
+    }
+
+    #[test]
+    fn validates_ai_endpoint_scheme() {
+        let request = AiRequest {
+            id: "test".into(),
+            endpoint: "file:///etc/passwd".into(),
+            api_key: String::new(),
+            model: "mock".into(),
+            messages: Vec::new(),
+            temperature: 0.0,
+            max_tokens: 10,
+        };
+        let client = ai_client().unwrap();
+        assert!(ai_request_builder(&client, &request, false).is_err());
+    }
+
+    #[test]
     fn roundtrips_files_in_store() {
         let root = std::env::temp_dir().join(format!("lafei-store-test-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
@@ -408,6 +441,300 @@ mod tests {
     }
 }
 
+#[derive(Default)]
+struct AiCancelState {
+    requests: Mutex<HashMap<String, Arc<AtomicBool>>>,
+}
+
+impl AiCancelState {
+    fn register(&self, id: &str) -> Arc<AtomicBool> {
+        let flag = Arc::new(AtomicBool::new(false));
+        if let Ok(mut requests) = self.requests.lock() {
+            requests.insert(id.to_string(), flag.clone());
+        }
+        flag
+    }
+
+    fn cancel(&self, id: &str) {
+        if let Ok(requests) = self.requests.lock() {
+            if let Some(flag) = requests.get(id) {
+                flag.store(true, Ordering::SeqCst);
+            }
+        }
+    }
+
+    fn clear(&self, id: &str) {
+        if let Ok(mut requests) = self.requests.lock() {
+            requests.remove(id);
+        }
+    }
+}
+
+static AI_CANCELS: OnceLock<AiCancelState> = OnceLock::new();
+
+fn ai_cancels() -> &'static AiCancelState {
+    AI_CANCELS.get_or_init(AiCancelState::default)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct AiMessage {
+    role: String,
+    content: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AiRequest {
+    id: String,
+    endpoint: String,
+    api_key: String,
+    model: String,
+    messages: Vec<AiMessage>,
+    temperature: f32,
+    max_tokens: u32,
+}
+
+fn ai_body_detail(text: &str) -> String {
+    if let Ok(value) = serde_json::from_str::<Value>(text) {
+        for pointer in ["/error/message", "/message"] {
+            if let Some(message) = value.pointer(pointer).and_then(Value::as_str) {
+                return message.chars().take(300).collect();
+            }
+        }
+        if let Some(message) = value.get("error").and_then(Value::as_str) {
+            return message.chars().take(300).collect();
+        }
+    }
+    text.chars().take(300).collect()
+}
+
+fn ai_network_error(error: reqwest::Error) -> String {
+    if error.is_timeout() {
+        "NETWORK: 请求超时，请检查接口地址、网络或代理设置".into()
+    } else if error.is_connect() {
+        format!("NETWORK: 无法建立连接（{error}）")
+    } else {
+        format!("NETWORK: {error}")
+    }
+}
+
+fn ai_client() -> Result<reqwest::Client, String> {
+    reqwest::Client::builder()
+        .connect_timeout(Duration::from_secs(15))
+        .timeout(Duration::from_secs(300))
+        .build()
+        .map_err(|error| format!("CONFIG: 初始化网络客户端失败：{error}"))
+}
+
+fn ai_request_builder(
+    client: &reqwest::Client,
+    request: &AiRequest,
+    stream: bool,
+) -> Result<reqwest::RequestBuilder, String> {
+    let url = reqwest::Url::parse(&request.endpoint)
+        .map_err(|_| "CONFIG: 接口地址格式无效".to_string())?;
+    if !matches!(url.scheme(), "http" | "https") {
+        return Err("CONFIG: 接口地址只支持 http 或 https".into());
+    }
+
+    let mut builder = client
+        .post(url)
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .header(
+            reqwest::header::ACCEPT,
+            if stream {
+                "text/event-stream"
+            } else {
+                "application/json"
+            },
+        )
+        .json(&json!({
+            "model": request.model,
+            "messages": request.messages,
+            "temperature": request.temperature,
+            "max_tokens": request.max_tokens,
+            "stream": stream,
+        }));
+
+    if !request.api_key.trim().is_empty() {
+        builder = builder.bearer_auth(request.api_key.trim());
+    }
+
+    Ok(builder)
+}
+
+async fn ai_send_request(request: &AiRequest, stream: bool) -> Result<reqwest::Response, String> {
+    let client = ai_client()?;
+    let builder = ai_request_builder(&client, request, stream)?;
+    let response = builder.send().await.map_err(ai_network_error)?;
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(format!(
+            "HTTP {}: {}",
+            status.as_u16(),
+            ai_body_detail(&body)
+        ));
+    }
+    Ok(response)
+}
+
+fn ai_content_from_json(value: &Value) -> Option<String> {
+    value
+        .pointer("/choices/0/message/content")
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+}
+
+fn ai_error_from_json(value: &Value) -> Option<String> {
+    let error = value.get("error")?;
+    if let Some(message) = error.get("message").and_then(Value::as_str) {
+        return Some(message.to_string());
+    }
+    if let Some(message) = error.as_str() {
+        return Some(message.to_string());
+    }
+    Some("AI 服务返回了一个错误".into())
+}
+
+fn ai_handle_sse_line(
+    line: &str,
+    channel: &Channel<String>,
+    full: &mut String,
+) -> Result<(), String> {
+    let trimmed = line.trim();
+    if !trimmed.starts_with("data:") {
+        return Ok(());
+    }
+    let data = trimmed[5..].trim();
+    if data.is_empty() || data == "[DONE]" {
+        return Ok(());
+    }
+    let value: Value = match serde_json::from_str(data) {
+        Ok(value) => value,
+        Err(_) => return Ok(()),
+    };
+    if let Some(message) = ai_error_from_json(&value) {
+        return Err(format!("SERVER: {message}"));
+    }
+    if let Some(content) = value
+        .pointer("/choices/0/delta/content")
+        .and_then(Value::as_str)
+        .or_else(|| {
+            value
+                .pointer("/choices/0/message/content")
+                .and_then(Value::as_str)
+        })
+    {
+        if !content.is_empty() {
+            full.push_str(content);
+            channel
+                .send(content.to_string())
+                .map_err(|error| format!("CHANNEL: 无法回传 AI 响应：{error}"))?;
+        }
+    }
+    Ok(())
+}
+
+async fn ai_stream_inner(
+    request: &AiRequest,
+    channel: &Channel<String>,
+    cancelled: &AtomicBool,
+) -> Result<(), String> {
+    if cancelled.load(Ordering::SeqCst) {
+        return Err("CANCELLED".into());
+    }
+
+    let response = ai_send_request(request, true).await?;
+    let content_type = response
+        .headers()
+        .get(reqwest::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+
+    if content_type.contains("application/json") && !content_type.contains("event-stream") {
+        let text = response.text().await.map_err(ai_network_error)?;
+        let value: Value = serde_json::from_str(&text)
+            .map_err(|_| format!("SERVER: 无法解析 AI 响应：{}", ai_body_detail(&text)))?;
+        if let Some(message) = ai_error_from_json(&value) {
+            return Err(format!("SERVER: {message}"));
+        }
+        if let Some(content) = ai_content_from_json(&value) {
+            channel
+                .send(content)
+                .map_err(|error| format!("CHANNEL: {error}"))?;
+            return Ok(());
+        }
+        return Err("EMPTY: AI 没有返回文字".into());
+    }
+
+    let mut stream = response.bytes_stream();
+    let mut pending: Vec<u8> = Vec::new();
+    let mut full = String::new();
+
+    while let Some(chunk) = stream.next().await {
+        if cancelled.load(Ordering::SeqCst) {
+            return Err("CANCELLED".into());
+        }
+        let chunk = chunk.map_err(ai_network_error)?;
+        pending.extend_from_slice(&chunk);
+
+        while let Some(index) = pending.iter().position(|byte| *byte == b'\n') {
+            let line: Vec<u8> = pending.drain(..=index).collect();
+            ai_handle_sse_line(&String::from_utf8_lossy(&line), channel, &mut full)?;
+        }
+    }
+
+    if !pending.is_empty() {
+        ai_handle_sse_line(&String::from_utf8_lossy(&pending), channel, &mut full)?;
+    }
+
+    if full.trim().is_empty() {
+        return Err("EMPTY: AI 没有返回文字，请换一个模型或稍后再试".into());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn ai_stream(request: AiRequest, channel: Channel<String>) -> Result<(), String> {
+    let cancelled = ai_cancels().register(&request.id);
+    let result = ai_stream_inner(&request, &channel, &cancelled).await;
+    ai_cancels().clear(&request.id);
+    result
+}
+
+#[tauri::command]
+async fn ai_complete(request: AiRequest) -> Result<String, String> {
+    let cancelled = ai_cancels().register(&request.id);
+    let result = async {
+        if cancelled.load(Ordering::SeqCst) {
+            return Err("CANCELLED".to_string());
+        }
+        let response = ai_send_request(&request, false).await?;
+        let text = response.text().await.map_err(ai_network_error)?;
+        if cancelled.load(Ordering::SeqCst) {
+            return Err("CANCELLED".into());
+        }
+        let value: Value = serde_json::from_str(&text)
+            .map_err(|_| format!("SERVER: 无法解析 AI 响应：{}", ai_body_detail(&text)))?;
+        if let Some(message) = ai_error_from_json(&value) {
+            return Err(format!("SERVER: {message}"));
+        }
+        ai_content_from_json(&value)
+            .filter(|content| !content.trim().is_empty())
+            .ok_or_else(|| "EMPTY: AI 没有返回文字，请换一个模型或稍后再试".to_string())
+    }
+    .await;
+    ai_cancels().clear(&request.id);
+    result
+}
+
+#[tauri::command]
+fn ai_cancel(id: String) {
+    ai_cancels().cancel(&id);
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -421,7 +748,10 @@ pub fn run() {
             read_store_manifest,
             write_store_file,
             remove_store_file,
-            clear_store_data
+            clear_store_data,
+            ai_stream,
+            ai_complete,
+            ai_cancel
         ])
         .run(tauri::generate_context!())
         .expect("error while running Lafei");
