@@ -3,6 +3,19 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.4.0] - 2026-10-20
+
+### Added
+
+- 外观设置新增「界面字号」：小 / 标准 / 大 / 特大（90% / 100% / 110% / 120%）
+- 桌面版通过 Tauri WebView 页面缩放应用字号，Web/PWA 使用 CSS 缩放兜底
+- 字号设置持久化到本机，即时生效
+
+### Changed
+
+- 大字号下移动端任务筛选栏改为单行横向滚动，避免标签换行
+- 设置页新增字号预览与说明
+
 ## [0.3.1] - 2026-10-20
 
 ### Fixed

@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Default permissions for the Lafei main window",
   "windows": ["main"],
-  "permissions": ["core:default", "opener:default"]
+  "permissions": ["core:default", "core:webview:allow-set-webview-zoom", "opener:default"]
 }

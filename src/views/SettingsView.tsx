@@ -36,6 +36,7 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { openExternal } from "../lib/external";
 import { isTauri } from "../lib/util";
 import { FolderStorageSettings } from "../features/FolderStorageSettings";
+import { FONT_SCALES } from "../lib/fontScale";
 import { mirrorAllToFolder } from "../lib/folderSync";
 
 type SettingsTab = "ai" | "appearance" | "data" | "about";
@@ -72,6 +73,8 @@ export function SettingsView() {
   const patchAI = useUI((state) => state.patchAI);
   const theme = useUI((state) => state.theme);
   const setTheme = useUI((state) => state.setTheme);
+  const fontScale = useUI((state) => state.fontScale);
+  const setFontScale = useUI((state) => state.setFontScale);
   const noteMode = useUI((state) => state.noteMode);
   const setNoteMode = useUI((state) => state.setNoteMode);
   const closeNote = useUI((state) => state.closeNote);
@@ -281,7 +284,7 @@ export function SettingsView() {
               </div>
               <div>
                 <strong>设置</strong>
-                <span>lafei · v0.3.1</span>
+                <span>lafei · v0.4</span>
               </div>
             </div>
             <div className="settings-nav-items">
@@ -555,6 +558,39 @@ export function SettingsView() {
                   <div className="settings-block">
                     <div className="settings-block-head">
                       <div>
+                        <h3>界面字号</h3>
+                        <p>整体放大文字和控件；选择后立即生效。</p>
+                      </div>
+                    </div>
+                    <div className="font-scale-grid" role="group" aria-label="界面字号">
+                      {FONT_SCALES.map((item) => (
+                        <button
+                          key={item.value}
+                          type="button"
+                          className={cn("font-scale-card", fontScale === item.value && "active")}
+                          onClick={() => setFontScale(item.value)}
+                          aria-pressed={fontScale === item.value}
+                          aria-label={`${item.label}字号 ${item.caption}`}
+                        >
+                          <span className="font-scale-sample" style={{ fontSize: `${item.sample}px` }}>
+                            Aa
+                          </span>
+                          <span className="font-scale-label">
+                            <strong>{item.label}</strong>
+                            <em>{item.caption}</em>
+                          </span>
+                          {fontScale === item.value && <Check size={12} className="font-scale-check" />}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="font-scale-hint">
+                      设置保存在本机，只影响显示大小，不改变笔记内容。
+                    </p>
+                  </div>
+
+                  <div className="settings-block">
+                    <div className="settings-block-head">
+                      <div>
                         <h3>打开笔记时的默认视图</h3>
                         <p>随时可以在编辑器右上角切换。</p>
                       </div>
@@ -731,7 +767,7 @@ export function SettingsView() {
                       <i />
                     </div>
                     <div>
-                      <span className="eyebrow">Lafei · v0.3.1</span>
+                      <span className="eyebrow">Lafei · v0.4.0</span>
                       <h3 className="display">把知识收好，把行动理清。</h3>
                       <p>一个本地优先的笔记与任务应用，AI 是内置的，不是后装的外挂。</p>
                     </div>

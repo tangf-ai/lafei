@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AISettings, AppView, NoteMode, TaskFilter, ThemeMode } from "../types";
+import type { AISettings, AppView, FontScale, NoteMode, TaskFilter, ThemeMode } from "../types";
 import { DEFAULT_AI } from "../lib/ai";
 
 interface UIState {
@@ -9,6 +9,7 @@ interface UIState {
   tagFilter: string | null;
   noteMode: NoteMode;
   theme: ThemeMode;
+  fontScale: FontScale;
   ai: AISettings;
   settingsOpen: boolean;
   commandOpen: boolean;
@@ -22,6 +23,7 @@ interface UIState {
   setTagFilter: (tag: string | null) => void;
   setNoteMode: (mode: NoteMode) => void;
   setTheme: (theme: ThemeMode) => void;
+  setFontScale: (scale: FontScale) => void;
   setAI: (ai: AISettings) => void;
   patchAI: (patch: Partial<AISettings>) => void;
   setSettingsOpen: (open: boolean) => void;
@@ -40,6 +42,7 @@ export const useUI = create<UIState>()(
       tagFilter: null,
       noteMode: "write",
       theme: "light",
+      fontScale: 1,
       ai: DEFAULT_AI,
       settingsOpen: false,
       commandOpen: false,
@@ -53,6 +56,7 @@ export const useUI = create<UIState>()(
       setTagFilter: (tagFilter) => set({ tagFilter }),
       setNoteMode: (noteMode) => set({ noteMode }),
       setTheme: (theme) => set({ theme }),
+      setFontScale: (fontScale) => set({ fontScale }),
       setAI: (ai) => set({ ai }),
       patchAI: (patch) => set((state) => ({ ai: { ...state.ai, ...patch } })),
       setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
@@ -68,14 +72,20 @@ export const useUI = create<UIState>()(
       partialize: (state) => ({
         noteMode: state.noteMode,
         theme: state.theme,
+        fontScale: state.fontScale,
         ai: state.ai,
         folderRoot: state.folderRoot,
       }),
       merge: (persisted, current) => {
         const saved = (persisted ?? {}) as Partial<UIState>;
+        const fontScale =
+          typeof saved.fontScale === "number" && [0.9, 1, 1.1, 1.2].includes(saved.fontScale)
+            ? saved.fontScale
+            : current.fontScale;
         return {
           ...current,
           ...saved,
+          fontScale,
           ai: { ...DEFAULT_AI, ...(saved.ai ?? {}) },
         };
       },

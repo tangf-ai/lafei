@@ -12,6 +12,7 @@ import { AssistantView } from "./views/AssistantView";
 import { SettingsView } from "./views/SettingsView";
 import { useUI } from "./store/ui";
 import { useIsMobile, useResolvedTheme } from "./lib/hooks";
+import { applyFontScale } from "./lib/fontScale";
 import { newNote } from "./lib/actions";
 import { createTask } from "./db";
 import { dayKey } from "./lib/util";
@@ -21,6 +22,7 @@ export default function App() {
   const view = useUI((state) => state.view);
   const activeNoteId = useUI((state) => state.activeNoteId);
   const theme = useUI((state) => state.theme);
+  const fontScale = useUI((state) => state.fontScale);
   const setSettingsOpen = useUI((state) => state.setSettingsOpen);
   const setCommandOpen = useUI((state) => state.setCommandOpen);
   const setView = useUI((state) => state.setView);
@@ -35,6 +37,10 @@ export default function App() {
     const meta = document.querySelector('meta[name="theme-color"]');
     meta?.setAttribute("content", resolvedTheme === "dark" ? "#161410" : "#F2EEE6");
   }, [resolvedTheme]);
+
+  useEffect(() => {
+    applyFontScale(fontScale);
+  }, [fontScale]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

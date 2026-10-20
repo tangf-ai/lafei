@@ -9680,3 +9680,118 @@ select:focus-visible,
     font-size: 8px;
   }
 }
+
+/* ---------- font scale setting ---------- */
+
+.font-scale-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.font-scale-card {
+  position: relative;
+  min-width: 0;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+  text-align: left;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s var(--ease);
+}
+
+.font-scale-card:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-hover);
+  transform: translateY(-1px);
+}
+
+.font-scale-card.active {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.font-scale-sample {
+  flex-shrink: 0;
+  min-width: 27px;
+  font-family: var(--font-display);
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -0.04em;
+}
+
+.font-scale-card.active .font-scale-sample {
+  color: var(--accent-deep);
+}
+
+.font-scale-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.font-scale-label strong {
+  color: var(--ink);
+  font-size: 10.5px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.font-scale-label em {
+  color: var(--faint);
+  font-size: 8.5px;
+  font-style: normal;
+  line-height: 1.2;
+}
+
+.font-scale-check {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  color: var(--accent);
+}
+
+.font-scale-hint {
+  margin-top: 9px;
+  color: var(--faint);
+  font-size: 8.5px;
+}
+
+@media (max-width: 820px) {
+  .font-scale-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .font-scale-card {
+    min-height: 62px;
+  }
+
+  .font-scale-hint {
+    font-size: 8.5px;
+    line-height: 1.6;
+  }
+}
+
+@media (max-width: 820px) {
+  .filter-tabs {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}

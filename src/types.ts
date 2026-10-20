@@ -58,6 +58,7 @@ export type AppView = "today" | "notes" | "tasks" | "assistant";
 export type TaskFilter = "all" | "today" | "upcoming" | "done";
 export type NoteMode = "write" | "split" | "read";
 export type ThemeMode = "light" | "dark" | "system";
+export type FontScale = 0.9 | 1 | 1.1 | 1.2;
 export type AIProvider = "deepseek" | "openai" | "custom";
 
 export interface AISettings {
