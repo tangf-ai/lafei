@@ -85,6 +85,15 @@
 
 > 数据默认保存在本机 IndexedDB；桌面版可选把数据实时镜像到任意文件夹。手机 PWA 无法访问 iCloud Drive 目录，目前通过备份迁移，原生 iPhone 版会直接读取同一个 iCloud 文件夹。
 
+### 从 Logseq 迁移
+
+- 设置 → 数据与备份 → 从 Logseq 导入，选择 Logseq graph 根目录
+- 读取 `pages/` 与 `journals/`，导入 `TODO`、`DOING`、`NOW`、`LATER`、`WAITING` 状态
+- 保留 A/B/C 优先级、`SCHEDULED` / `DEADLINE` 日期，以及子块里的「截止 10-23」这类日期
+- 任务描述会保存来源页面和文件位置；不会修改 Logseq graph
+- 自动跳过 `DONE` / `CANCELED`、备份目录和重复任务；只新增，不覆盖现有数据
+- 目前需要桌面版访问本地文件夹
+
 ### 可读性
 
 - 设置 → 外观与写作 → 界面字号，提供「小 / 标准 / 大 / 特大」四档（90%–120%）
@@ -120,9 +129,9 @@ pnpm desktop:build   # 生成 .app / .dmg（macOS）或对应平台安装包
 macOS 构建产物：
 
 ```text
-Lafei-0.4.0-macOS-arm64.dmg                                      # 可直接分发的安装包
+Lafei-0.5.0-macOS-arm64.dmg                                      # 可直接分发的安装包
 src-tauri/target/release/bundle/macos/Lafei.app                  # 未打包的应用
-src-tauri/target/release/bundle/dmg/Lafei_0.4.0_aarch64.dmg      # Tauri 原始产物
+src-tauri/target/release/bundle/dmg/Lafei_0.5.0_aarch64.dmg      # Tauri 原始产物
 ```
 
 > 构建产物（`.app` / `.dmg`）不进入 Git，正式版本请通过 GitHub Releases 分发。当前本地产物是 Apple Silicon（arm64）版本，使用 ad-hoc 签名，未做 Apple 公证；若系统提示无法验证，右键应用选择「打开」，或在终端执行：
@@ -295,7 +304,7 @@ scripts/mock-ai.mjs 本地 AI 演示服务
 
 ## 已知限制
 
-这是 `0.4.0`，一个可以真实日用的本地 MVP，但不是完成品：
+这是 `0.5.0`，一个可以真实日用的本地 MVP，但不是完成品：
 
 - 文件夹同步是文件级的、最终一致的，不是实时协作；冲突采用更新时间优先，没有逐行合并
 - 手机 PWA 不能直接读取 iCloud Drive；目前需要备份迁移，原生 iOS 版尚未生成

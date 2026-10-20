@@ -68,6 +68,27 @@ export interface AISettings {
   model: string;
 }
 
+export interface LogseqTaskPreview {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string | null;
+  priority: Priority;
+  sourcePage: string;
+  sourceFile: string;
+  sourceLine: number;
+  status: string;
+}
+
+export interface LogseqScan {
+  graphPath: string;
+  graphName: string;
+  scannedFiles: number;
+  openCount: number;
+  completedCount: number;
+  tasks: LogseqTaskPreview[];
+}
+
 export interface BackupData {
   app: "lafei";
   version: 1;

@@ -10,6 +10,8 @@ use std::time::{Duration, UNIX_EPOCH};
 use tauri::ipc::Channel;
 use tauri_plugin_dialog::DialogExt;
 
+mod logseq;
+
 const MAX_FILE_BYTES: u64 = 16 * 1024 * 1024;
 const MAX_WRITE_BYTES: usize = 32 * 1024 * 1024;
 
@@ -735,6 +737,13 @@ fn ai_cancel(id: String) {
     ai_cancels().cancel(&id);
 }
 
+#[tauri::command]
+async fn scan_logseq_tasks(path: String, today: String) -> Result<logseq::LogseqScan, String> {
+    tauri::async_runtime::spawn_blocking(move || logseq::scan(&path, &today))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -751,7 +760,8 @@ pub fn run() {
             clear_store_data,
             ai_stream,
             ai_complete,
-            ai_cancel
+            ai_cancel,
+            scan_logseq_tasks
         ])
         .run(tauri::generate_context!())
         .expect("error while running Lafei");

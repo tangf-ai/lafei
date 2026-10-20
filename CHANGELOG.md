@@ -3,6 +3,15 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.5.0] - 2026-10-20
+
+### Added
+
+- 设置 →「从 Logseq 导入」：选择 Logseq graph，把未完成任务迁移到 Lafei
+- 解析 TODO / DOING / NOW / LATER / WAITING，保留 A/B/C 优先级和来源页面
+- 识别 SCHEDULED / DEADLINE 属性，以及子块中的「截止 10-23」自然语言日期
+- 跳过 DONE / CANCELED 与 Logseq 备份目录；按来源 ID 和标题去重，只新增不覆盖
+
 ## [0.4.0] - 2026-10-20
 
 ### Added

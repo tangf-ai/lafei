@@ -1,6 +1,6 @@
 [package]
 name = "lafei"
-version = "0.4.0"
+version = "0.5.0"
 description = "Lafei — 笔记、任务与内置 AI"
 authors = ["Lafei"]
 edition = "2021"
@@ -21,3 +21,4 @@ serde_json = "1"
 tauri-plugin-dialog = "2"
 reqwest = { version = "0.13", default-features = false, features = ["json", "stream", "native-tls", "http2", "system-proxy", "charset"] }
 futures-util = "0.3"
+regex = "1"

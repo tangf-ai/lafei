@@ -37,6 +37,7 @@ import { openExternal } from "../lib/external";
 import { isTauri } from "../lib/util";
 import { FolderStorageSettings } from "../features/FolderStorageSettings";
 import { FONT_SCALES } from "../lib/fontScale";
+import { LogseqImport } from "../features/LogseqImport";
 import { mirrorAllToFolder } from "../lib/folderSync";
 
 type SettingsTab = "ai" | "appearance" | "data" | "about";
@@ -284,7 +285,7 @@ export function SettingsView() {
               </div>
               <div>
                 <strong>设置</strong>
-                <span>lafei · v0.4</span>
+                <span>lafei · v0.5</span>
               </div>
             </div>
             <div className="settings-nav-items">
@@ -668,6 +669,8 @@ export function SettingsView() {
 
                   <FolderStorageSettings />
 
+                  <LogseqImport />
+
                   <div className="settings-block">
                     <div className="settings-block-head">
                       <div>
@@ -767,7 +770,7 @@ export function SettingsView() {
                       <i />
                     </div>
                     <div>
-                      <span className="eyebrow">Lafei · v0.4.0</span>
+                      <span className="eyebrow">Lafei · v0.5.0</span>
                       <h3 className="display">把知识收好，把行动理清。</h3>
                       <p>一个本地优先的笔记与任务应用，AI 是内置的，不是后装的外挂。</p>
                     </div>
