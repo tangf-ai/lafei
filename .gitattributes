@@ -1,0 +1,20 @@
+# Normalize text files to LF
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.dmg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+
+*.sh text eol=lf
+*.lock text eol=lf
+pnpm-lock.yaml text eol=lf
+Cargo.lock text eol=lf

@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+dist-ssr/
+dev-dist/
+coverage/
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/gen/
+target/
+
+# Desktop release artifacts (use GitHub Releases)
+*.dmg
+*.app
+*.msi
+*.exe
+*.AppImage
+*.deb
+*.rpm
+release/
+
+# Local configuration & secrets
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+
+# Logs and test artifacts
+*.log
+npm-debug.log*
+pnpm-debug.log*
+playwright-report/
+test-results/
+
+# Editor & OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+._*
+
+# Local databases
+*.sqlite
+*.sqlite3
