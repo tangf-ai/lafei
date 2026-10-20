@@ -1,12 +1,24 @@
 import { useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Check, CheckCheck, ChevronDown, Flag, ListTodo, Plus, Sparkles } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  CheckCheck,
+  ChevronDown,
+  Flag,
+  List,
+  ListTodo,
+  Plus,
+  Sparkles,
+} from "lucide-react";
 import { db, createTask } from "../db";
 import { useUI, toast } from "../store/ui";
 import { cn, dayKey, dueLabel, isOverdue } from "../lib/util";
 import { DUE_PRESETS, dayKeyOffset, duePresetDate, type DuePresetId } from "../lib/date";
 import type { Priority, Task, TaskFilter } from "../types";
 import { TaskRow } from "../components/TaskRow";
+import { DeadlineCountdown } from "../features/DeadlineCountdown";
+import { TaskCalendar } from "../features/TaskCalendar";
 
 const FILTERS: Array<{ id: TaskFilter; label: string }> = [
   { id: "all", label: "全部" },
@@ -41,6 +53,7 @@ export function TasksView() {
   const [customDueDate, setCustomDueDate] = useState(dayKeyOffset(1));
   const [priority, setPriority] = useState<Priority>("medium");
   const [adding, setAdding] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const today = dayKey();
@@ -62,7 +75,7 @@ export function TasksView() {
 
   const counts: Record<TaskFilter, number> = {
     all: open.length,
-    today: overdueTasks.length + dueTodayTasks.length,
+    today: dueTodayTasks.length,
     upcoming: upcomingTasks.length,
     done: done.length,
   };
@@ -98,14 +111,9 @@ export function TasksView() {
       return [{ key: "done", label: "已完成", tone: "done", tasks: sortedDone }];
     }
     if (filter === "today") {
-      return [
-        ...(overdueTasks.length
-          ? [{ key: "overdue", label: "逾期", tone: "overdue" as const, tasks: overdueTasks }]
-          : []),
-        ...(dueTodayTasks.length
-          ? [{ key: "today", label: "今天", tone: "today" as const, tasks: dueTodayTasks }]
-          : []),
-      ];
+      return dueTodayTasks.length
+        ? [{ key: "today", label: "今天", tone: "today" as const, tasks: dueTodayTasks }]
+        : [];
     }
     if (filter === "upcoming") {
       return futureGroups;
@@ -176,6 +184,8 @@ export function TasksView() {
           </div>
         </header>
 
+        <DeadlineCountdown tasks={open} />
+
         <form
           className="task-add-bar"
           onSubmit={(event) => {
@@ -245,32 +255,63 @@ export function TasksView() {
         </form>
 
         <div className="tasks-toolbar">
-          <div className="filter-tabs" role="tablist" aria-label="任务筛选">
-            {FILTERS.map((item) => (
+          {viewMode === "list" ? (
+            <div className="filter-tabs" role="tablist" aria-label="任务筛选">
+              {FILTERS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={filter === item.id}
+                  className={cn("filter-tab", filter === item.id && "active")}
+                  onClick={() => setFilter(item.id)}
+                >
+                  {item.label}
+                  <span className="filter-tab-count">{counts[item.id]}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <span className="calendar-mode-hint">所有未完成任务 · 按截止日期分布</span>
+          )}
+          <div className="tasks-toolbar-right">
+            {viewMode === "list" && (
+              <span className="tasks-toolbar-note">
+                {filter === "done"
+                  ? "完成的每一小步都算数"
+                  : filter === "today"
+                    ? "今天的截止任务"
+                    : filter === "upcoming"
+                      ? "按截止日期由近到远"
+                      : `${open.length} 个未完成 · ${scheduledCount} 个有截止日期`}
+              </span>
+            )}
+            <div className="segmented task-view-switch" role="group" aria-label="任务视图">
               <button
-                key={item.id}
                 type="button"
-                role="tab"
-                aria-selected={filter === item.id}
-                className={cn("filter-tab", filter === item.id && "active")}
-                onClick={() => setFilter(item.id)}
+                className={cn("segment", viewMode === "list" && "active")}
+                onClick={() => setViewMode("list")}
+                title="列表视图"
+                aria-pressed={viewMode === "list"}
               >
-                {item.label}
-                <span className="filter-tab-count">{counts[item.id]}</span>
+                <List size={13} />
+                <span>列表</span>
               </button>
-            ))}
+              <button
+                type="button"
+                className={cn("segment", viewMode === "calendar" && "active")}
+                onClick={() => setViewMode("calendar")}
+                title="日历视图"
+                aria-pressed={viewMode === "calendar"}
+              >
+                <CalendarDays size={13} />
+                <span>日历</span>
+              </button>
+            </div>
           </div>
-          <span className="tasks-toolbar-note">
-            {filter === "done"
-              ? "完成的每一小步都算数"
-              : filter === "today"
-                ? "逾期与今天 · 先处理最急的"
-                : filter === "upcoming"
-                  ? "按截止日期由近到远"
-                  : `${open.length} 个未完成 · ${scheduledCount} 个有截止日期`}
-          </span>
         </div>
 
+        {viewMode === "list" ? (
         <div className="task-groups">
           {isEmpty ? (
             <div className="task-empty">
@@ -329,6 +370,9 @@ export function TasksView() {
             )
           )}
         </div>
+        ) : (
+          <TaskCalendar tasks={open} notes={notes} onShowList={() => setViewMode("list")} />
+        )}
 
         <div className="tasks-footer">
           <span>
