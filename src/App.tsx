@@ -48,6 +48,7 @@ export default function App() {
         event.preventDefault();
         if (event.shiftKey) {
           void createTask({ title: "", dueDate: dayKey() }).then((task) => {
+            useUI.getState().setTaskFilter("all");
             setView("tasks");
             setTaskDetailId(task.id);
           });

@@ -8779,3 +8779,114 @@ select:focus-visible,
   font-size: 8.8px;
   line-height: 1.7;
 }
+
+/* future due tasks on today */
+
+.today-upcoming-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  margin-left: 1px;
+  border-radius: 5px;
+  background: var(--surface-muted);
+  color: var(--faint);
+  font-size: 8.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.card-mini-label button {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.upcoming-more {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 4px;
+  padding: 7px;
+  border-radius: 6px;
+  color: var(--faint);
+  font-size: 9.5px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.upcoming-more:hover {
+  color: var(--accent);
+  background: var(--surface-hover);
+}
+
+.task-add-date-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+
+.task-add-date {
+  width: 128px;
+  height: 32px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 10.5px;
+}
+
+.task-add-date:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+@media (max-width: 820px) {
+  .task-add-date-wrap {
+    flex: 1;
+    min-width: 130px;
+  }
+
+  .task-add-date {
+    width: 100%;
+    height: 33px;
+    font-size: 11px;
+  }
+}
+
+/* keep the custom due-date control from overflowing on small screens */
+@media (max-width: 820px) {
+  .task-add-controls {
+    flex-wrap: wrap;
+  }
+
+  .task-add-date-wrap {
+    order: 3;
+    flex: 1 1 100%;
+  }
+
+  .task-add-date {
+    width: 100%;
+  }
+}
+
+@media (max-width: 820px) {
+  .task-add-date-wrap {
+    order: initial;
+    flex: 0 1 128px;
+  }
+
+  .task-add-date {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .task-add-submit {
+    order: 4;
+    flex: 1 1 100%;
+    margin-left: 0;
+    justify-content: center;
+  }
+}

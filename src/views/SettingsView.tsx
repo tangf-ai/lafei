@@ -281,7 +281,7 @@ export function SettingsView() {
               </div>
               <div>
                 <strong>设置</strong>
-                <span>lafei · v0.2</span>
+                <span>lafei · v0.2.1</span>
               </div>
             </div>
             <div className="settings-nav-items">
@@ -727,7 +727,7 @@ export function SettingsView() {
                       <i />
                     </div>
                     <div>
-                      <span className="eyebrow">Lafei · v0.2.0</span>
+                      <span className="eyebrow">Lafei · v0.2.1</span>
                       <h3 className="display">把知识收好，把行动理清。</h3>
                       <p>一个本地优先的笔记与任务应用，AI 是内置的，不是后装的外挂。</p>
                     </div>

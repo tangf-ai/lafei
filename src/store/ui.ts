@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AISettings, AppView, NoteMode, ThemeMode } from "../types";
+import type { AISettings, AppView, NoteMode, TaskFilter, ThemeMode } from "../types";
 import { DEFAULT_AI } from "../lib/ai";
 
 interface UIState {
@@ -14,6 +14,7 @@ interface UIState {
   commandOpen: boolean;
   aiPanelOpen: boolean;
   taskDetailId: string | null;
+  taskFilter: TaskFilter;
   folderRoot: string | null;
   setView: (view: AppView) => void;
   openNote: (id: string) => void;
@@ -27,6 +28,7 @@ interface UIState {
   setCommandOpen: (open: boolean) => void;
   setAIPanelOpen: (open: boolean) => void;
   setTaskDetailId: (id: string | null) => void;
+  setTaskFilter: (filter: TaskFilter) => void;
   setFolderRoot: (root: string | null) => void;
 }
 
@@ -43,6 +45,7 @@ export const useUI = create<UIState>()(
       commandOpen: false,
       aiPanelOpen: false,
       taskDetailId: null,
+      taskFilter: "all",
       folderRoot: null,
       setView: (view) => set({ view }),
       openNote: (id) => set({ activeNoteId: id, view: "notes", aiPanelOpen: false }),
@@ -56,6 +59,7 @@ export const useUI = create<UIState>()(
       setCommandOpen: (commandOpen) => set({ commandOpen }),
       setAIPanelOpen: (aiPanelOpen) => set({ aiPanelOpen }),
       setTaskDetailId: (taskDetailId) => set({ taskDetailId }),
+      setTaskFilter: (taskFilter) => set({ taskFilter }),
       setFolderRoot: (folderRoot) => set({ folderRoot }),
     }),
     {

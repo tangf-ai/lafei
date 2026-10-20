@@ -83,8 +83,8 @@ export function Sidebar() {
                 <Icon size={17} strokeWidth={1.8} />
                 {item.label}
                 {item.id === "notes" && notes.length > 0 && <span className="nav-count">{notes.length}</span>}
-                {item.id === "tasks" && dueCount > 0 && (
-                  <span className={cn("nav-count", isActive ? "" : "is-accent")}>{dueCount}</span>
+                {item.id === "tasks" && openTasks.length > 0 && (
+                  <span className={cn("nav-count", dueCount > 0 && "is-accent")}>{openTasks.length}</span>
                 )}
                 {item.id === "assistant" && (
                   <span className="nav-count" style={{ fontSize: 9, letterSpacing: ".04em" }}>

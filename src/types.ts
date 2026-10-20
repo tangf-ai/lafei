@@ -55,6 +55,7 @@ export interface ChatMessage {
 }
 
 export type AppView = "today" | "notes" | "tasks" | "assistant";
+export type TaskFilter = "all" | "today" | "upcoming" | "done";
 export type NoteMode = "write" | "split" | "read";
 export type ThemeMode = "light" | "dark" | "system";
 export type AIProvider = "deepseek" | "openai" | "custom";

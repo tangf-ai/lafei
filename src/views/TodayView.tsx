@@ -36,6 +36,7 @@ export function TodayView() {
   const tasks = useLiveQuery(() => db.tasks.toArray(), [], []);
   const openNote = useUI((state) => state.openNote);
   const setView = useUI((state) => state.setView);
+  const setTaskFilter = useUI((state) => state.setTaskFilter);
   const ai = useUI((state) => state.ai);
   const setSettingsOpen = useUI((state) => state.setSettingsOpen);
   const isMobile = useIsMobile();
@@ -52,10 +53,10 @@ export function TodayView() {
   const focusTasks = tasks
     .filter((task) => !task.done && (task.dueDate === today || isOverdue(task.dueDate)))
     .sort((a, b) => Number(b.priority === "high") - Number(a.priority === "high") || a.dueDate!.localeCompare(b.dueDate!));
-  const upcoming = tasks
+  const upcomingAll = tasks
     .filter((task) => !task.done && task.dueDate && task.dueDate > today)
-    .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
-    .slice(0, 3);
+    .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
+  const upcoming = upcomingAll.slice(0, 4);
   const completedToday = tasks.filter(
     (task) => task.done && task.completedAt && dayKey(new Date(task.completedAt)) === today,
   );
@@ -95,8 +96,8 @@ export function TodayView() {
     setBriefBusy(true);
     const controller = new AbortController();
     abortRef.current = controller;
-    const taskLines = [...focusTasks, ...upcoming, ...completedToday]
-      .slice(0, 12)
+    const taskLines = [...focusTasks, ...upcomingAll, ...completedToday]
+      .slice(0, 16)
       .map((task) => `- [${task.done ? "x" : " "}] ${task.title}${task.dueDate ? `（${dueLabel(task.dueDate).label}）` : ""}`)
       .join("\n");
     const noteLines = recentNotes
@@ -172,8 +173,10 @@ export function TodayView() {
             </h1>
             <p className="today-intro">
               {focusTasks.length > 0
-                ? `还有 ${focusTasks.length} 件事在等你。不必全部做完，先挑一件真正重要的。`
-                : "清单是空的。正好留一点空间，给突然出现的想法。"}
+                ? `今天还有 ${focusTasks.length} 件事，未来 ${upcomingAll.length} 件也已经排好。不必全部做完，先挑一件真正重要的。`
+                : upcomingAll.length > 0
+                  ? `今天先留白。接下来还有 ${upcomingAll.length} 件已安排，可以提前看一眼。`
+                  : "清单是空的。正好留一点空间，给突然出现的想法。"}
             </p>
             <div className="today-actions">
               <button
@@ -189,7 +192,10 @@ export function TodayView() {
               <button
                 type="button"
                 className="btn btn-outline btn-lg"
-                onClick={() => setView("tasks")}
+                onClick={() => {
+                  setTaskFilter("all");
+                  setView("tasks");
+                }}
               >
                 <CheckSquare size={16} /> 查看任务
               </button>
@@ -240,7 +246,14 @@ export function TodayView() {
                 <span className="eyebrow">Today</span>
                 <h2 className="card-title display">今天要做的事</h2>
               </div>
-              <button type="button" className="card-link" onClick={() => setView("tasks")}>
+              <button
+                type="button"
+                className="card-link"
+                onClick={() => {
+                  setTaskFilter("all");
+                  setView("tasks");
+                }}
+              >
                 全部 <ArrowUpRight size={14} />
               </button>
             </div>
@@ -275,11 +288,18 @@ export function TodayView() {
               )}
             </div>
 
-            {upcoming.length > 0 && (
+            {upcomingAll.length > 0 && (
               <div className="today-upcoming">
                 <div className="card-mini-label">
                   <CalendarDays size={13} /> 接下来
-                  <button type="button" onClick={() => setView("tasks")}>
+                  <span className="today-upcoming-count">{upcomingAll.length}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTaskFilter("upcoming");
+                      setView("tasks");
+                    }}
+                  >
                     查看全部
                   </button>
                 </div>
@@ -296,6 +316,19 @@ export function TodayView() {
                     </span>
                   </button>
                 ))}
+                {upcomingAll.length > upcoming.length && (
+                  <button
+                    type="button"
+                    className="upcoming-more"
+                    onClick={() => {
+                      setTaskFilter("upcoming");
+                      setView("tasks");
+                    }}
+                  >
+                    还有 {upcomingAll.length - upcoming.length} 件未来任务
+                    <ArrowRight size={12} />
+                  </button>
+                )}
               </div>
             )}
           </section>

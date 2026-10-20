@@ -10,6 +10,7 @@ export async function newNote(partial: Partial<Note> = {}) {
 
 export async function newTask(partial: Partial<Task> = {}, openDetail = false) {
   const task = await createTask(partial);
+  useUI.getState().setTaskFilter("all");
   useUI.getState().setView("tasks");
   if (openDetail) useUI.getState().setTaskDetailId(task.id);
   return task;

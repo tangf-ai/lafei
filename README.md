@@ -43,11 +43,14 @@
 
 ### 任务管理
 
-- 今天 / 接下来 / 全部待办 / 已完成 四个视图
-- 截止日期、优先级、备注、关联笔记
-- 逾期高亮、今日进度、近 7 天完成统计
+- 默认展示**全部待办**，按「逾期 / 今天 / 每一天的截止日期 / 无日期」分组
+- 今天 / 接下来 / 已完成等视图可快速切换，未来的任务不会再藏在今天之后
+- 截止日期、优先级、备注、关联笔记；支持今天、明天、三天后、自定义日期和无日期
+- 逾期高亮、今日进度；侧边栏显示全部未完成任务数，有逾期时高亮
 - 在任务详情里直接跳回来源笔记；删除笔记时任务会保留
-- 今日页一键快速添加，支持自然地把笔记里的待办提取出来
+- 今日页一键快速添加，并把未来的截止任务单独列出来
+
+![任务与截止日期](docs/screenshots/desktop-tasks.png)
 
 ### 内置 AI（不是外挂聊天窗）
 
@@ -105,9 +108,9 @@ pnpm desktop:build   # 生成 .app / .dmg（macOS）或对应平台安装包
 macOS 构建产物：
 
 ```text
-Lafei-0.2.0-macOS-arm64.dmg                                      # 可直接分发的安装包
+Lafei-0.2.1-macOS-arm64.dmg                                      # 可直接分发的安装包
 src-tauri/target/release/bundle/macos/Lafei.app                  # 未打包的应用
-src-tauri/target/release/bundle/dmg/Lafei_0.2.0_aarch64.dmg      # Tauri 原始产物
+src-tauri/target/release/bundle/dmg/Lafei_0.2.1_aarch64.dmg      # Tauri 原始产物
 ```
 
 > 构建产物（`.app` / `.dmg`）不进入 Git，正式版本请通过 GitHub Releases 分发。当前本地产物是 Apple Silicon（arm64）版本，使用 ad-hoc 签名，未做 Apple 公证；若系统提示无法验证，右键应用选择「打开」，或在终端执行：
@@ -275,7 +278,7 @@ scripts/mock-ai.mjs 本地 AI 演示服务
 
 ## 已知限制
 
-这是 `0.2.0`，一个可以真实日用的本地 MVP，但不是完成品：
+这是 `0.2.1`，一个可以真实日用的本地 MVP，但不是完成品：
 
 - 文件夹同步是文件级的、最终一致的，不是实时协作；冲突采用更新时间优先，没有逐行合并
 - 手机 PWA 不能直接读取 iCloud Drive；目前需要备份迁移，原生 iOS 版尚未生成

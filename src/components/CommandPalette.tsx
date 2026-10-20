@@ -31,6 +31,7 @@ export function CommandPalette() {
   const setView = useUI((state) => state.setView);
   const setSettingsOpen = useUI((state) => state.setSettingsOpen);
   const setTaskDetailId = useUI((state) => state.setTaskDetailId);
+  const setTaskFilter = useUI((state) => state.setTaskFilter);
   const theme = useUI((state) => state.theme);
   const setTheme = useUI((state) => state.setTheme);
   const [query, setQuery] = useState("");
@@ -79,6 +80,7 @@ export function CommandPalette() {
         icon: CheckSquare,
         run: async () => {
           const task = await createTask({ dueDate: dayKey() });
+          setTaskFilter("all");
           setTaskDetailId(task.id);
           setView("tasks");
           setOpen(false);
@@ -121,7 +123,7 @@ export function CommandPalette() {
         },
       },
     ],
-    [openNote, setOpen, setSettingsOpen, setTaskDetailId, setTheme, setView, theme],
+    [openNote, setOpen, setSettingsOpen, setTaskDetailId, setTaskFilter, setTheme, setView, theme],
   );
 
   const items = useMemo<PaletteItem[]>(() => {
@@ -165,6 +167,7 @@ export function CommandPalette() {
       openNote(item.note.id);
       setOpen(false);
     } else if (item.kind === "task") {
+      setTaskFilter("all");
       setView("tasks");
       setTaskDetailId(item.task.id);
       setOpen(false);
