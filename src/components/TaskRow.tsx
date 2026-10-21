@@ -55,7 +55,7 @@ export function TaskRow({
               {due.label}
             </span>
           )}
-          {!task.dueDate && <span className="task-due tone-none">无日期</span>}
+          {!task.dueDate && <span className="task-due tone-none">待安排</span>}
           {task.dueDate && remaining.days !== null && remaining.days > 0 && (
             <span className={cn("task-remaining", `tone-${remaining.tone}`)}>{remaining.label}</span>
           )}

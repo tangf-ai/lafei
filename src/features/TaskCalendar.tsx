@@ -180,7 +180,7 @@ export function TaskCalendar({ tasks, notes, onShowList }: TaskCalendarProps) {
         <div className="calendar-foot">
           <span>
             <ListTodo size={13} />
-            {unscheduled.length > 0 ? `另有 ${unscheduled.length} 个任务没有截止日期` : "所有未完成任务都有截止日期"}
+            {unscheduled.length > 0 ? `另有 ${unscheduled.length} 个任务待安排` : "所有未完成任务都有截止日期"}
           </span>
           <button type="button" onClick={onShowList}>
             切换到列表

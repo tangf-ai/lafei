@@ -71,11 +71,12 @@ export function TasksView() {
     .sort((a, b) => a.dueDate!.localeCompare(b.dueDate!));
   const noDateTasks = open.filter((task) => !task.dueDate);
   const scheduledCount = open.filter((task) => Boolean(task.dueDate)).length;
+  const upcomingCount = upcomingTasks.length + noDateTasks.length;
 
   const counts: Record<TaskFilter, number> = {
     all: open.length,
     today: dueTodayTasks.length,
-    upcoming: upcomingTasks.length,
+    upcoming: upcomingCount,
     done: done.length,
   };
 
@@ -115,7 +116,12 @@ export function TasksView() {
         : [];
     }
     if (filter === "upcoming") {
-      return futureGroups;
+      return [
+        ...futureGroups,
+        ...(noDateTasks.length
+          ? [{ key: "nodate", label: "待安排", tone: "later" as const, tasks: noDateTasks }]
+          : []),
+      ];
     }
     return [
       ...(overdueTasks.length
@@ -126,7 +132,7 @@ export function TasksView() {
         : []),
       ...futureGroups,
       ...(noDateTasks.length
-        ? [{ key: "nodate", label: "无日期", tone: "later" as const, tasks: noDateTasks }]
+        ? [{ key: "nodate", label: "待安排", tone: "later" as const, tasks: noDateTasks }]
         : []),
     ];
   }, [dueTodayTasks, filter, futureGroups, noDateTasks, overdueTasks, sortedDone]);
@@ -153,8 +159,8 @@ export function TasksView() {
     open.length === 0
       ? "清单是空的。写下下一件想推进的事，或者先休息一下。"
       : overdueTasks.length > 0
-        ? `有 ${overdueTasks.length} 件已经逾期，今天 ${dueTodayTasks.length} 件，接下来 ${upcomingTasks.length} 件。先处理最近的一件。`
-        : `今天 ${dueTodayTasks.length} 件，接下来 ${upcomingTasks.length} 件。任务按截止日期铺开，不必一次做完。`;
+        ? `有 ${overdueTasks.length} 件已经逾期，今天 ${dueTodayTasks.length} 件，接下来 ${upcomingCount} 件${noDateTasks.length ? `（${noDateTasks.length} 件待安排）` : ""}。先处理最近的一件。`
+        : `今天 ${dueTodayTasks.length} 件，接下来 ${upcomingCount} 件${noDateTasks.length ? `（${noDateTasks.length} 件待安排）` : ""}。任务按截止日期铺开，不必一次做完。`;
 
   return (
     <div className="view-scroll">
@@ -172,7 +178,7 @@ export function TasksView() {
             </div>
             <span className="task-stat-line" />
             <div className="task-stat">
-              <strong>{upcomingTasks.length}</strong>
+              <strong>{upcomingCount}</strong>
               <span>接下来</span>
             </div>
             <span className="task-stat-line" />
@@ -279,7 +285,7 @@ export function TasksView() {
                   : filter === "today"
                     ? "今天的截止任务"
                     : filter === "upcoming"
-                      ? "按截止日期由近到远"
+                      ? "已排期按日期，其余待安排"
                       : `${open.length} 个未完成 · ${scheduledCount} 个有截止日期`}
               </span>
             )}
@@ -350,6 +356,7 @@ export function TasksView() {
                         {remainingLabel(group.key.slice(5)).label}
                       </span>
                     )}
+                    {group.key === "nodate" && <span className="task-group-note">还没排期</span>}
                     {group.key === "done" && group.tasks.length > 0 && (
                       <span className="task-group-note">
                         <Check size={12} /> 共 {group.tasks.length} 件

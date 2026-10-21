@@ -54,9 +54,13 @@ export function TodayView() {
   const focusTasks = tasks
     .filter((task) => !task.done && (task.dueDate === today || isOverdue(task.dueDate)))
     .sort((a, b) => Number(b.priority === "high") - Number(a.priority === "high") || a.dueDate!.localeCompare(b.dueDate!));
-  const upcomingAll = tasks
+  const scheduledUpcoming = tasks
     .filter((task) => !task.done && task.dueDate && task.dueDate > today)
     .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
+  const undatedUpcoming = tasks
+    .filter((task) => !task.done && !task.dueDate)
+    .sort((a, b) => Number(b.priority === "high") - Number(a.priority === "high") || b.updatedAt - a.updatedAt);
+  const upcomingAll = [...scheduledUpcoming, ...undatedUpcoming];
   const upcoming = upcomingAll.slice(0, 4);
   const completedToday = tasks.filter(
     (task) => task.done && task.completedAt && dayKey(new Date(task.completedAt)) === today,
@@ -101,7 +105,7 @@ export function TodayView() {
     abortRef.current = controller;
     const taskLines = [...focusTasks, ...upcomingAll, ...completedToday]
       .slice(0, 16)
-      .map((task) => `- [${task.done ? "x" : " "}] ${task.title}${task.dueDate ? `（${dueLabel(task.dueDate).label}）` : ""}`)
+      .map((task) => `- [${task.done ? "x" : " "}] ${task.title}${task.dueDate ? `（${dueLabel(task.dueDate).label}）` : "（待安排）"}`)
       .join("\n");
     const noteLines = recentNotes
       .map((note) => `《${noteTitle(note.title)}》：${excerpt(note.content, 160)}`)
@@ -174,9 +178,9 @@ export function TodayView() {
             </h1>
             <p className="today-intro">
               {focusTasks.length > 0
-                ? `今天还有 ${focusTasks.length} 件事，未来 ${upcomingAll.length} 件也已经排好。不必全部做完，先挑一件真正重要的。`
+                ? `今天还有 ${focusTasks.length} 件事，接下来 ${upcomingAll.length} 件${undatedUpcoming.length ? `（其中 ${undatedUpcoming.length} 件待安排）` : ""}。不必全部做完，先挑一件真正重要的。`
                 : upcomingAll.length > 0
-                  ? `今天先留白。接下来还有 ${upcomingAll.length} 件已安排，可以提前看一眼。`
+                  ? `今天先留白。接下来还有 ${upcomingAll.length} 件工作${undatedUpcoming.length ? `，其中 ${undatedUpcoming.length} 件还没安排日期` : ""}，可以提前看一眼。`
                   : "清单是空的。正好留一点空间，给突然出现的想法。"}
             </p>
             <div className="today-actions">
@@ -226,8 +230,8 @@ export function TodayView() {
               </strong>
               <span className="today-focus-meta">
                 {focusCardTask
-                  ? `${dueLabel(focusCardTask.dueDate).label}${focusCardTask.priority === "high" ? " · 高优先级" : ""}`
-                  : "从下面快速添加，或先看看未来任务。"}
+                  ? `${focusCardTask.dueDate ? dueLabel(focusCardTask.dueDate).label : "待安排"}${focusCardTask.priority === "high" ? " · 高优先级" : ""}`
+                  : "从下面快速添加，或先看看接下来要做的事。"}
               </span>
             </button>
 
@@ -342,8 +346,8 @@ export function TodayView() {
                     onClick={() => useUI.getState().setTaskDetailId(task.id)}
                   >
                     <span>{task.title}</span>
-                    <span className={cn("task-due", `tone-${dueLabel(task.dueDate).tone}`)}>
-                      {dueLabel(task.dueDate).label}
+                    <span className={cn("task-due", task.dueDate ? `tone-${dueLabel(task.dueDate).tone}` : "tone-none")}>
+                      {task.dueDate ? dueLabel(task.dueDate).label : "待安排"}
                     </span>
                   </button>
                 ))}
@@ -356,7 +360,7 @@ export function TodayView() {
                       setView("tasks");
                     }}
                   >
-                    还有 {upcomingAll.length - upcoming.length} 件未来任务
+                    还有 {upcomingAll.length - upcoming.length} 件接下来的任务
                     <ArrowRight size={12} />
                   </button>
                 )}

@@ -3,6 +3,15 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.7.0] - 2026-10-21
+
+### Changed
+
+- 「接下来」的统计和筛选现在包含没有截止日期的任务，统一归为「待安排」
+- 顶部接下来数量、Today 页接下来区域和 AI 简报都会包含待安排任务
+- 无日期任务在任务行、日历和日期分组中的文案改为「待安排」
+- Today 页会说明接下来任务中有多少件还没安排日期
+
 ## [0.6.5] - 2026-10-21
 
 ### Changed
