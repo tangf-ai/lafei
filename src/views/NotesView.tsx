@@ -5,6 +5,7 @@ import { db } from "../db";
 import { useUI } from "../store/ui";
 import { useIsMobile } from "../lib/hooks";
 import { searchNotes } from "../lib/search";
+import { hasTag, sameTag, tagsOf } from "../lib/tags";
 import { cn, noteTitle, updatedLabel } from "../lib/util";
 import { newNote } from "../lib/actions";
 import { NoteEditor } from "./NoteEditor";
@@ -25,22 +26,31 @@ export function NotesView() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
-    const base = tagFilter ? notes.filter((note) => note.tags.includes(tagFilter)) : notes;
+    const base = tagFilter ? notes.filter((note) => hasTag(note, tagFilter)) : notes;
     return searchNotes(base, query);
   }, [notes, query, tagFilter]);
 
   useEffect(() => {
     if (!isMobile && !activeNoteId && filtered.length > 0) {
-      openNote(filtered[0].id);
+      openNote(filtered[0].id, { keepTagFilter: true });
     }
   }, [activeNoteId, filtered, isMobile, openNote]);
 
   const tagCounts = useMemo(() => {
-    const counts = new Map<string, number>();
+    // 和标签页保持一致：大小写不同的同名标签合并展示
+    const counts = new Map<string, { tag: string; count: number }>();
     for (const note of notes) {
-      for (const tag of note.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      for (const tag of tagsOf(note)) {
+        const key = tag.toLocaleLowerCase();
+        const entry = counts.get(key);
+        if (entry) entry.count += 1;
+        else counts.set(key, { tag, count: 1 });
+      }
     }
-    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "zh")).slice(0, 10);
+    return [...counts.values()]
+      .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, "zh"))
+      .slice(0, 10)
+      .map((entry) => [entry.tag, entry.count] as const);
   }, [notes]);
 
   useEffect(() => {
@@ -50,11 +60,11 @@ export function NotesView() {
   useEffect(() => {
     if (isMobile || !tagFilter || !activeNoteId) return;
     const current = notes.find((note) => note.id === activeNoteId);
-    if (!current || current.tags.includes(tagFilter)) return;
+    if (!current || hasTag(current, tagFilter)) return;
     const first = notes
-      .filter((note) => note.tags.includes(tagFilter))
+      .filter((note) => hasTag(note, tagFilter))
       .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt)[0];
-    if (first) openNote(first.id);
+    if (first) openNote(first.id, { keepTagFilter: true });
     else closeNote();
   }, [activeNoteId, closeNote, isMobile, notes, openNote, tagFilter]);
 
@@ -83,7 +93,7 @@ export function NotesView() {
   return (
     <div className={cn("notes-layout", listCollapsed && "is-list-collapsed")}>
       <aside className={cn("notes-list-pane", !showListOnMobile && "mobile-hidden")}>
-        <div className="notes-list-head">
+        <div className="notes-list-head" data-tauri-drag-region>
           <div className="notes-list-heading">
             <div>
               <span className="eyebrow">知识库</span>
@@ -154,7 +164,7 @@ export function NotesView() {
                 <button
                   key={tag}
                   type="button"
-                  className={tagFilter === tag ? "mobile-tag-pill active" : "mobile-tag-pill"}
+                  className={tagFilter !== null && sameTag(tagFilter, tag) ? "mobile-tag-pill active" : "mobile-tag-pill"}
                   onClick={() => setTagFilter(tag)}
                 >
                   #{tag}
@@ -180,7 +190,7 @@ export function NotesView() {
                 key={note.id}
                 type="button"
                 className={cn("note-list-item", activeNoteId === note.id && "is-active")}
-                onClick={() => openNote(note.id)}
+                onClick={() => openNote(note.id, { keepTagFilter: Boolean(tagFilter) })}
               >
                 <div className="note-item-top">
                   <span className="note-item-date">{updatedLabel(note.updatedAt)}</span>

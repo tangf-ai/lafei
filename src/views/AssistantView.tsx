@@ -30,6 +30,7 @@ import {
 } from "../lib/ai";
 import type { Chat, ChatMessage, ChatSource } from "../types";
 import { Markdown } from "../lib/markdown";
+import { tagsOf } from "../lib/tags";
 import { cn, dueLabel, newId, updatedLabel } from "../lib/util";
 import { Modal } from "../components/Modal";
 
@@ -133,8 +134,10 @@ export function AssistantView() {
   useEffect(() => {
     if (!textareaRef.current) return;
     const el = textareaRef.current;
+    // 输入框至少保持两行高度，内容变多时再向上长
+    const minHeight = 52;
     el.style.height = "auto";
-    el.style.height = `${Math.min(150, el.scrollHeight)}px`;
+    el.style.height = `${Math.max(minHeight, Math.min(150, el.scrollHeight))}px`;
   }, [input]);
 
   const chatTitle = (prompt: string) => {
@@ -205,7 +208,10 @@ export function AssistantView() {
     const openTasks = tasks.filter((task) => !task.done).slice(0, 12);
     const taskBlock = openTasks.length
       ? `\n\n用户当前的未完成任务：\n${openTasks
-          .map((task) => `- [ ] ${task.title}${task.dueDate ? `（${dueLabel(task.dueDate).label}）` : ""}${task.priority === "high" ? "（高优先级）" : ""}`)
+          .map((task) => {
+            const tags = tagsOf(task);
+            return `- [ ] ${task.title}${tags.length ? ` #${tags.join(" #")}` : ""}${task.dueDate ? `（${dueLabel(task.dueDate).label}）` : ""}${task.priority === "high" ? "（高优先级）" : ""}`;
+          })
           .join("\n")}`
       : "";
     const built = buildChatMessages(history, question, context);
@@ -364,7 +370,7 @@ export function AssistantView() {
   const showWelcome = displayMessages.length === 0 && !streaming;
 
   return (
-    <div className="assistant-layout">
+    <div className="assistant-layout" data-tauri-drag-region>
       <aside className="assistant-sidebar">
         <div className="assistant-side-head">
           <span className="eyebrow">Conversations</span>
@@ -380,7 +386,7 @@ export function AssistantView() {
       </aside>
 
       <section className="assistant-main">
-        <header className="assistant-topbar">
+        <header className="assistant-topbar" data-tauri-drag-region>
           <div className="assistant-title-wrap">
             <span className="assistant-orb">
               <Sparkles size={16} />
@@ -575,7 +581,7 @@ export function AssistantView() {
               <textarea
                 ref={textareaRef}
                 value={input}
-                rows={1}
+                rows={2}
                 placeholder={configured ? "问点什么，或让 AI 帮你整理…" : "配置 AI 后开始对话…"}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={(event) => {

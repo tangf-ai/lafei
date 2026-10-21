@@ -20,6 +20,15 @@ pnpm build          # 生产构建
 pnpm desktop:dev    # Tauri 桌面开发窗口
 ```
 
+清理构建产物：
+
+```bash
+pnpm clean          # 清 dist / bundle / debug / vite 缓存，保留 Rust 依赖缓存（增量构建仍只需十几秒）
+pnpm clean:all      # 连 Rust 依赖缓存一起清，下次构建需要完整编译
+```
+
+`src-tauri/target` 里真正占空间的是 `release/deps` 和 `release/build`（约 1.1 GB），它们是增量编译的基础，平时保留；`release/bundle` 每次构建都会重新生成，可以用 `pnpm clean` 顺手清掉。
+
 Rust 检查：
 
 ```bash

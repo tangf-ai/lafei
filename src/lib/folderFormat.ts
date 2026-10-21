@@ -150,6 +150,7 @@ export function parseTaskFile(file: StoreFile): Task | null {
       noteId: typeof parsed.noteId === "string" && parsed.noteId ? parsed.noteId : null,
       dueDate: typeof parsed.dueDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.dueDate) ? parsed.dueDate : null,
       priority: PRIORITIES.includes(parsed.priority as Priority) ? (parsed.priority as Priority) : "medium",
+      tags: asTags(parsed.tags),
       done: parsed.done === true,
       completedAt: typeof parsed.completedAt === "number" ? parsed.completedAt : null,
       createdAt,

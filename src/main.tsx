@@ -6,6 +6,8 @@ import { bootstrapDatabase } from "./db";
 import { isTauri } from "./lib/util";
 import { initializeFolderSync } from "./lib/folderSync";
 
+document.documentElement.dataset.shell = isTauri ? "tauri" : "web";
+
 async function start() {
   try {
     await bootstrapDatabase();

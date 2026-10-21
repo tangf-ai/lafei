@@ -25,6 +25,7 @@ export interface Task {
   noteId: string | null;
   dueDate: string | null;
   priority: Priority;
+  tags: string[];
   done: boolean;
   completedAt: number | null;
   createdAt: number;
@@ -54,7 +55,7 @@ export interface ChatMessage {
   createdAt: number;
 }
 
-export type AppView = "today" | "notes" | "tasks" | "assistant";
+export type AppView = "today" | "notes" | "tasks" | "tags" | "assistant";
 export type TaskFilter = "all" | "today" | "upcoming" | "done";
 export type NoteMode = "write" | "split" | "read";
 export type ThemeMode = "light" | "dark" | "system" | "sunny" | "mint" | "sea";

@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Lafei · 侧栏配色方案对比</title>
+<style>
+  @font-face {
+    font-family: "Inter Variable";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 100 900;
+    src: url("../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2-variations");
+  }
+  @font-face {
+    font-family: "Fraunces Variable";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 100 900;
+    src: url("../../node_modules/@fontsource-variable/fraunces/files/fraunces-latin-wght-normal.woff2") format("woff2-variations");
+  }
+  @font-face {
+    font-family: "Fraunces Variable";
+    font-style: italic;
+    font-display: swap;
+    font-weight: 100 900;
+    src: url("../../node_modules/@fontsource-variable/fraunces/files/fraunces-latin-wght-italic.woff2") format("woff2-variations");
+  }
+
+  /* ---------------------------------------------------------------- *
+   * 主题 token（取自 src/index.css，仅保留当前截图使用的 mint 主题）
+   * ---------------------------------------------------------------- */
+  .sb {
+    --bg: #ecf4e7;
+    --bg-deep: #e3eedc;
+    --surface: #f7fbf3;
+    --surface-raised: #fcfef8;
+    --surface-muted: #e3edd9;
+    --surface-hover: #eff6e9;
+    --ink: #243229;
+    --ink-soft: #465649;
+    --muted: #6f816f;
+    --faint: #9aa997;
+    --line: #d5e1ce;
+    --line-strong: #c1d2b8;
+    --accent: #4f8667;
+    --accent-deep: #376a4f;
+    --accent-soft: #d6eadc;
+    --accent-wash: #ebf6eb;
+    --sage: #4d7356;
+    --sage-soft: #dcebdb;
+    --gold: #a8863e;
+    --gold-soft: #f0e7ca;
+    --font-ui: "Inter Variable", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", sans-serif;
+    --font-display: "Fraunces Variable", "Songti SC", "STSong", Georgia, serif;
+    --shadow-sm: 0 1px 2px rgba(44, 76, 50, 0.04), 0 4px 14px rgba(44, 76, 50, 0.04);
+    --radius-sm: 8px;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+    width: 238px;
+    height: 648px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px 14px 14px;
+    font-family: var(--font-ui);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  .sb button {
+    font: inherit;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    cursor: default;
+    text-align: left;
+  }
+  .nav-item, .tag-item, .sidebar-user, .sidebar-theme { background: transparent; }
+
+  /* ---------- brand ---------- */
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; height: 38px; }
+  .brand-mark {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: grid; place-items: center; position: relative; flex-shrink: 0;
+    background: var(--mark-bg, var(--ink));
+    box-shadow: 0 3px 8px rgba(35, 30, 21, 0.18);
+  }
+  .brand-mark span {
+    font-family: var(--font-display); font-style: italic; font-size: 23px; font-weight: 500;
+    line-height: 1; transform: translateY(-1px);
+    color: var(--mark-ink, var(--surface-raised));
+  }
+  .brand-mark::after {
+    content: ""; position: absolute; width: 5px; height: 5px; border-radius: 50%;
+    right: 6px; top: 6px; background: var(--mark-dot, var(--accent));
+  }
+  .brand-word { font-family: var(--font-display); font-size: 24px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+  .brand-word em { font-style: italic; color: var(--accent); }
+  .brand-tag {
+    margin-left: auto; font-size: 9px; letter-spacing: 0.12em; color: var(--faint);
+    text-transform: uppercase; writing-mode: vertical-rl; line-height: 1;
+  }
+
+  /* ---------- new note ---------- */
+  .sidebar-new {
+    margin: 23px 2px 0; height: 40px; padding: 0 12px; border-radius: 10px;
+    display: flex; align-items: center; gap: 9px;
+    background: var(--cta-bg, var(--ink));
+    color: var(--cta-ink, var(--surface-raised));
+    border: var(--cta-border, 0 solid transparent);
+    font-size: 13px; font-weight: 550;
+    box-shadow: var(--cta-shadow, var(--shadow-sm));
+  }
+  .sidebar-new svg { color: var(--cta-icon, currentColor); }
+  .sidebar-new .kbd {
+    margin-left: auto; height: 20px; padding: 0 5px; border-radius: 5px;
+    display: inline-flex; align-items: center; font-size: 10.5px; font-weight: 500; line-height: 1;
+    letter-spacing: 0.02em;
+    background: transparent;
+    border: 1px solid var(--cta-kbd-border, color-mix(in srgb, var(--surface-raised) 24%, transparent));
+    color: var(--cta-kbd-ink, color-mix(in srgb, var(--surface-raised) 62%, transparent));
+  }
+  .sidebar-new-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---------- nav ---------- */
+  .sidebar-scroll { flex: 1; overflow: hidden; margin: 0 -6px; padding: 0 6px; }
+  .nav-group { margin-top: 24px; }
+  .nav-label {
+    padding: 0 10px; margin-bottom: 7px; display: flex; align-items: center; justify-content: space-between;
+    color: var(--faint); font-size: 10px; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .nav-item {
+    width: 100%; height: 39px; display: flex; align-items: center; gap: 10px; padding: 0 10px;
+    border-radius: 9px; color: var(--ink-soft); font-size: 13.5px; font-weight: 500;
+    transition: background 0.16s var(--ease), color 0.16s var(--ease);
+    position: relative;
+  }
+  .nav-item + .nav-item { margin-top: 2px; }
+  .nav-item svg { color: var(--muted); flex-shrink: 0; }
+  .nav-item-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-count {
+    margin-left: auto; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; background: var(--surface-muted); color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .nav-count.is-accent { background: var(--accent-soft); color: var(--accent-deep); }
+
+  /* ---------- tags ---------- */
+  .tag-list { display: flex; flex-direction: column; gap: 1px; }
+  .tag-item {
+    display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 5px 10px;
+    border-radius: 8px; font-size: 13px; color: var(--muted); text-align: left;
+  }
+  .tag-hash { color: var(--faint); font-size: 11px; font-family: var(--font-display); font-style: italic; }
+  .tag-count { margin-left: auto; font-size: 10px; color: var(--faint); font-variant-numeric: tabular-nums; }
+
+  /* ---------- foot ---------- */
+  .sidebar-foot { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; flex-shrink: 0; }
+  .local-note { display: flex; align-items: center; gap: 7px; padding: 0 9px 10px; color: var(--faint); font-size: 10.5px; }
+  .local-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--sage);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sage) 14%, transparent); flex-shrink: 0;
+  }
+  .sidebar-user-row { display: flex; align-items: center; gap: 4px; }
+  .sidebar-user { display: flex; align-items: center; gap: 9px; width: 100%; padding: 6px 8px; border-radius: 9px; }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--accent-deep);
+    font-family: var(--font-display); font-size: 14px; font-weight: 600; flex-shrink: 0;
+  }
+  .sidebar-user-info { min-width: 0; display: flex; flex-direction: column; }
+  .sidebar-user-info strong { font-size: 12px; font-weight: 600; }
+  .sidebar-user-info span { font-size: 10px; color: var(--faint); }
+  .sidebar-user > svg { margin-left: auto; color: var(--faint); }
+  .sidebar-theme { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; color: var(--faint); flex-shrink: 0; }
+
+  /* ================= 方案差异 ================= */
+
+  /* 现状 */
+  .v-current .nav-item.active { background: var(--ink); color: var(--surface-raised); box-shadow: var(--shadow-sm); }
+  .v-current .nav-item.active svg { color: var(--surface-raised); }
+  .v-current .nav-item.active .nav-count { background: color-mix(in srgb, var(--surface-raised) 17%, transparent); color: var(--surface-raised); }
+  .v-current .nav-item.active .nav-count.is-accent { background: var(--accent); color: #fff; }
+
+  /* A / C 共用：柔色选中 */
+  .v-a, .v-c { --mark-bg: var(--mark); }
+  .v-a .nav-item.active,
+  .v-c .nav-item.active {
+    background: var(--sel-bg);
+    color: var(--sel-ink);
+    box-shadow: none;
+    font-weight: 550;
+  }
+  .v-a .nav-item.active svg,
+  .v-c .nav-item.active svg { color: var(--sel-icon); }
+  .v-a .nav-item.active .nav-count,
+  .v-c .nav-item.active .nav-count {
+    background: var(--sel-count-bg);
+    color: var(--sel-count-ink);
+  }
+  .v-a .nav-item.active .nav-count.is-accent,
+  .v-c .nav-item.active .nav-count.is-accent {
+    background: var(--accent); color: #fff;
+  }
+  .v-a .nav-item.active::before,
+  .v-c .nav-item.active::before {
+    content: ""; position: absolute; left: -9px; top: 11px; bottom: 11px; width: 3px;
+    border-radius: 3px; background: var(--accent);
+  }
+
+  /* B：白底胶囊 + 柔色选中 */
+  .v-b .nav-item.active {
+    background: #ffffff;
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1px #e2ecdc, 0 1px 2px rgba(44, 76, 50, 0.05), 0 6px 18px rgba(44, 76, 50, 0.08);
+    font-weight: 550;
+  }
+  .v-b .nav-item.active svg { color: var(--accent-deep); }
+  .v-b .nav-item.active .nav-count { background: var(--sage-soft); color: var(--sage); }
+  .v-b .nav-item.active .nav-count.is-accent { background: var(--accent); color: #fff; }
+  .v-b .nav-item.active::before {
+    content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px;
+    border-radius: 2px; background: var(--accent);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * 页面
+   * ---------------------------------------------------------------- */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 46px 42px 40px;
+    background: #e7e4da;
+    font-family: "Inter Variable", -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    color: #2b2721;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page-head { max-width: 1240px; margin: 0 auto 26px; }
+  .page-head .eyebrow {
+    font-size: 10px; font-weight: 650; letter-spacing: 0.15em; text-transform: uppercase; color: #8c8475;
+  }
+  .page-head h1 { font-size: 27px; font-weight: 560; letter-spacing: -0.02em; margin: 8px 0 6px; }
+  .page-head p { margin: 0; font-size: 12.5px; color: #6f6759; max-width: 760px; line-height: 1.65; }
+  .grid { max-width: 1240px; margin: 0 auto; display: flex; gap: 20px; align-items: flex-start; }
+  .card {
+    width: 282px; flex-shrink: 0; background: #f5f2ea; border: 1px solid #ddd7c8;
+    border-radius: 20px; padding: 16px 16px 14px;
+    box-shadow: 0 2px 6px rgba(60, 50, 34, 0.05), 0 18px 44px rgba(60, 50, 34, 0.07);
+  }
+  .card-head { padding: 2px 4px 14px; }
+  .card-head .kicker { display: flex; align-items: center; gap: 8px; }
+  .badge {
+    font-size: 9.5px; font-weight: 650; letter-spacing: 0.08em; padding: 3px 7px; border-radius: 999px;
+    background: #e2ded0; color: #6f6759; text-transform: uppercase;
+  }
+  .badge.rec { background: #dfead9; color: #3f6248; }
+  .card-head h2 { font-size: 15px; font-weight: 570; margin: 9px 0 3px; letter-spacing: -0.01em; }
+  .card-head .desc { font-size: 11.5px; line-height: 1.55; color: #6f6759; margin: 0; }
+  .sb-wrap { display: flex; justify-content: center; }
+  .swatches { display: flex; gap: 6px; margin: 13px 4px 0; flex-wrap: wrap; }
+  .sw { display: flex; align-items: center; gap: 6px; font-size: 9.5px; color: #6f6759; font-variant-numeric: tabular-nums; }
+  .sw i { width: 13px; height: 13px; border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.07); display: block; }
+  .icon-note {
+    margin: 11px 4px 0; padding-top: 9px; border-top: 1px dashed #d8d2c2;
+    font-size: 10.5px; line-height: 1.6; color: #7b7364;
+  }
+  .icon-note b { color: #463f34; font-weight: 600; }
+
+  /* ---------- 图标规范 ---------- */
+  .spec {
+    max-width: 1240px; margin: 20px auto 0; background: #f5f2ea; border: 1px solid #ddd7c8;
+    border-radius: 20px; padding: 18px 22px 20px; display: flex; gap: 34px; align-items: stretch;
+    box-shadow: 0 2px 6px rgba(60, 50, 34, 0.05), 0 18px 44px rgba(60, 50, 34, 0.07);
+  }
+  .spec-title { width: 230px; flex-shrink: 0; }
+  .spec-title .kicker { font-size: 9.5px; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; color: #8c8475; }
+  .spec-title h3 { font-size: 15px; margin: 7px 0 6px; font-weight: 570; }
+  .spec-title p { margin: 0; font-size: 11px; line-height: 1.65; color: #6f6759; }
+  .spec-title p b { color: #463f34; font-weight: 600; }
+  .spec-icons { display: flex; gap: 26px; align-items: flex-start; flex: 1; }
+  .istate { }
+  .istate-row { display: flex; gap: 14px; align-items: center; height: 34px; }
+  .istate-cap { font-size: 9.5px; color: #8c8475; margin-top: 9px; line-height: 1.5; }
+  .istate-cap b { color: #5c5446; font-weight: 600; }
+  .spec-marks { display: flex; gap: 14px; align-items: flex-start; padding-left: 26px; border-left: 1px dashed #d8d2c2; }
+  .mark-cap { font-size: 9.5px; color: #8c8475; text-align: center; margin-top: 7px; }
+  .chip-solid, .chip-ghost {
+    width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+  }
+  .chip-solid { background: #3f6f54; }
+  .chip-ghost { background: #fcfef8; box-shadow: inset 0 0 0 1px #bfd5ba; }
+  .mini-mark {
+    width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; position: relative;
+    font-family: "Fraunces Variable", "Songti SC", serif; font-style: italic; font-size: 23px;
+    line-height: 1; box-shadow: 0 3px 8px rgba(35, 30, 21, 0.18);
+  }
+  .mini-mark::after {
+    content: ""; position: absolute; width: 5px; height: 5px; border-radius: 50%; right: 6px; top: 6px;
+    background: var(--dot, #4f8667);
+  }
+  /* ---------- 跨主题 fragments ---------- */
+  .themes { max-width: 1240px; margin: 20px auto 0; display: flex; gap: 20px; }
+  .frag-wrap { flex: 1; }
+  .frag-name {
+    font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8c8475;
+    margin-bottom: 8px; padding-left: 2px;
+  }
+  .frag.sb { width: 100%; height: auto; padding: 14px; }
+  .frag .sidebar-new { margin: 0; }
+  .frag .nav-item { margin-top: 10px; }
+
+  .t-light {
+    --bg: #f2eee6; --surface: #faf8f3; --surface-raised: #fffdf8; --surface-muted: #ece7dc;
+    --ink: #24211b; --ink-soft: #4c473d; --muted: #81796b; --faint: #a79e8e;
+    --line: #ded7c9; --accent: #bd522c; --accent-deep: #9d3f1e; --sage-soft: #e3e9df;
+  }
+  .t-sunny {
+    --bg: #fbf2df; --surface: #fffaef; --surface-raised: #fffdf7; --surface-muted: #f2e6cf;
+    --ink: #2b261c; --ink-soft: #554b3a; --muted: #8a7a61; --faint: #b0a187;
+    --line: #e9dbc2; --accent: #de6234; --accent-deep: #b84a20; --sage-soft: #e7eedb;
+  }
+  .t-sea {
+    --bg: #edf4f6; --surface: #f7fbfc; --surface-raised: #fcfeff; --surface-muted: #e3edf0;
+    --ink: #233138; --ink-soft: #465860; --muted: #6e818a; --faint: #9aaab1;
+    --line: #d4e2e6; --accent: #3f7f9e; --accent-deep: #2d6481; --sage-soft: #dfece7;
+  }
+  .t-dark {
+    --bg: #161410; --surface: #1d1a15; --surface-raised: #23201a; --surface-muted: #29251e;
+    --ink: #f1ebde; --ink-soft: #d0c8b8; --muted: #9d9483; --faint: #746d5f;
+    --line: #332f27; --accent: #e48159; --accent-deep: #f09a76; --sage-soft: #25302a;
+  }
+  .foot { max-width: 1240px; margin: 24px auto 0; font-size: 11px; color: #8c8475; line-height: 1.7; }
+  .foot code { font-family: "SF Mono", Menlo, monospace; font-size: 10.5px; color: #5d564a; }
+</style>
+</head>
+<body>
+  <div class="page-head">
+    <div class="eyebrow">Lafei · Sidebar &amp; Icon Color Study</div>
+    <h1>侧栏主色对比：把「两团墨」拆成一支主色</h1>
+    <p>当前的问题是 <b>新建笔记</b> 与 <b>选中项</b> 都用了同一个接近纯黑的 <code>--ink</code>，两个等重的深色块叠在左上角，既压住了暖纸底，也让「主操作」和「当前页」失去区分。下面四个方案在 mint 主题下用真实 token 渲染。</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- 现状 -->
+    <section class="card">
+      <div class="card-head">
+        <div class="kicker"><span class="badge">现状</span></div>
+        <h2>近黑实心 ×2</h2>
+        <p class="desc">新建笔记与选中项同为 <code>--ink</code>，侧栏顶部三块深色（Logo、按钮、选中）。</p>
+      </div>
+      <div class="sb-wrap">
+        <div class="sb v-current">
+          <div class="brand">
+            <div class="brand-mark"><span>l</span></div>
+            <div class="brand-word">lafei<em>.</em></div>
+            <span class="brand-tag">local first</span>
+          </div>
+          <button class="sidebar-new">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            <span class="sidebar-new-label">新建笔记</span>
+            <span class="kbd">⌘N</span>
+          </button>
+          <div class="sidebar-scroll">
+            <nav class="nav-group">
+              <button class="nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/></svg>
+                <span class="nav-item-label">今日</span>
+              </button>
+              <button class="nav-item active">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg>
+                <span class="nav-item-label">笔记</span>
+                <span class="nav-count">1</span>
+              </button>
+              <button class="nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344"/><path d="m9 11 3 3L22 4"/></svg>
+                <span class="nav-item-label">任务</span>
+                <span class="nav-count is-accent">8</span>
+              </button>
+              <button class="nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+                <span class="nav-item-label">AI 助手</span>
+                <span class="nav-count" style="font-size:9px;letter-spacing:.04em">AI</span>
+              </button>
+            </nav>
+            <div class="nav-group">
+              <div class="nav-label">标签<span>2</span></div>
+              <div class="tag-list">
+                <button class="tag-item"><span class="tag-hash">#</span><span>开始</span><span class="tag-count">1</span></button>
+                <button class="tag-item"><span class="tag-hash">#</span><span>指南</span><span class="tag-count">1</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="sidebar-foot">
+            <div class="local-note"><span class="local-dot"></span>本地存储 · 数据属于你</div>
+            <div class="sidebar-user-row">
+              <button class="sidebar-user">
+                <span class="avatar">L</span>
+                <span class="sidebar-user-info"><strong>我的空间</strong><span>1 篇笔记 · 8 个待办</span></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+              </button>
+              <button class="sidebar-theme">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="swatches">
+        <span class="sw"><i style="background:#243229"></i>按钮 #243229</span>
+        <span class="sw"><i style="background:#243229"></i>选中 #243229</span>
+        <span class="sw"><i style="background:#243229"></i>Logo #243229</span>
+      </div>
+      <div class="icon-note"><b>图标</b>：白色描边压在近黑上，重量被放大；选中态与主按钮的图标语言完全一样。</div>
+    </section>
+
+    <!-- 方案 A -->
+    <section class="card">
+      <div class="card-head">
+        <div class="kicker"><span class="badge rec">推荐</span></div>
+        <h2>A · 苔绿实心 + 柔绿选中</h2>
+        <p class="desc">主按钮用主题绿（加深一档保证 4.5:1），选中项换成柔绿底＋绿图标，只保留一个深色锚点。</p>
+      </div>
+      <div class="sb-wrap">
+        <div class="sb v-a" style="--mark:#3f6f54; --mark-dot:#e3c477; --cta-bg:#3f6f54; --cta-ink:#f7fbf3; --sel-bg:#dcebdb; --sel-ink:#284434; --sel-icon:#356b50; --sel-count-bg:rgba(55,106,79,.14); --sel-count-ink:#284434;">
+          <div class="brand">
+            <div class="brand-mark"><span>l</span></div>
+            <div class="brand-word">lafei<em>.</em></div>
+            <span class="brand-tag">local first</span>
+          </div>
+          <button class="sidebar-new">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            <span class="sidebar-new-label">新建笔记</span>
+            <span class="kbd">⌘N</span>
+          </button>
+          <div class="sidebar-scroll">
+            <nav class="nav-group">
+              <button class="nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/></svg>
+                <span class="nav-item-label">今日</span>
+              </button>
+              <button class="nav-item active">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg>
+                <span class="nav-item-label">笔记</span>
+                <span class="nav-count">1</span>
+              </button>
+              <button class="nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344"/><path d="m9 11 3 3L22 4"/></svg>
+                <span class="nav-item-label">任务</span>
+                <span class="nav-count is-accent">8</span>
+              </button>
+              <button class="nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+                <span class="nav-item-label">AI 助手</span>
+                <span class="nav-count" style="font-size:9px;letter-spacing:.04em">AI</span>
+              </button>
+            </nav>
+            <div class="nav-group">
+              <div class="nav-label">标签<span>2</span></div>
+              <div class="tag-list">
+                <button class="tag-item"><span class="tag-hash">#</span><span>开始</span><span class="tag-count">1</span></button>
+                <button class="tag-item"><span class="tag-hash">#</span><span>指南</span><span class="tag-count">1</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="sidebar-foot">
+            <div class="local-note"><span class="local-dot"></span>本地存储 · 数据属于你</div>
+            <div class="sidebar-user-row">
+              <button class="sidebar-user">
+                <span class="avatar">L</span>
+                <span class="sidebar-user-info"><strong>我的空间</strong><span>1 篇笔记 · 8 个待办</span></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+              </button>
+              <button class="sidebar-theme">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="swatches">
+        <span class="sw"><i style="background:#3f6f54"></i>按钮 #3f6f54</span>
+        <span class="sw"><i style="background:#dcebdb"></i>选中底 #dcebdb</span>
+        <span class="sw"><i style="background:#284434"></i>选中字 #284434</span>
+        <span class="sw"><i style="background:#356b50"></i>选中图标 #356b50</span>
+      </div>
+      <div class="icon-note"><b>图标</b>：选中项用 1.8 绿色描边（不再反白），右侧计数改为淡绿胶囊；Logo 同步换成品牌绿。</div>
+    </section>
+
+    <!-- 方案 B -->
+    <section class="card">
+      <div class="card-head">
+        <div class="kicker"><span class="badge">最轻</span></div>
+        <h2>B · 描边主按钮 + 白底胶囊</h2>
+        <p class="desc">侧栏里完全不出现实心深块：主按钮改为描边，选中项用白底＋投影浮起，靠绿色小竖条确认位置。</p>
+      </div>
+      <div class="sb-wrap">
+        <div class="sb v-b" style="--mark:#3f6f54; --mark-dot:#e3c477; --cta-bg:#fcfef8; --cta-ink:#376a4f; --cta-border:1px solid #bfd5ba; --cta-shadow:0 1px 2px rgba(44,76,50,.05); --cta-icon:#4f8667; --cta-kbd-border:rgba(55,106,79,.22); --cta-kbd-ink:#7d8f7d;">
+          <div class="brand">
+            <div class="brand-mark"><span>l</span></div>
+            <div class="brand-word">lafei<em>.</em></div>
+            <span class="brand-tag">local first</span>
+          </div>
+          <button class="sidebar-new">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            <span class="sidebar-new-label">新建笔记</span>
+            <span class="kbd">⌘N</span>
+          </button>
+          <div class="sidebar-scroll">
+            <nav class="nav-group">
+              <button class="nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/></svg>
+                <span class="nav-item-label">今日</span>
+              </button>
+              <button class="nav-item active">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg>
+                <span class="nav-item-label">笔记</span>
+                <span class="nav-count">1</span>
+              </button>
+              <button class="nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344"/><path d="m9 11 3 3L22 4"/></svg>
+                <span class="nav-item-label">任务</span>
+                <span class="nav-count is-accent">8</span>
+              </button>
+              <button class="nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+                <span class="nav-item-label">AI 助手</span>
+                <span class="nav-count" style="font-size:9px;letter-spacing:.04em">AI</span>
+              </button>
+            </nav>
+            <div class="nav-group">
+              <div class="nav-label">标签<span>2</span></div>
+              <div class="tag-list">
+                <button class="tag-item"><span class="tag-hash">#</span><span>开始</span><span class="tag-count">1</span></button>
+                <button class="tag-item"><span class="tag-hash">#</span><span>指南</span><span class="tag-count">1</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="sidebar-foot">
+            <div class="local-note"><span class="local-dot"></span>本地存储 · 数据属于你</div>
+            <div class="sidebar-user-row">
+              <button class="sidebar-user">
+                <span class="avatar">L</span>
+                <span class="sidebar-user-info"><strong>我的空间</strong><span>1 篇笔记 · 8 个待办</span></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+              </button>
+              <button class="sidebar-theme">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="swatches">
+        <span class="sw"><i style="background:#fcfef8"></i>按钮 #fcfef8 / 边 #bfd5ba</span>
+        <span class="sw"><i style="background:#376a4f"></i>按钮字 #376a4f</span>
+        <span class="sw"><i style="background:#4f8667"></i>竖条 #4f8667</span>
+      </div>
+      <div class="icon-note"><b>图标</b>：主按钮的 ＋ 用绿色细描边（2px），与选中项图标同色系；光标不需要「白色 +」了。</div>
+    </section>
+
+    <!-- 方案 C -->
+    <section class="card">
+      <div class="card-head">
+        <div class="kicker"><span class="badge">最小改动</span></div>
+        <h2>C · 墨绿降一档 + 柔绿选中</h2>
+        <p class="desc">保留「实心主按钮」的结构，只把近黑换成低饱和墨绿，并把选中项改为柔色，改动面最小。</p>
+      </div>
+      <div class="sb-wrap">
+        <div class="sb v-c" style="--mark:#34443a; --cta-bg:#34443a; --cta-ink:#f4f8f0; --sel-bg:#dcebdb; --sel-ink:#284434; --sel-icon:#356b50; --sel-count-bg:rgba(55,106,79,.14); --sel-count-ink:#284434;">
+          <div class="brand">
+            <div class="brand-mark"><span>l</span></div>
+            <div class="brand-word">lafei<em>.</em></div>
+            <span class="brand-tag">local first</span>
+          </div>
+          <button class="sidebar-new">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            <span class="sidebar-new-label">新建笔记</span>
+            <span class="kbd">⌘N</span>
+          </button>
+          <div class="sidebar-scroll">
+            <nav class="nav-group">
+              <button class="nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/></svg>
+                <span class="nav-item-label">今日</span>
+              </button>
+              <button class="nav-item active">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg>
+                <span class="nav-item-label">笔记</span>
+                <span class="nav-count">1</span>
+              </button>
+              <button class="nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344"/><path d="m9 11 3 3L22 4"/></svg>
+                <span class="nav-item-label">任务</span>
+                <span class="nav-count is-accent">8</span>
+              </button>
+              <button class="nav-item">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+                <span class="nav-item-label">AI 助手</span>
+                <span class="nav-count" style="font-size:9px;letter-spacing:.04em">AI</span>
+              </button>
+            </nav>
+            <div class="nav-group">
+              <div class="nav-label">标签<span>2</span></div>
+              <div class="tag-list">
+                <button class="tag-item"><span class="tag-hash">#</span><span>开始</span><span class="tag-count">1</span></button>
+                <button class="tag-item"><span class="tag-hash">#</span><span>指南</span><span class="tag-count">1</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="sidebar-foot">
+            <div class="local-note"><span class="local-dot"></span>本地存储 · 数据属于你</div>
+            <div class="sidebar-user-row">
+              <button class="sidebar-user">
+                <span class="avatar">L</span>
+                <span class="sidebar-user-info"><strong>我的空间</strong><span>1 篇笔记 · 8 个待办</span></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+              </button>
+              <button class="sidebar-theme">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="swatches">
+        <span class="sw"><i style="background:#34443a"></i>按钮 #34443a</span>
+        <span class="sw"><i style="background:#dcebdb"></i>选中底 #dcebdb</span>
+        <span class="sw"><i style="background:#284434"></i>选中字 #284434</span>
+      </div>
+      <div class="icon-note"><b>图标</b>：与 A 相同的「选中态绿色图标」；主按钮图标仍为白描边，适合只想动颜色的最小改动。</div>
+    </section>
+
+  </div>
+
+
+
+  <section class="themes">
+    <div class="frag-wrap">
+      <div class="frag-name">LIGHT · 米色</div>
+      <div class="sb frag v-a t-light" style="--cta-bg:#b04a26;--cta-ink:#fffaf3;--sel-bg:#f3e4d6;--sel-ink:#3a2f22;--sel-icon:#9d3f1e;--sel-count-bg:rgba(157,63,30,.12);--sel-count-ink:#3a2f22;">
+        <button class="sidebar-new">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          <span class="sidebar-new-label">新建笔记</span>
+          <span class="kbd">⌘N</span>
+        </button>
+        <button class="nav-item active">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg>
+          <span class="nav-item-label">笔记</span>
+          <span class="nav-count">1</span>
+        </button>
+      </div>
+    </div>
+    <div class="frag-wrap">
+      <div class="frag-name">SUNNY · 暖阳</div>
+      <div class="sb frag v-a t-sunny" style="--cta-bg:#bd4f22;--cta-ink:#fffaf0;--sel-bg:#f7e5ca;--sel-ink:#463a22;--sel-icon:#a8451e;--sel-count-bg:rgba(184,74,32,.13);--sel-count-ink:#463a22;">
+        <button class="sidebar-new">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          <span class="sidebar-new-label">新建笔记</span>
+          <span class="kbd">⌘N</span>
+        </button>
+        <button class="nav-item active">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg>
+          <span class="nav-item-label">笔记</span>
+          <span class="nav-count">1</span>
+        </button>
+      </div>
+    </div>
+    <div class="frag-wrap">
+      <div class="frag-name">SEA · 海洋</div>
+      <div class="sb frag v-a t-sea" style="--cta-bg:#316d8c;--cta-ink:#fcfeff;--sel-bg:#d9e9ef;--sel-ink:#1f3f4e;--sel-icon:#2b5d7a;--sel-count-bg:rgba(45,100,129,.13);--sel-count-ink:#1f3f4e;">
+        <button class="sidebar-new">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          <span class="sidebar-new-label">新建笔记</span>
+          <span class="kbd">⌘N</span>
+        </button>
+        <button class="nav-item active">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg>
+          <span class="nav-item-label">笔记</span>
+          <span class="nav-count">1</span>
+        </button>
+      </div>
+    </div>
+    <div class="frag-wrap">
+      <div class="frag-name">DARK · 深色</div>
+      <div class="sb frag v-a t-dark" style="--cta-bg:#e48159;--cta-ink:#241d18;--sel-bg:#2f2a22;--sel-ink:#f1ebde;--sel-icon:#f0a077;--sel-count-bg:rgba(228,129,89,.18);--sel-count-ink:#f1ebde;">
+        <button class="sidebar-new">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          <span class="sidebar-new-label">新建笔记</span>
+          <span class="kbd">⌘N</span>
+        </button>
+        <button class="nav-item active">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg>
+          <span class="nav-item-label">笔记</span>
+          <span class="nav-count">1</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="spec">
+    <div class="spec-title">
+      <div class="kicker">Icons &amp; Mark</div>
+      <h3>图标规范</h3>
+      <p>统一 <b>17px / 1.8 描边</b>，颜色只随状态变，不随底色反白。主按钮的 ＋ 单独用 <b>2.0</b> 描边、16px，保持手感扎实。</p>
+    </div>
+    <div class="spec-icons">
+      <div class="istate">
+        <div class="istate-row"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6f816f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/></svg><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6f816f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6f816f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344"/><path d="m9 11 3 3L22 4"/></svg><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6f816f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg></div>
+        <div class="istate-cap"><b>未选中</b> · #6f816f（--muted）</div>
+      </div>
+      <div class="istate">
+        <div class="istate-row"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#356b50" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/></svg><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#356b50" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/></svg><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#356b50" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344"/><path d="m9 11 3 3L22 4"/></svg><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#356b50" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg></div>
+        <div class="istate-cap"><b>选中</b> · #356b50（--accent-deep）</div>
+      </div>
+      <div class="istate">
+        <div class="istate-row">
+          <span class="chip-solid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f7fbf3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+          <span class="chip-ghost"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3f6f54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+        </div>
+        <div class="istate-cap"><b>主按钮 ＋</b> · 实心底用纸白；描边方案用品牌绿</div>
+      </div>
+    </div>
+    <div class="spec-marks">
+      <div>
+        <div class="mini-mark" style="background:#243229;color:#fcfef8;--dot:#4f8667">l</div>
+        <div class="mark-cap">现状</div>
+      </div>
+      <div>
+        <div class="mini-mark" style="background:#3f6f54;color:#f7fbf3;--dot:#e3c477">l</div>
+        <div class="mark-cap">A 品牌绿</div>
+      </div>
+      <div>
+        <div class="mini-mark" style="background:#34443a;color:#f4f8f0;--dot:#4f8667">l</div>
+        <div class="mark-cap">C 深墨绿</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    说明：截图所用主题为 mint；浅色、暖阳、海洋与深色主题会按同一组 token（<code>--cta-*</code> / <code>--nav-active-*</code>）换算，深色主题下主按钮建议反相为 <code>--accent</code> 填充 + 深色字。
+  </div>
+</body>
+</html>

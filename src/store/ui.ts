@@ -20,9 +20,10 @@ interface UIState {
   taskFilter: TaskFilter;
   folderRoot: string | null;
   setView: (view: AppView) => void;
-  openNote: (id: string) => void;
+  openNote: (id: string, options?: { keepTagFilter?: boolean }) => void;
   closeNote: () => void;
   setTagFilter: (tag: string | null) => void;
+  openTagView: (tag: string) => void;
   setNoteMode: (mode: NoteMode) => void;
   setTheme: (theme: ThemeMode) => void;
   setFontScale: (scale: FontScale) => void;
@@ -56,10 +57,18 @@ export const useUI = create<UIState>()(
       taskDetailId: null,
       taskFilter: "all",
       folderRoot: null,
-      setView: (view) => set({ view }),
-      openNote: (id) => set({ activeNoteId: id, view: "notes", aiPanelOpen: false }),
+      // 切换主视图或打开笔记时收起标签筛选，避免旧标签在另一个视图里悄悄过滤内容
+      setView: (view) => set({ view, tagFilter: null }),
+      openNote: (id, options) =>
+        set((state) => ({
+          activeNoteId: id,
+          view: "notes",
+          aiPanelOpen: false,
+          tagFilter: options?.keepTagFilter ? state.tagFilter : null,
+        })),
       closeNote: () => set({ activeNoteId: null, aiPanelOpen: false }),
       setTagFilter: (tagFilter) => set({ tagFilter }),
+      openTagView: (tag) => set({ tagFilter: tag, view: "tags", aiPanelOpen: false }),
       setNoteMode: (noteMode) => set({ noteMode }),
       setTheme: (theme) => set({ theme }),
       setFontScale: (fontScale) => set({ fontScale }),

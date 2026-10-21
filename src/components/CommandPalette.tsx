@@ -12,16 +12,19 @@ import {
   Settings2,
   Sparkles,
   Sunrise,
+  Tag,
 } from "lucide-react";
 import { db, createNote, createTask } from "../db";
 import { useUI } from "../store/ui";
 import { searchNotes, searchTasks } from "../lib/search";
+import { collectTagCounts, type TagCount } from "../lib/tags";
 import { cn, dayKey, dueLabel, noteTitle } from "../lib/util";
 import type { Note, Task } from "../types";
 
 type PaletteItem =
   | { kind: "note"; note: Note; key: string }
   | { kind: "task"; task: Task; key: string }
+  | { kind: "tag"; tag: TagCount; key: string }
   | { kind: "action"; label: string; hint?: string; icon: typeof Search; key: string; run: () => void };
 
 export function CommandPalette() {
@@ -32,6 +35,7 @@ export function CommandPalette() {
   const setSettingsOpen = useUI((state) => state.setSettingsOpen);
   const setTaskDetailId = useUI((state) => state.setTaskDetailId);
   const setTaskFilter = useUI((state) => state.setTaskFilter);
+  const openTagView = useUI((state) => state.openTagView);
   const theme = useUI((state) => state.theme);
   const setTheme = useUI((state) => state.setTheme);
   const [query, setQuery] = useState("");
@@ -41,6 +45,7 @@ export function CommandPalette() {
 
   const notes = useLiveQuery(() => db.notes.toArray(), [], []);
   const tasks = useLiveQuery(() => db.tasks.toArray(), [], []);
+  const tagIndex = useMemo(() => collectTagCounts(notes, tasks), [notes, tasks]);
 
   useEffect(() => {
     if (open) {
@@ -145,11 +150,18 @@ export function CommandPalette() {
     const taskHits = searchTasks(tasks, trimmed)
       .slice(0, 4)
       .map((task): PaletteItem => ({ kind: "task", task, key: `task-${task.id}` }));
+    const tagQuery = trimmed.replace(/^#+/, "").toLowerCase();
+    const tagHits = tagIndex
+      .filter((item) => tagQuery.length > 0 && item.tag.toLowerCase().includes(tagQuery))
+      .slice(0, 4)
+      .map((tag): PaletteItem => ({ kind: "tag", tag, key: `tag-${tag.tag}` }));
     const actionHits = actions
       .filter((action) => action.label.includes(trimmed) || trimmed.includes(action.label.slice(0, 2)))
       .map((action): PaletteItem => ({ kind: "action", ...action, key: `action-${action.label}` }));
-    return [...noteHits, ...taskHits, ...actionHits];
-  }, [actions, notes, query, tasks]);
+    return trimmed.startsWith("#")
+      ? [...tagHits, ...noteHits, ...taskHits, ...actionHits]
+      : [...noteHits, ...tagHits, ...taskHits, ...actionHits];
+  }, [actions, notes, query, tagIndex, tasks]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -171,13 +183,25 @@ export function CommandPalette() {
       setView("tasks");
       setTaskDetailId(item.task.id);
       setOpen(false);
+    } else if (item.kind === "tag") {
+      openTagView(item.tag.tag);
+      setOpen(false);
     } else {
       void item.run();
     }
   };
 
   const sections = items.reduce<Record<string, PaletteItem[]>>((groups, item) => {
-    const key = item.kind === "note" ? (query.trim() ? "笔记" : "最近笔记") : item.kind === "task" ? "任务" : "快捷操作";
+    const key =
+      item.kind === "note"
+        ? query.trim()
+          ? "笔记"
+          : "最近笔记"
+        : item.kind === "task"
+          ? "任务"
+          : item.kind === "tag"
+            ? "标签"
+            : "快捷操作";
     groups[key] = groups[key] ?? [];
     groups[key].push(item);
     return groups;
@@ -199,7 +223,7 @@ export function CommandPalette() {
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="搜索笔记、任务，或输入命令…"
+            placeholder="搜索笔记、任务、标签，或输入命令…"
             aria-label="搜索"
             onKeyDown={(event) => {
               if (event.key === "ArrowDown") {
@@ -245,6 +269,8 @@ export function CommandPalette() {
                         <FileText size={16} />
                       ) : item.kind === "task" ? (
                         <CheckSquare size={16} />
+                      ) : item.kind === "tag" ? (
+                        <Tag size={16} />
                       ) : (
                         <item.icon size={16} />
                       )}
@@ -260,6 +286,12 @@ export function CommandPalette() {
                         <>
                           <strong>{item.task.title}</strong>
                           <span>{item.task.done ? "已完成" : item.task.dueDate ? dueLabel(item.task.dueDate).label : "无日期"} · 任务</span>
+                        </>
+                      )}
+                      {item.kind === "tag" && (
+                        <>
+                          <strong>#{item.tag.tag}</strong>
+                          <span>{item.tag.openTasks} 个待办 · {item.tag.notes} 篇笔记</span>
                         </>
                       )}
                       {item.kind === "action" && (

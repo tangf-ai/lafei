@@ -33,6 +33,7 @@ import { AI_PRESETS, AIError, isAIConfigured, testAIConnection } from "../lib/ai
 import { useUI, toast } from "../store/ui";
 import { cn } from "../lib/util";
 import type { AIProvider, BackupData, NoteMode, ThemeMode } from "../types";
+import { tagsOf } from "../lib/tags";
 import { db } from "../db";
 import { Modal } from "../components/Modal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -176,7 +177,9 @@ export function SettingsView() {
     for (const task of tasks) {
       const done = task.done ? "x" : " ";
       const due = task.dueDate ? ` · 截止 ${task.dueDate}` : "";
-      parts.push(`- [${done}] ${task.title}${due}`);
+      const taskTags = tagsOf(task);
+      const tags = taskTags.length ? ` · ${taskTags.map((tag) => `#${tag}`).join(" ")}` : "";
+      parts.push(`- [${done}] ${task.title}${due}${tags}`);
     }
     try {
       const saved = await downloadFile(
@@ -202,8 +205,17 @@ export function SettingsView() {
       ) {
         throw new Error("invalid");
       }
+      const normalizeTags = <T extends { tags?: unknown }>(items: T[]): T[] =>
+        items.map((item) => ({
+          ...item,
+          tags: Array.isArray(item.tags)
+            ? item.tags.filter((tag): tag is string => typeof tag === "string")
+            : [],
+        }));
       const data: BackupData = {
         ...parsed,
+        notes: normalizeTags(parsed.notes),
+        tasks: normalizeTags(parsed.tasks),
         chats: Array.isArray(parsed.chats) ? parsed.chats : [],
         messages: Array.isArray(parsed.messages) ? parsed.messages : [],
         tombstones: Array.isArray(parsed.tombstones) ? parsed.tombstones : [],
@@ -291,7 +303,7 @@ export function SettingsView() {
               </div>
               <div>
                 <strong>设置</strong>
-                <span>lafei · v0.8</span>
+                <span>lafei · v0.9</span>
               </div>
             </div>
             <div className="settings-nav-items">
@@ -776,7 +788,7 @@ export function SettingsView() {
                       <i />
                     </div>
                     <div>
-                      <span className="eyebrow">Lafei · v0.8.0</span>
+                      <span className="eyebrow">Lafei · v0.9.0</span>
                       <h3 className="display">把知识收好，把行动理清。</h3>
                       <p>一个本地优先的笔记与任务应用，AI 是内置的，不是后装的外挂。</p>
                     </div>

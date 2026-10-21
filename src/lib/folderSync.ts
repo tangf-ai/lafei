@@ -107,8 +107,24 @@ function newer<T extends { updatedAt: number }>(local: T | undefined, remote: T 
   return local.updatedAt >= remote.updatedAt ? local : remote;
 }
 
+/**
+ * 结构化比较时忽略对象键顺序。
+ * 迁移或旧备份补出来的 tags 可能排在对象末尾，而文件夹解析会按固定顺序重建对象；
+ * 直接用 JSON.stringify 比较会让同一份数据每次同步都被判定为“已变化”。
+ */
+function stableJson(value: unknown): string {
+  if (value === undefined) return "undefined";
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  const record = value as Record<string, unknown>;
+  const keys = Object.keys(record)
+    .filter((key) => record[key] !== undefined)
+    .sort();
+  return `{${keys.map((key) => `${JSON.stringify(key)}:${stableJson(record[key])}`).join(",")}}`;
+}
+
 function sameJson(a: unknown, b: unknown) {
-  return JSON.stringify(a) === JSON.stringify(b);
+  return stableJson(a) === stableJson(b);
 }
 
 function sortMessages(messages: ChatMessage[]) {

@@ -25,6 +25,29 @@ class LafeiDatabase extends Dexie {
       messages: "id, chatId, createdAt",
       tombstones: "key, deletedAt",
     });
+    this.version(3)
+      .stores({
+        notes: "id, updatedAt, createdAt, pinned, *tags",
+        tasks: "id, done, dueDate, updatedAt, noteId, *tags",
+        chats: "id, updatedAt",
+        messages: "id, chatId, createdAt",
+        tombstones: "key, deletedAt",
+      })
+      .upgrade(async (transaction) => {
+        // 旧数据可能没有 tags 字段：补成空数组，保证后续读取和索引都拿得到数组
+        await transaction
+          .table("tasks")
+          .toCollection()
+          .modify((task: Record<string, unknown>) => {
+            if (!Array.isArray(task.tags)) task.tags = [];
+          });
+        await transaction
+          .table("notes")
+          .toCollection()
+          .modify((note: Record<string, unknown>) => {
+            if (!Array.isArray(note.tags)) note.tags = [];
+          });
+      });
   }
 }
 
@@ -74,6 +97,7 @@ export async function createTask(partial: Partial<Task> = {}): Promise<Task> {
     noteId: null,
     dueDate: null,
     priority: "medium",
+    tags: [],
     done: false,
     completedAt: null,
     createdAt: now,

@@ -9,18 +9,21 @@ import {
   Sparkles,
   Sun,
   Sunrise,
+  Tag,
 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, createNote } from "../db";
 import { useUI } from "../store/ui";
 import { useFolderSync } from "../store/folderSync";
 import { cn, dayKey, isOverdue } from "../lib/util";
+import { collectTagCounts, sameTag } from "../lib/tags";
 import { Logo } from "./Logo";
 
 const NAV = [
   { id: "today", label: "今日", icon: Sunrise },
   { id: "notes", label: "笔记", icon: NotebookPen },
   { id: "tasks", label: "任务", icon: CheckSquare },
+  { id: "tags", label: "标签", icon: Tag },
   { id: "assistant", label: "AI 助手", icon: Sparkles },
 ] as const;
 
@@ -30,6 +33,7 @@ export function Sidebar() {
   const openNote = useUI((state) => state.openNote);
   const tagFilter = useUI((state) => state.tagFilter);
   const setTagFilter = useUI((state) => state.setTagFilter);
+  const openTagView = useUI((state) => state.openTagView);
   const setSettingsOpen = useUI((state) => state.setSettingsOpen);
   const theme = useUI((state) => state.theme);
   const setTheme = useUI((state) => state.setTheme);
@@ -44,11 +48,8 @@ export function Sidebar() {
   const today = dayKey();
   const dueCount = openTasks.filter((task) => task.dueDate === today || isOverdue(task.dueDate)).length;
 
-  const tagCounts = new Map<string, number>();
-  for (const note of notes) {
-    for (const tag of note.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
-  }
-  const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "zh")).slice(0, 9);
+  const tagCounts = collectTagCounts(notes, tasks);
+  const tags = tagCounts.slice(0, 9);
 
   const startNote = async () => {
     const note = await createNote();
@@ -60,7 +61,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className={cn("sidebar", sidebarCollapsed && "is-collapsed")}>
+    <aside className={cn("sidebar", sidebarCollapsed && "is-collapsed")} data-tauri-drag-region>
       <div className="sidebar-top">
         <Logo />
         <button
@@ -82,7 +83,7 @@ export function Sidebar() {
         title="新建笔记"
         aria-label="新建笔记"
       >
-        <Plus size={16} strokeWidth={2.2} />
+        <Plus size={16} strokeWidth={2} />
         <span className="sidebar-new-label">新建笔记</span>
         <span className="kbd">⌘N</span>
       </button>
@@ -100,7 +101,7 @@ export function Sidebar() {
                 title={item.label}
                 onClick={() => {
                   setView(item.id);
-                  if (item.id !== "notes") setTagFilter(null);
+                  setTagFilter(null);
                 }}
               >
                 <Icon size={17} strokeWidth={1.8} />
@@ -122,36 +123,40 @@ export function Sidebar() {
         <div className="nav-group sidebar-tags">
           <div className="nav-label">
             标签
-            <span style={{ letterSpacing: 0 }}>{tags.length ? `${tagCounts.size}` : ""}</span>
+            <span style={{ letterSpacing: 0 }}>{tags.length ? `${tagCounts.length}` : ""}</span>
           </div>
           {tags.length > 0 ? (
             <div className="tag-list">
-              {tags.map(([tag, count]) => (
-                <button
-                  key={tag}
-                  type="button"
-                  className={cn("tag-item", tagFilter === tag && "active")}
-                  onClick={() => {
-                    setTagFilter(tagFilter === tag ? null : tag);
-                    setView("notes");
-                  }}
-                >
-                  <span className="tag-hash">#</span>
-                  <span
-                    style={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+              {tags.map((item) => {
+                const active = view === "tags" && tagFilter !== null && sameTag(tagFilter, item.tag);
+                return (
+                  <button
+                    key={item.tag}
+                    type="button"
+                    className={cn("tag-item", active && "active")}
+                    title={`${item.openTasks} 个待办 · ${item.notes} 篇笔记`}
+                    onClick={() => {
+                      if (active) setTagFilter(null);
+                      else openTagView(item.tag);
                     }}
                   >
-                    {tag}
-                  </span>
-                  <span className="tag-count">{count}</span>
-                </button>
-              ))}
+                    <span className="tag-hash">#</span>
+                    <span
+                      style={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {item.tag}
+                    </span>
+                    <span className="tag-count">{item.total}</span>
+                  </button>
+                );
+              })}
             </div>
           ) : (
-            <p className="empty-tags">给笔记加上标签，它们会出现在这里。</p>
+            <p className="empty-tags">给笔记或任务加上标签，它们会出现在这里。</p>
           )}
         </div>
       </div>

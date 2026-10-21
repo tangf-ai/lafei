@@ -45,6 +45,15 @@ export function updatedLabel(timestamp: number) {
   return format(date, "M月d日", { locale: zhCN });
 }
 
+export function dayGroupLabel(key: string) {
+  const date = dateFromDayKey(key);
+  const diff = differenceInCalendarDays(date, startOfDay(new Date()));
+  if (diff === 0) return "今天";
+  if (diff === -1) return "昨天";
+  if (diff > -7) return format(date, "EEEE", { locale: zhCN });
+  return format(date, "M月d日", { locale: zhCN });
+}
+
 export function dueLabel(key: string | null): { label: string; tone: "overdue" | "today" | "soon" | "later" | "none" } {
   if (!key) return { label: "无日期", tone: "none" };
   const date = dateFromDayKey(key);

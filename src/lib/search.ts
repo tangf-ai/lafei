@@ -1,5 +1,6 @@
 import type { Note, Task } from "../types";
 import { excerpt, stripMarkdown } from "./util";
+import { tagsOf } from "./tags";
 
 export interface NoteHit extends Note {
   score: number;
@@ -50,7 +51,21 @@ function bestSnippet(note: Note, terms: string[]) {
 export function searchTasks(tasks: Task[], rawQuery: string) {
   const query = rawQuery.trim().toLowerCase();
   if (!query) return [];
+  const terms = Array.from(new Set([query, ...query.split(/\s+/).filter(Boolean)]));
   return tasks
-    .filter((task) => task.title.toLowerCase().includes(query) || task.description.toLowerCase().includes(query))
-    .slice(0, 8);
+    .map((task) => {
+      const title = task.title.toLowerCase();
+      const description = task.description.toLowerCase();
+      const tags = tagsOf(task).join(" ").toLowerCase();
+      let score = 0;
+      for (const term of terms) {
+        if (title.includes(term)) score += 60;
+        if (tags.includes(term)) score += 30;
+        if (description.includes(term)) score += 8;
+      }
+      return { task, score };
+    })
+    .filter((hit) => hit.score > 0)
+    .sort((a, b) => b.score - a.score || b.task.updatedAt - a.task.updatedAt)
+    .map((hit) => hit.task);
 }

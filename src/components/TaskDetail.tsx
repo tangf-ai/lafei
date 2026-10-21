@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { CalendarDays, Check, Flag, Link2, Loader2, SquareArrowOutUpRight, Trash2 } from "lucide-react";
+import { CalendarDays, Check, Flag, Link2, Loader2, SquareArrowOutUpRight, Tag, Trash2 } from "lucide-react";
 import { db, deleteTask, updateTask } from "../db";
 import { useUI, toast } from "../store/ui";
 import { cn, dueLabel, noteTitle } from "../lib/util";
+import { collectTagCounts, tagsOf } from "../lib/tags";
 import type { Priority, Task } from "../types";
 import { Modal } from "./Modal";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { TagInput } from "./TagInput";
 
 const PRIORITIES: Array<{ id: Priority; label: string }> = [
   { id: "high", label: "高" },
@@ -18,13 +20,41 @@ export function TaskDetailModal() {
   const taskId = useUI((state) => state.taskDetailId);
   const setTaskId = useUI((state) => state.setTaskDetailId);
   const openNote = useUI((state) => state.openNote);
+  const openTagView = useUI((state) => state.openTagView);
   const task = useLiveQuery(() => (taskId ? db.tasks.get(taskId) : undefined), [taskId]);
   const notes = useLiveQuery(() => db.notes.toArray(), [], []);
+  const allTasks = useLiveQuery(() => db.tasks.toArray(), [], []);
+  const tagSuggestions = useMemo(
+    () => collectTagCounts(notes, allTasks).map((item) => item.tag),
+    [allTasks, notes],
+  );
   const [draft, setDraft] = useState<Task | null>(null);
   const [saved, setSaved] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const dirtyRef = useRef(false);
+  const latestDraftRef = useRef<Task | null>(null);
+  latestDraftRef.current = draft;
+
+  const persist = async (value: Task) => {
+    await updateTask(value.id, {
+      title: value.title,
+      description: value.description,
+      noteId: value.noteId,
+      dueDate: value.dueDate,
+      priority: value.priority,
+      tags: tagsOf(value),
+      done: value.done,
+      completedAt: value.completedAt,
+    });
+  };
 
   useEffect(() => {
+    // 直接切到另一个任务时，先把上一个任务未落盘的改动画出来
+    const previous = latestDraftRef.current;
+    if (previous && previous.id !== task?.id && dirtyRef.current) {
+      void persist(previous);
+    }
+    dirtyRef.current = false;
     if (task) {
       setDraft(task);
       setSaved(true);
@@ -34,19 +64,14 @@ export function TaskDetailModal() {
   }, [task?.id]);
 
   useEffect(() => {
-    if (!draft) return;
+    if (!draft || !dirtyRef.current) return;
     setSaved(false);
     const timer = window.setTimeout(async () => {
-      await updateTask(draft.id, {
-        title: draft.title,
-        description: draft.description,
-        noteId: draft.noteId,
-        dueDate: draft.dueDate,
-        priority: draft.priority,
-        done: draft.done,
-        completedAt: draft.completedAt,
-      });
-      setSaved(true);
+      await persist(draft);
+      if (latestDraftRef.current === draft) {
+        dirtyRef.current = false;
+        setSaved(true);
+      }
     }, 450);
     return () => window.clearTimeout(timer);
   }, [draft]);
@@ -54,7 +79,16 @@ export function TaskDetailModal() {
   if (!taskId) return null;
 
   const patch = (value: Partial<Task>) => {
+    dirtyRef.current = true;
     setDraft((current) => (current ? { ...current, ...value } : current));
+  };
+
+  const closeDetail = () => {
+    if (draft && dirtyRef.current) {
+      void persist(draft);
+      dirtyRef.current = false;
+    }
+    setTaskId(null);
   };
 
   const toggleDone = () => {
@@ -64,7 +98,7 @@ export function TaskDetailModal() {
 
   return (
     <>
-      <Modal open={Boolean(taskId)} onClose={() => setTaskId(null)} size="md" headless className="task-modal">
+      <Modal open={Boolean(taskId)} onClose={closeDetail} size="md" headless className="task-modal">
         {draft && (
           <div className="task-detail">
             <div className="task-detail-top">
@@ -77,7 +111,11 @@ export function TaskDetailModal() {
                 {draft.done && <Check size={14} strokeWidth={3} />}
               </button>
               <span className="eyebrow">{draft.done ? "已完成" : "任务详情"}</span>
-              <button type="button" className="btn btn-sm btn-ghost" onClick={() => setTaskId(null)}>
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost"
+                onClick={closeDetail}
+              >
                 完成编辑
               </button>
             </div>
@@ -124,6 +162,22 @@ export function TaskDetailModal() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div className="task-field task-field-wide">
+                <span className="task-field-label">
+                  <Tag size={14} /> 标签
+                </span>
+                <TagInput
+                  tags={tagsOf(draft)}
+                  suggestions={tagSuggestions}
+                  onChange={(tags) => patch({ tags })}
+                  onTagClick={(tag) => {
+                    closeDetail();
+                    openTagView(tag);
+                  }}
+                  placeholder="添加标签"
+                />
               </div>
 
               <div className="task-field task-field-wide">

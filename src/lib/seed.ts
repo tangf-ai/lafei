@@ -24,7 +24,7 @@ Lafei 是一个**本地优先**的笔记与任务空间。你的文字先属于�
 ## 从这里开始
 
 - 在左侧点 **新建笔记**，直接开始写。支持 Markdown，也支持 \`[[双向链接]]\`
-- 在「任务」里记下要做的事，或者让 AI 从笔记中帮你提取
+- 在「任务」里记下要做的事，给任务加上标签；「标签」页会把相关的笔记和任务放在一起
 - 点任意笔记右上角的 **AI**，试试总结、润色和提取待办
 
 > 你的数据保存在这台设备本地。记得在「设置 → 数据」里定期导出备份。
@@ -132,6 +132,7 @@ Lafei 是一个**本地优先**的笔记与任务空间。你的文字先属于�
       noteId: welcome.id,
       dueDate: isoDay(0),
       priority: "high",
+      tags: ["开始", "指南", "AI"],
       done: false,
       completedAt: null,
       createdAt: now - 1000 * 60 * 40,
@@ -144,6 +145,7 @@ Lafei 是一个**本地优先**的笔记与任务空间。你的文字先属于�
       noteId: knowledge.id,
       dueDate: isoDay(0),
       priority: "medium",
+      tags: ["方法", "AI"],
       done: false,
       completedAt: null,
       createdAt: now - 1000 * 60 * 35,
@@ -156,6 +158,7 @@ Lafei 是一个**本地优先**的笔记与任务空间。你的文字先属于�
       noteId: ideas.id,
       dueDate: isoDay(1),
       priority: "medium",
+      tags: ["灵感"],
       done: false,
       completedAt: null,
       createdAt: now - 1000 * 60 * 30,
@@ -168,6 +171,7 @@ Lafei 是一个**本地优先**的笔记与任务空间。你的文字先属于�
       noteId: review.id,
       dueDate: isoDay(4),
       priority: "low",
+      tags: ["复盘", "模板"],
       done: false,
       completedAt: null,
       createdAt: now - 1000 * 60 * 25,
@@ -180,6 +184,7 @@ Lafei 是一个**本地优先**的笔记与任务空间。你的文字先属于�
       noteId: welcome.id,
       dueDate: isoDay(0),
       priority: "low",
+      tags: ["开始"],
       done: true,
       completedAt: now - 1000 * 60 * 60,
       createdAt: now - 1000 * 60 * 60 * 2,

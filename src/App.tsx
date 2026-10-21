@@ -8,6 +8,7 @@ import { Toasts } from "./components/Toasts";
 import { TodayView } from "./views/TodayView";
 import { NotesView } from "./views/NotesView";
 import { TasksView } from "./views/TasksView";
+import { TagView } from "./views/TagView";
 import { AssistantView } from "./views/AssistantView";
 import { SettingsView } from "./views/SettingsView";
 import { useUI } from "./store/ui";
@@ -79,13 +80,14 @@ export default function App() {
   }, [setCommandOpen, setSettingsOpen, setTaskDetailId, setView]);
 
   return (
-    <div className={cn("app-shell", editorOpen && "editor-open")}>
+    <div className={cn("app-shell", editorOpen && "editor-open")} data-tauri-drag-region>
       <Sidebar />
       <div className="app-main">
         {!editorOpen && <MobileTopbar />}
         {view === "today" && <TodayView />}
         {view === "notes" && <NotesView />}
         {view === "tasks" && <TasksView />}
+        {view === "tags" && <TagView />}
         {view === "assistant" && <AssistantView />}
         {!editorOpen && <MobileNav />}
       </div>

@@ -28,6 +28,7 @@ import {
   updatedLabel,
 } from "../lib/util";
 import { isAIConfigured, streamChat, AIError } from "../lib/ai";
+import { tagsOf } from "../lib/tags";
 import type { Note } from "../types";
 import { TaskRow } from "../components/TaskRow";
 
@@ -105,7 +106,10 @@ export function TodayView() {
     abortRef.current = controller;
     const taskLines = [...focusTasks, ...upcomingAll, ...completedToday]
       .slice(0, 16)
-      .map((task) => `- [${task.done ? "x" : " "}] ${task.title}${task.dueDate ? `（${dueLabel(task.dueDate).label}）` : "（待安排）"}`)
+      .map((task) => {
+        const tags = tagsOf(task);
+        return `- [${task.done ? "x" : " "}] ${task.title}${tags.length ? ` #${tags.join(" #")}` : ""}${task.dueDate ? `（${dueLabel(task.dueDate).label}）` : "（待安排）"}`;
+      })
       .join("\n");
     const noteLines = recentNotes
       .map((note) => `《${noteTitle(note.title)}》：${excerpt(note.content, 160)}`)
@@ -164,7 +168,7 @@ export function TodayView() {
 
   return (
     <div className="view-scroll">
-      <div className="page today-page">
+      <div className="page today-page" data-tauri-drag-region>
         <header className="today-hero">
           <div className="today-hero-copy">
             <div className="today-eyebrow">
