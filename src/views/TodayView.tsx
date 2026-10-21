@@ -170,9 +170,7 @@ export function TodayView() {
               {longDate()}
             </div>
             <h1 className="today-greeting display">
-              {greeting()}。
-              <br />
-              今天，<em>做点重要的。</em>
+              {greeting()}。今天，<em>做点重要的。</em>
             </h1>
             <p className="today-intro">
               {focusTasks.length > 0

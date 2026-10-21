@@ -3,6 +3,14 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.2] - 2026-10-21
+
+### Changed
+
+- Today 页问候语从两行 62px 展示标题压缩为一行紧凑标题
+- 收紧顶部间距和进度卡尺寸，首屏可更早看到今日任务和最近笔记
+- 手机端同步压缩问候语和间距
+
 ## [0.6.1] - 2026-10-21
 
 ### Changed

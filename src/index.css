@@ -10098,3 +10098,93 @@ select:focus-visible,
     display: none;
   }
 }
+
+/* ---------- compact Today hero ---------- */
+
+.today-hero {
+  padding-bottom: 26px;
+  gap: 40px;
+}
+
+.today-eyebrow {
+  margin-bottom: 12px;
+}
+
+.today-greeting {
+  font-size: clamp(30px, 3.4vw, 38px);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.today-intro {
+  margin-top: 10px;
+  max-width: 560px;
+  line-height: 1.7;
+}
+
+.today-actions {
+  margin-top: 17px;
+}
+
+.today-progress-card {
+  padding: 15px 16px;
+  gap: 14px;
+}
+
+.today-ring-wrap,
+.today-ring {
+  width: 92px;
+  height: 92px;
+}
+
+.today-ring-value {
+  stroke-width: 6;
+}
+
+.today-ring-track {
+  stroke-width: 6;
+}
+
+.today-ring-center strong {
+  font-size: 22px;
+}
+
+.today-ring-center strong span {
+  font-size: 11px;
+}
+
+.today-ring-center > span {
+  font-size: 7.5px;
+}
+
+.today-hero-side {
+  gap: 10px;
+}
+
+.today-focus-card {
+  padding: 12px 14px 11px;
+}
+
+@media (max-width: 820px) {
+  .today-hero {
+    gap: 18px;
+    padding-bottom: 20px;
+  }
+
+  .today-eyebrow {
+    margin-bottom: 10px;
+  }
+
+  .today-greeting {
+    font-size: clamp(29px, 8.5vw, 35px);
+    line-height: 1.16;
+  }
+
+  .today-intro {
+    margin-top: 9px;
+  }
+
+  .today-actions {
+    margin-top: 15px;
+  }
+}
