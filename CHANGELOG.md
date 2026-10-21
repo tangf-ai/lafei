@@ -3,6 +3,14 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.5] - 2026-10-21
+
+### Changed
+
+- 任务页顶部统计改为独立概览卡：数字 34px、标签 14px，提升对比度
+- 日期分组的「今天截止 / 剩余 N 天」提升到 12px，并增加状态底色
+- 任务行截止日期、剩余天数、优先级标签同步放大
+
 ## [0.6.4] - 2026-10-21
 
 ### Changed
