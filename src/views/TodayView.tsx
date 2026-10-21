@@ -46,6 +46,7 @@ export function TodayView() {
   const [briefBusy, setBriefBusy] = useState(false);
   const [briefError, setBriefError] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+  const quickInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -65,6 +66,8 @@ export function TodayView() {
   const recentNotes = notes.slice().sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 3);
   const noteMap = new Map(notes.map((note) => [note.id, note]));
   const importantTask = focusTasks.find((task) => task.priority === "high") ?? focusTasks[0];
+  const focusCardTask = importantTask ?? upcomingAll[0] ?? null;
+  const focusCardKind = importantTask ? "今日重点" : upcomingAll[0] ? "下一件" : "今天留白";
 
   const localBrief = (() => {
     if (focusTasks.length === 0 && completedToday.length === 0) {
@@ -202,8 +205,36 @@ export function TodayView() {
             </div>
           </div>
 
-          <div className="today-progress-card">
-            <div className="today-ring-wrap">
+          <div className="today-hero-side">
+            <button
+              type="button"
+              className={cn("today-focus-card", !focusCardTask && "is-empty")}
+              onClick={() => {
+                if (focusCardTask) {
+                  useUI.getState().setTaskDetailId(focusCardTask.id);
+                } else {
+                  quickInputRef.current?.focus();
+                  quickInputRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+                }
+              }}
+              title={focusCardTask ? `打开任务：${focusCardTask.title}` : "快速添加今天的第一件事"}
+            >
+              <span className="today-focus-kicker">
+                <span className="eyebrow">{focusCardKind}</span>
+                {focusCardTask ? <ArrowUpRight size={14} /> : <Plus size={14} />}
+              </span>
+              <strong>
+                {focusCardTask ? focusCardTask.title : "给今天留一件重要的事"}
+              </strong>
+              <span className="today-focus-meta">
+                {focusCardTask
+                  ? `${dueLabel(focusCardTask.dueDate).label}${focusCardTask.priority === "high" ? " · 高优先级" : ""}`
+                  : "从下面快速添加，或先看看未来任务。"}
+              </span>
+            </button>
+
+            <div className="today-progress-card">
+              <div className="today-ring-wrap">
               <svg viewBox="0 0 112 112" className="today-ring">
                 <circle cx="56" cy="56" r={ringRadius} className="today-ring-track" />
                 <circle
@@ -235,6 +266,7 @@ export function TodayView() {
                     ? "慢慢来，你已经在推进了。"
                     : "第一件事，从现在开始。"}
               </span>
+              </div>
             </div>
           </div>
         </header>
@@ -263,6 +295,7 @@ export function TodayView() {
                 <Plus size={15} />
               </span>
               <input
+                ref={quickInputRef}
                 value={quickTitle}
                 onChange={(event) => setQuickTitle(event.target.value)}
                 placeholder="往今天加一件小事…"

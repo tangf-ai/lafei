@@ -3,6 +3,14 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.1] - 2026-10-21
+
+### Changed
+
+- Today 页顶部右侧新增「今日重点 / 下一件」卡片，利用原来进度卡上方的空白
+- 点击重点卡可直接打开任务；没有任务时会聚焦快速添加
+- 今日进度卡保留在右列底部，和左侧按钮对齐；手机端仍保持单列进度卡
+
 ## [0.6.0] - 2026-10-21
 
 ### Added
