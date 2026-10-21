@@ -3,6 +3,13 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.3] - 2026-10-21
+
+### Fixed
+
+- macOS 点击窗口左上角红色关闭按钮现在只隐藏窗口，Lafei 继续在 Dock 中运行
+- 点击 Dock 图标可重新显示并聚焦主窗口；⌘Q / 菜单退出仍然真正退出应用
+
 ## [0.6.2] - 2026-10-21
 
 ### Changed
