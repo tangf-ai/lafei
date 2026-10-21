@@ -3,6 +3,14 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.5.1] - 2026-10-21
+
+### Changed
+
+- 移除任务页顶部的实时倒计时卡片，减少干扰、让首屏看到更多任务
+- 任务行新增「剩余 N 天」标签；日期分组右侧也显示剩余天数
+- 今天和逾期仍使用「今天截止」「已逾期」等明确状态
+
 ## [0.5.0] - 2026-10-20
 
 ### Added

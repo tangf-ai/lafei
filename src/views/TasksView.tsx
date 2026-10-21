@@ -13,11 +13,10 @@ import {
 } from "lucide-react";
 import { db, createTask } from "../db";
 import { useUI, toast } from "../store/ui";
-import { cn, dayKey, dueLabel, isOverdue } from "../lib/util";
+import { cn, dayKey, dueLabel, isOverdue, remainingLabel } from "../lib/util";
 import { DUE_PRESETS, dayKeyOffset, duePresetDate, type DuePresetId } from "../lib/date";
 import type { Priority, Task, TaskFilter } from "../types";
 import { TaskRow } from "../components/TaskRow";
-import { DeadlineCountdown } from "../features/DeadlineCountdown";
 import { TaskCalendar } from "../features/TaskCalendar";
 
 const FILTERS: Array<{ id: TaskFilter; label: string }> = [
@@ -184,8 +183,6 @@ export function TasksView() {
           </div>
         </header>
 
-        <DeadlineCountdown tasks={open} />
-
         <form
           className="task-add-bar"
           onSubmit={(event) => {
@@ -347,8 +344,11 @@ export function TasksView() {
                     <span>{group.tasks.length}</span>
                     <span className="task-group-line" />
                     {group.key === "overdue" && <span className="task-group-note">先处理这些</span>}
+                    {group.key === "today" && <span className="task-group-note tone-today">今天截止</span>}
                     {group.key.startsWith("date-") && (
-                      <span className="task-group-note">已安排</span>
+                      <span className={cn("task-group-note", `tone-${remainingLabel(group.key.slice(5)).tone}`)}>
+                        {remainingLabel(group.key.slice(5)).label}
+                      </span>
                     )}
                     {group.key === "done" && group.tasks.length > 0 && (
                       <span className="task-group-note">

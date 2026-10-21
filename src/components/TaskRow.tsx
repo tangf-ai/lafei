@@ -1,6 +1,6 @@
 import { Check, FileText } from "lucide-react";
 import type { Note, Task } from "../types";
-import { cn, dueLabel, isOverdue, noteTitle } from "../lib/util";
+import { cn, dueLabel, isOverdue, noteTitle, remainingLabel } from "../lib/util";
 import { toggleTask } from "../db";
 import { useUI } from "../store/ui";
 
@@ -18,6 +18,7 @@ export function TaskRow({
   const setTaskDetailId = useUI((state) => state.setTaskDetailId);
   const openNote = useUI((state) => state.openNote);
   const due = dueLabel(task.dueDate);
+  const remaining = remainingLabel(task.dueDate);
   const overdue = !task.done && isOverdue(task.dueDate);
 
   return (
@@ -55,6 +56,9 @@ export function TaskRow({
             </span>
           )}
           {!task.dueDate && <span className="task-due tone-none">无日期</span>}
+          {task.dueDate && remaining.days !== null && remaining.days > 0 && (
+            <span className={cn("task-remaining", `tone-${remaining.tone}`)}>{remaining.label}</span>
+          )}
           {task.priority === "high" && <span className="task-priority">高优先</span>}
           {showNote && note && (
             <button

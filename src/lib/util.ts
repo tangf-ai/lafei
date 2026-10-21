@@ -57,6 +57,24 @@ export function dueLabel(key: string | null): { label: string; tone: "overdue" |
   return { label: format(date, "M月d日", { locale: zhCN }), tone: "later" };
 }
 
+export function remainingLabel(key: string | null): {
+  label: string;
+  tone: "overdue" | "today" | "soon" | "later" | "none";
+  days: number | null;
+} {
+  if (!key) return { label: "未安排", tone: "none", days: null };
+  const days = differenceInCalendarDays(dateFromDayKey(key), startOfDay(new Date()));
+  if (days < 0) {
+    return {
+      label: days === -1 ? "已逾期 1 天" : `已逾期 ${Math.abs(days)} 天`,
+      tone: "overdue",
+      days,
+    };
+  }
+  if (days === 0) return { label: "今天截止", tone: "today", days };
+  return { label: `剩余 ${days} 天`, tone: days === 1 ? "soon" : "later", days };
+}
+
 export function isOverdue(key: string | null) {
   if (!key) return false;
   return differenceInCalendarDays(dateFromDayKey(key), startOfDay(new Date())) < 0;

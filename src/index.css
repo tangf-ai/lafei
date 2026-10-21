@@ -3769,6 +3769,30 @@ textarea {
   color: var(--gold);
 }
 
+.task-remaining {
+  display: inline-flex;
+  align-items: center;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 8.5px;
+  font-weight: 550;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.task-remaining.tone-soon {
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+
+.task-remaining.tone-later {
+  background: color-mix(in srgb, var(--surface-muted) 78%, transparent);
+  color: var(--muted);
+}
+
 .task-due.tone-none {
   color: var(--faint);
   opacity: 0.7;
@@ -8891,263 +8915,6 @@ select:focus-visible,
   }
 }
 
-/* ---------- deadline countdown ---------- */
-
-.deadline-countdown {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  margin-top: 18px;
-  padding: 13px 16px;
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
-  border-radius: 14px;
-  background:
-    linear-gradient(100deg, color-mix(in srgb, var(--accent-wash) 78%, var(--surface-raised)), var(--surface-raised) 65%);
-  text-align: left;
-  box-shadow: var(--shadow-sm);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s var(--ease);
-}
-
-.deadline-countdown:hover {
-  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
-}
-
-.deadline-countdown.is-empty {
-  color: var(--faint);
-  border-style: dashed;
-  border-color: var(--line);
-  background: color-mix(in srgb, var(--surface) 55%, transparent);
-  box-shadow: none;
-}
-
-.deadline-countdown.is-empty:hover {
-  box-shadow: none;
-  transform: none;
-  border-color: var(--line);
-}
-
-.deadline-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  color: var(--accent-deep);
-  background: color-mix(in srgb, var(--accent-soft) 68%, var(--surface-raised));
-  border: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
-}
-
-.deadline-copy {
-  min-width: 0;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.deadline-kicker {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--accent-deep);
-  font-size: 9px;
-  font-weight: 650;
-  letter-spacing: 0.04em;
-}
-
-.deadline-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--gold);
-}
-
-.deadline-dot.priority-high {
-  background: var(--accent);
-}
-
-.deadline-dot.priority-low {
-  background: var(--faint);
-}
-
-.deadline-countdown.is-overdue {
-  border-color: color-mix(in srgb, var(--danger) 24%, var(--line));
-  background:
-    linear-gradient(100deg, color-mix(in srgb, var(--danger-soft) 65%, var(--surface-raised)), var(--surface-raised) 65%);
-}
-
-.deadline-countdown.is-overdue .deadline-icon {
-  color: var(--danger);
-  background: var(--danger-soft);
-  border-color: color-mix(in srgb, var(--danger) 16%, transparent);
-}
-
-.deadline-countdown.is-overdue .deadline-kicker {
-  color: var(--danger);
-}
-
-.deadline-due-pill {
-  display: inline-flex;
-  align-items: center;
-  height: 17px;
-  padding: 0 5px;
-  border-radius: 4px;
-  background: var(--surface-raised);
-  color: var(--muted);
-  font-size: 8px;
-  font-weight: 550;
-  letter-spacing: 0;
-}
-
-.deadline-copy > strong {
-  color: var(--ink);
-  font-size: 12.5px;
-  font-weight: 650;
-  line-height: 1.45;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.deadline-meta {
-  color: var(--faint);
-  font-size: 8.8px;
-  line-height: 1.5;
-}
-
-.deadline-clock {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  flex-shrink: 0;
-  padding-left: 9px;
-}
-
-.deadline-unit {
-  min-width: 32px;
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 1px;
-  font-variant-numeric: tabular-nums;
-}
-
-.deadline-unit b {
-  font-family: var(--font-display);
-  font-size: 25px;
-  line-height: 1;
-  font-weight: 480;
-  letter-spacing: -0.045em;
-  color: var(--ink);
-}
-
-.deadline-unit em {
-  font-style: normal;
-  font-size: 8px;
-  color: var(--faint);
-}
-
-.deadline-unit.is-seconds b {
-  color: var(--accent-deep);
-}
-
-.deadline-countdown.is-overdue .deadline-unit b {
-  color: var(--danger);
-}
-
-.deadline-open {
-  display: grid;
-  place-items: center;
-  width: 25px;
-  height: 25px;
-  border-radius: 7px;
-  flex-shrink: 0;
-  color: var(--faint);
-  background: color-mix(in srgb, var(--surface-raised) 65%, transparent);
-}
-
-.deadline-countdown:hover .deadline-open {
-  color: var(--accent);
-}
-
-.deadline-empty-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.deadline-empty-copy strong {
-  color: var(--muted);
-  font-size: 11.5px;
-  font-weight: 600;
-}
-
-.deadline-empty-copy em {
-  font-style: normal;
-  color: var(--faint);
-  font-size: 9px;
-}
-
-@media (max-width: 820px) {
-  .deadline-countdown {
-    flex-wrap: wrap;
-    gap: 9px;
-    margin-top: 14px;
-    padding: 11px 12px;
-  }
-
-  .deadline-icon {
-    width: 33px;
-    height: 33px;
-    border-radius: 9px;
-  }
-
-  .deadline-copy {
-    flex-basis: calc(100% - 47px);
-  }
-
-  .deadline-copy > strong {
-    font-size: 12px;
-  }
-
-  .deadline-clock {
-    width: 100%;
-    justify-content: flex-start;
-    gap: 11px;
-    padding: 6px 0 0 42px;
-    border-top: 1px dashed color-mix(in srgb, var(--accent) 18%, var(--line));
-  }
-
-  .deadline-countdown.is-overdue .deadline-clock {
-    border-top-color: color-mix(in srgb, var(--danger) 20%, var(--line));
-  }
-
-  .deadline-unit {
-    min-width: 34px;
-    justify-content: flex-start;
-  }
-
-  .deadline-unit b {
-    font-size: 22px;
-  }
-
-  .deadline-open {
-    margin-left: auto;
-  }
-
-  .deadline-countdown.is-empty {
-    flex-wrap: nowrap;
-  }
-
-  .deadline-empty-copy {
-    flex: 1;
-  }
-}
-
 /* ---------- task calendar ---------- */
 
 .task-calendar {
@@ -9991,5 +9758,44 @@ select:focus-visible,
 
   .logseq-done .btn {
     margin-left: 30px;
+  }
+}
+
+.task-group-note.tone-soon {
+  color: var(--gold);
+}
+
+.task-group-note.tone-later {
+  color: var(--accent-deep);
+}
+
+.task-group-note.tone-today {
+  color: var(--accent);
+}
+
+.task-group-note {
+  white-space: nowrap;
+}
+
+.task-group-note {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.task-remaining {
+  height: 18px;
+  padding: 0 6px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+@media (max-width: 820px) {
+  .task-group-note {
+    font-size: 9.5px;
+  }
+
+  .task-remaining {
+    font-size: 8.8px;
   }
 }
