@@ -3,6 +3,14 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.8.0] - 2026-10-21
+
+### Added
+
+- 新增三套完整主题：晴日（暖亮有活力）、薄荷（低对比护眼）、海盐（清透放松）
+- 主题覆盖背景、卡片、文字、强调色与状态色，并同步系统 theme-color
+- 主题选择即时生效并保存在本机
+
 ## [0.7.0] - 2026-10-21
 
 ### Changed

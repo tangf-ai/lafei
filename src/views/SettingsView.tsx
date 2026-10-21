@@ -13,6 +13,7 @@ import {
   FileText,
   Info,
   Layers,
+  Leaf,
   Loader2,
   LockKeyhole,
   Monitor,
@@ -21,8 +22,10 @@ import {
   ShieldCheck,
   Sparkles,
   Sun,
+  SunMedium,
   Trash2,
   Upload,
+  Waves,
   X,
 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -59,6 +62,9 @@ const THEMES: Array<{ id: ThemeMode; label: string; icon: typeof Sun; caption: s
   { id: "light", label: "浅色", icon: Sun, caption: "温暖的纸感" },
   { id: "dark", label: "深色", icon: Moon, caption: "夜晚的墨色" },
   { id: "system", label: "跟随系统", icon: Monitor, caption: "随环境切换" },
+  { id: "sunny", label: "晴日", icon: SunMedium, caption: "明亮有活力" },
+  { id: "mint", label: "薄荷", icon: Leaf, caption: "柔和护眼" },
+  { id: "sea", label: "海盐", icon: Waves, caption: "清透放松" },
 ];
 
 const EDITOR_MODES: Array<{ id: NoteMode; label: string; caption: string }> = [
@@ -285,7 +291,7 @@ export function SettingsView() {
               </div>
               <div>
                 <strong>设置</strong>
-                <span>lafei · v0.7</span>
+                <span>lafei · v0.8</span>
               </div>
             </div>
             <div className="settings-nav-items">
@@ -770,7 +776,7 @@ export function SettingsView() {
                       <i />
                     </div>
                     <div>
-                      <span className="eyebrow">Lafei · v0.7.0</span>
+                      <span className="eyebrow">Lafei · v0.8.0</span>
                       <h3 className="display">把知识收好，把行动理清。</h3>
                       <p>一个本地优先的笔记与任务应用，AI 是内置的，不是后装的外挂。</p>
                     </div>

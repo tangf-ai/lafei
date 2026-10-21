@@ -97,6 +97,17 @@
 - 自动跳过 `DONE` / `CANCELED`、备份目录和重复任务；只新增，不覆盖现有数据
 - 目前需要桌面版访问本地文件夹
 
+### 主题
+
+- 除浅色、深色、跟随系统外，新增三套完整主题：
+  - **晴日**：暖亮、有活力，适合想让一天轻快起来的时候
+  - **薄荷**：低对比的护眼绿，长时间阅读更柔和
+  - **海盐**：清透的蓝灰色，安静、放松
+- 主题会应用到背景、卡片、文字、强调色和状态色，不只是换壁纸
+- 选择即时生效，并保存在本机
+
+![主题选择](docs/screenshots/desktop-themes.png)
+
 ### 可读性
 
 - 设置 → 外观与写作 → 界面字号，提供「小 / 标准 / 大 / 特大」四档（90%–120%）
@@ -132,9 +143,9 @@ pnpm desktop:build   # 生成 .app / .dmg（macOS）或对应平台安装包
 macOS 构建产物：
 
 ```text
-Lafei-0.7.0-macOS-arm64.dmg                                      # 可直接分发的安装包
+Lafei-0.8.0-macOS-arm64.dmg                                      # 可直接分发的安装包
 src-tauri/target/release/bundle/macos/Lafei.app                  # 未打包的应用
-src-tauri/target/release/bundle/dmg/Lafei_0.7.0_aarch64.dmg      # Tauri 原始产物
+src-tauri/target/release/bundle/dmg/Lafei_0.8.0_aarch64.dmg      # Tauri 原始产物
 ```
 
 > 构建产物（`.app` / `.dmg`）不进入 Git，正式版本请通过 GitHub Releases 分发。当前本地产物是 Apple Silicon（arm64）版本，使用 ad-hoc 签名，未做 Apple 公证；若系统提示无法验证，右键应用选择「打开」，或在终端执行：
@@ -307,7 +318,7 @@ scripts/mock-ai.mjs 本地 AI 演示服务
 
 ## 已知限制
 
-这是 `0.7.0`，一个可以真实日用的本地 MVP，但不是完成品：
+这是 `0.8.0`，一个可以真实日用的本地 MVP，但不是完成品：
 
 - 文件夹同步是文件级的、最终一致的，不是实时协作；冲突采用更新时间优先，没有逐行合并
 - 手机 PWA 不能直接读取 iCloud Drive；目前需要备份迁移，原生 iOS 版尚未生成

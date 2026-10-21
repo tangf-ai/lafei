@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { ThemeMode } from "../types";
 
 export function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(() =>
@@ -20,7 +21,7 @@ export function useIsMobile() {
   return useMediaQuery("(max-width: 820px)");
 }
 
-export function useResolvedTheme(theme: "light" | "dark" | "system") {
+export function useResolvedTheme(theme: ThemeMode) {
   const [systemDark, setSystemDark] = useState(() =>
     typeof window === "undefined" ? false : window.matchMedia("(prefers-color-scheme: dark)").matches,
   );

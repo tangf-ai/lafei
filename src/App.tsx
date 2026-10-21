@@ -18,6 +18,14 @@ import { createTask } from "./db";
 import { dayKey } from "./lib/util";
 import { cn } from "./lib/util";
 
+const THEME_COLORS: Record<string, string> = {
+  light: "#F2EEE6",
+  dark: "#161410",
+  sunny: "#FBF2DF",
+  mint: "#ECF4E7",
+  sea: "#EDF4F6",
+};
+
 export default function App() {
   const view = useUI((state) => state.view);
   const activeNoteId = useUI((state) => state.activeNoteId);
@@ -33,9 +41,9 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = resolvedTheme;
-    document.documentElement.style.colorScheme = resolvedTheme;
+    document.documentElement.style.colorScheme = resolvedTheme === "dark" ? "dark" : "light";
     const meta = document.querySelector('meta[name="theme-color"]');
-    meta?.setAttribute("content", resolvedTheme === "dark" ? "#161410" : "#F2EEE6");
+    meta?.setAttribute("content", THEME_COLORS[resolvedTheme] ?? THEME_COLORS.light);
   }, [resolvedTheme]);
 
   useEffect(() => {
