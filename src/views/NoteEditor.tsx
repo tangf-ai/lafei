@@ -16,6 +16,8 @@ import {
   ListTodo,
   Loader2,
   NotebookPen,
+  PanelLeftClose,
+  PanelLeftOpen,
   PenLine,
   Pin,
   Plus,
@@ -60,6 +62,8 @@ export function NoteEditor({ noteId }: { noteId: string }) {
   const setNoteMode = useUI((state) => state.setNoteMode);
   const aiPanelOpen = useUI((state) => state.aiPanelOpen);
   const setAIPanelOpen = useUI((state) => state.setAIPanelOpen);
+  const notesListCollapsed = useUI((state) => state.notesListCollapsed);
+  const setNotesListCollapsed = useUI((state) => state.setNotesListCollapsed);
   const isMobile = useIsMobile();
 
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -287,6 +291,18 @@ export function NoteEditor({ noteId }: { noteId: string }) {
               <button type="button" className="icon-btn editor-back" onClick={closeNote} aria-label="返回笔记列表">
                 <ArrowLeft size={18} />
               </button>
+              {!isMobile && (
+                <button
+                  type="button"
+                  className="icon-btn notes-list-toggle"
+                  onClick={() => setNotesListCollapsed(!notesListCollapsed)}
+                  title={notesListCollapsed ? "展开笔记列表" : "收起笔记列表"}
+                  aria-label={notesListCollapsed ? "展开笔记列表" : "收起笔记列表"}
+                  aria-pressed={notesListCollapsed}
+                >
+                  {notesListCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+                </button>
+              )}
               <span className="editor-crumb">
                 <NotebookPen size={13} /> 笔记 <ChevronRight size={12} /> {noteTitle(draft.title)}
               </span>

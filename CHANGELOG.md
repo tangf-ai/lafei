@@ -3,6 +3,14 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.0] - 2026-10-21
+
+### Added
+
+- 桌面端侧栏支持收起为图标栏，可再次展开
+- 笔记列表支持独立收起，让编辑器占满可用宽度
+- 两处状态保存在本机，默认展开；手机端保持原有列表 / 编辑器切换方式
+
 ## [0.5.1] - 2026-10-21
 
 ### Changed

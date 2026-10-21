@@ -9799,3 +9799,196 @@ select:focus-visible,
     font-size: 8.8px;
   }
 }
+
+/* ---------- collapsible side panes ---------- */
+
+.sidebar {
+  transition: width 0.24s var(--ease), padding 0.24s var(--ease);
+}
+
+.sidebar-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.sidebar-top .brand {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-collapse-btn {
+  width: 26px;
+  height: 26px;
+  margin-top: 6px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--faint);
+  transition: background 0.16s var(--ease), color 0.16s var(--ease);
+}
+
+.sidebar-collapse-btn:hover {
+  background: var(--surface-hover);
+  color: var(--ink-soft);
+}
+
+.sidebar-new-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-item-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar.is-collapsed {
+  width: 64px;
+  padding: 18px 9px 12px;
+}
+
+.sidebar.is-collapsed .sidebar-top {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar.is-collapsed .sidebar-top .brand {
+  height: auto;
+  padding: 0;
+  justify-content: center;
+}
+
+.sidebar.is-collapsed .brand-word,
+.sidebar.is-collapsed .brand-tag {
+  display: none;
+}
+
+.sidebar.is-collapsed .sidebar-collapse-btn {
+  margin-top: 0;
+}
+
+.sidebar.is-collapsed .sidebar-new {
+  width: 42px;
+  height: 38px;
+  margin: 16px auto 0;
+  padding: 0;
+  justify-content: center;
+}
+
+.sidebar.is-collapsed .sidebar-new-label,
+.sidebar.is-collapsed .sidebar-new .kbd {
+  display: none;
+}
+
+.sidebar.is-collapsed .sidebar-scroll {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.sidebar.is-collapsed .nav-group {
+  margin-top: 16px;
+}
+
+.sidebar.is-collapsed .nav-group:first-child {
+  margin-top: 18px;
+}
+
+.sidebar.is-collapsed .nav-label,
+.sidebar.is-collapsed .sidebar-tags {
+  display: none;
+}
+
+.sidebar.is-collapsed .nav-item {
+  width: 42px;
+  height: 38px;
+  margin: 2px auto;
+  padding: 0;
+  justify-content: center;
+  gap: 0;
+}
+
+.sidebar.is-collapsed .nav-item-label,
+.sidebar.is-collapsed .nav-count {
+  display: none;
+}
+
+.sidebar.is-collapsed .local-note {
+  display: none;
+}
+
+.sidebar.is-collapsed .sidebar-user-row {
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sidebar.is-collapsed .sidebar-user-row .sidebar-user {
+  flex: none;
+  width: 100%;
+  padding: 4px;
+  justify-content: center;
+}
+
+.sidebar.is-collapsed .sidebar-user-info,
+.sidebar.is-collapsed .sidebar-user > svg {
+  display: none;
+}
+
+.sidebar.is-collapsed .sidebar-user-row .sidebar-theme {
+  margin: 0;
+}
+
+.sidebar.is-collapsed .avatar {
+  width: 30px;
+  height: 30px;
+}
+
+/* ---------- collapsible notes list ---------- */
+
+.notes-layout.is-list-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.notes-layout.is-list-collapsed .notes-list-pane {
+  display: none;
+}
+
+.notes-list-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.notes-list-collapse {
+  color: var(--faint);
+}
+
+.notes-list-collapse:hover {
+  color: var(--ink-soft);
+}
+
+.notes-list-toggle {
+  color: var(--faint);
+  flex-shrink: 0;
+}
+
+.notes-list-toggle:hover {
+  color: var(--ink-soft);
+}
+
+.notes-empty-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}

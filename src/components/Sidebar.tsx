@@ -2,6 +2,8 @@ import {
   CheckSquare,
   Moon,
   NotebookPen,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   Settings2,
   Sparkles,
@@ -31,6 +33,8 @@ export function Sidebar() {
   const setSettingsOpen = useUI((state) => state.setSettingsOpen);
   const theme = useUI((state) => state.theme);
   const setTheme = useUI((state) => state.setTheme);
+  const sidebarCollapsed = useUI((state) => state.sidebarCollapsed);
+  const setSidebarCollapsed = useUI((state) => state.setSidebarCollapsed);
   const folderRoot = useUI((state) => state.folderRoot);
   const syncPhase = useFolderSync((state) => state.phase);
 
@@ -56,12 +60,30 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="sidebar">
-      <Logo />
+    <aside className={cn("sidebar", sidebarCollapsed && "is-collapsed")}>
+      <div className="sidebar-top">
+        <Logo />
+        <button
+          type="button"
+          className="sidebar-collapse-btn"
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          title={sidebarCollapsed ? "展开侧栏" : "收起侧栏"}
+          aria-label={sidebarCollapsed ? "展开侧栏" : "收起侧栏"}
+          aria-pressed={sidebarCollapsed}
+        >
+          {sidebarCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+        </button>
+      </div>
 
-      <button type="button" className="sidebar-new" onClick={() => void startNote()}>
+      <button
+        type="button"
+        className="sidebar-new"
+        onClick={() => void startNote()}
+        title="新建笔记"
+        aria-label="新建笔记"
+      >
         <Plus size={16} strokeWidth={2.2} />
-        新建笔记
+        <span className="sidebar-new-label">新建笔记</span>
         <span className="kbd">⌘N</span>
       </button>
 
@@ -75,13 +97,14 @@ export function Sidebar() {
                 key={item.id}
                 type="button"
                 className={cn("nav-item", isActive && "active")}
+                title={item.label}
                 onClick={() => {
                   setView(item.id);
                   if (item.id !== "notes") setTagFilter(null);
                 }}
               >
                 <Icon size={17} strokeWidth={1.8} />
-                {item.label}
+                <span className="nav-item-label">{item.label}</span>
                 {item.id === "notes" && notes.length > 0 && <span className="nav-count">{notes.length}</span>}
                 {item.id === "tasks" && openTasks.length > 0 && (
                   <span className={cn("nav-count", dueCount > 0 && "is-accent")}>{openTasks.length}</span>
@@ -96,7 +119,7 @@ export function Sidebar() {
           })}
         </nav>
 
-        <div className="nav-group">
+        <div className="nav-group sidebar-tags">
           <div className="nav-label">
             标签
             <span style={{ letterSpacing: 0 }}>{tags.length ? `${tagCounts.size}` : ""}</span>

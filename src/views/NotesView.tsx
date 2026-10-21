@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ArrowUpRight, FileText, Pin, Plus, Search, X } from "lucide-react";
+import { ArrowUpRight, FileText, PanelLeftClose, PanelLeftOpen, Pin, Plus, Search, X } from "lucide-react";
 import { db } from "../db";
 import { useUI } from "../store/ui";
 import { useIsMobile } from "../lib/hooks";
@@ -18,6 +18,9 @@ export function NotesView() {
   const tagFilter = useUI((state) => state.tagFilter);
   const setTagFilter = useUI((state) => state.setTagFilter);
   const isMobile = useIsMobile();
+  const notesListCollapsed = useUI((state) => state.notesListCollapsed);
+  const setNotesListCollapsed = useUI((state) => state.setNotesListCollapsed);
+  const listCollapsed = !isMobile && notesListCollapsed;
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -78,7 +81,7 @@ export function NotesView() {
   const showEditorOnMobile = Boolean(activeNoteId);
 
   return (
-    <div className="notes-layout">
+    <div className={cn("notes-layout", listCollapsed && "is-list-collapsed")}>
       <aside className={cn("notes-list-pane", !showListOnMobile && "mobile-hidden")}>
         <div className="notes-list-head">
           <div className="notes-list-heading">
@@ -97,9 +100,22 @@ export function NotesView() {
                 )}
               </h1>
             </div>
-            <button type="button" className="notes-new-btn" onClick={() => void newNote()} aria-label="新建笔记">
-              <Plus size={18} />
-            </button>
+            <div className="notes-list-head-actions">
+              {!isMobile && (
+                <button
+                  type="button"
+                  className="icon-btn notes-list-collapse"
+                  onClick={() => setNotesListCollapsed(true)}
+                  title="收起笔记列表"
+                  aria-label="收起笔记列表"
+                >
+                  <PanelLeftClose size={16} />
+                </button>
+              )}
+              <button type="button" className="notes-new-btn" onClick={() => void newNote()} aria-label="新建笔记">
+                <Plus size={18} />
+              </button>
+            </div>
           </div>
 
           <div className="search-field">
@@ -206,9 +222,20 @@ export function NotesView() {
             title="从一个念头开始"
             description="选中左侧的笔记，或新建一篇。支持 Markdown、双向链接，以及随时唤出的 AI。"
             action={
-              <button type="button" className="btn btn-primary" onClick={() => void newNote()}>
-                <Plus size={15} /> 新建笔记
-              </button>
+              <div className="notes-empty-actions">
+                <button type="button" className="btn btn-primary" onClick={() => void newNote()}>
+                  <Plus size={15} /> 新建笔记
+                </button>
+                {listCollapsed && (
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={() => setNotesListCollapsed(false)}
+                  >
+                    <PanelLeftOpen size={15} /> 展开笔记列表
+                  </button>
+                )}
+              </div>
             }
             footnote={
               <span className="notes-empty-foot">
