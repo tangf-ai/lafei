@@ -3,6 +3,14 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.6.4] - 2026-10-21
+
+### Changed
+
+- 任务页顶部「今天 / 接下来 / 逾期」标签从 8px 提升到 12px
+- 日期分组右侧「今天截止 / 剩余 N 天」改为 11px 带底色标签，提升可读性
+- 任务行里的截止日期、剩余天数、优先级标签同步放大
+
 ## [0.6.3] - 2026-10-21
 
 ### Fixed
