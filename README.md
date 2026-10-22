@@ -4,26 +4,42 @@
 
 **把知识收好，把行动理清。**
 
+**AI 时代的原生 AI 笔记与任务软件。**
+
 一个把「知识笔记」「任务管理」和「内置 AI」放在同一张纸上的本地优先应用。
 桌面端用 Tauri 2，手机端是同一套代码的响应式 PWA。
 
 `React 19` · `TypeScript` · `Tauri 2` · `IndexedDB` · `iCloud Drive 文件夹` · `OpenAI-compatible AI` · `MIT`
 
-[功能](#功能) · [快速开始](#快速开始) · [iCloud 目录同步](#用-icloud-drive-当同步盘) · [配置-ai](#配置-ai) · [数据与隐私](#数据与隐私) · [参与贡献](#参与贡献) · [路线图](#路线图)
+[![CI](https://github.com/tangf-ai/lafei/actions/workflows/ci.yml/badge.svg)](https://github.com/tangf-ai/lafei/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-1f5c43.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/tangf-ai/lafei?label=release)](https://github.com/tangf-ai/lafei/releases)
+
+[下载](#下载) · [功能](#功能) · [快速开始](#快速开始) · [iCloud 目录同步](#用-icloud-drive-当同步盘) · [配置-ai](#配置-ai) · [数据与隐私](#数据与隐私) · [参与贡献](#参与贡献) · [路线图](#路线图)
 
 </div>
 
-![Lafei 桌面端今日页](docs/screenshots/desktop-today.png)
+![Lafei 桌面端今日页](docs/screenshots/v2/today.webp)
 
-| 笔记与内置 AI | AI 助手 |
+| 笔记与阅读 | AI 助手 |
 | --- | --- |
-| ![笔记 AI](docs/screenshots/desktop-note-ai.png) | ![AI 助手](docs/screenshots/desktop-assistant.png) |
+| ![笔记](docs/screenshots/v2/notes.webp) | ![AI 助手](docs/screenshots/v2/assistant.webp) |
 
 | 手机 · 今日 | 手机 · 笔记 |
 | --- | --- |
-| ![手机今日](docs/screenshots/mobile-today.png) | ![手机笔记](docs/screenshots/mobile-notes.png) |
+| ![手机今日](docs/screenshots/v2/mobile-today.webp) | ![手机笔记](docs/screenshots/v2/mobile-notes.webp) |
 
 > **Lafei / 拉飞** 是当前的工作名，品牌名、图标和产品文案都集中在少量文件里，改名不需要动业务逻辑。
+
+## 下载
+
+| 平台 | 版本 | 说明 |
+| --- | --- | --- |
+| macOS（Apple Silicon） | [v0.12.0](https://github.com/tangf-ai/lafei/releases/latest) | `Lafei-0.12.0-macOS-arm64.dmg`，ad-hoc 签名、未公证；首次打开如被拦截，右键应用选「打开」 |
+| Web / PWA | 源码构建 | `pnpm build` 后把 `dist/` 部署到任意静态托管 |
+| Windows / Linux | 源码构建 | Tauri 2 支持，暂未提供预编译包 |
+
+> 安装包不进入 Git 仓库，统一通过 [GitHub Releases](https://github.com/tangf-ai/lafei/releases) 分发。
 
 ## 为什么是 Lafei
 
@@ -42,7 +58,7 @@
 - 实时字数、更新时间、保存状态一目了然
 - 桌面端侧栏和笔记列表可分别收起：侧栏变成图标栏，笔记列表收起后正文占满；默认展开并记住选择
 
-![收起侧栏与笔记列表](docs/screenshots/desktop-collapsed-panes.png)
+![收起侧栏](docs/screenshots/v2/collapsed.webp)
 
 ### 任务管理
 
@@ -56,9 +72,9 @@
 - 每条截止任务直接显示「剩余 N 天」，日期分组也标注剩余天数；今天 / 逾期有独立标签
 - 月历视图：按日期铺开任务分布，支持切换月份、回到今天、点选某天查看当日任务
 
-![任务与截止日期](docs/screenshots/desktop-tasks.png)
+![任务与截止日期](docs/screenshots/v2/tasks.webp)
 
-![任务日历](docs/screenshots/desktop-calendar.png)
+![任务日历](docs/screenshots/v2/calendar.webp)
 
 ### 标签：把笔记和任务串起来
 
@@ -125,7 +141,7 @@
 - 主题会应用到背景、卡片、文字、强调色和状态色，不只是换壁纸
 - 选择即时生效，并保存在本机
 
-![主题选择](docs/screenshots/desktop-themes.png)
+![主题选择](docs/screenshots/v2/settings.webp)
 
 ### 可读性
 
@@ -133,7 +149,6 @@
 - 选择后立即生效，并保存在本机；桌面端使用系统级页面缩放，Web/PWA 使用样式缩放
 - 大字号下移动端筛选栏保持单行并可横向滑动，不会被挤成两行
 
-![界面字号](docs/screenshots/desktop-font-size.png)
 
 ## 快速开始
 
@@ -162,9 +177,9 @@ pnpm desktop:build   # 生成 .app / .dmg（macOS）或对应平台安装包
 macOS 构建产物：
 
 ```text
-Lafei-0.11.1-macOS-arm64.dmg                                      # 可直接分发的安装包
+Lafei-0.12.0-macOS-arm64.dmg                                      # 可直接分发的安装包
 src-tauri/target/release/bundle/macos/Lafei.app                  # 未打包的应用
-src-tauri/target/release/bundle/dmg/Lafei_0.11.1_aarch64.dmg      # Tauri 原始产物
+src-tauri/target/release/bundle/dmg/Lafei_0.12.0_aarch64.dmg      # Tauri 原始产物
 ```
 
 > 构建产物（`.app` / `.dmg`）不进入 Git，正式版本请通过 GitHub Releases 分发。当前本地产物是 Apple Silicon（arm64）版本，使用 ad-hoc 签名，未做 Apple 公证；若系统提示无法验证，右键应用选择「打开」，或在终端执行：
@@ -191,7 +206,7 @@ pnpm mock:ai
 
 ## 用 iCloud Drive 当同步盘
 
-![文件夹存储设置](docs/screenshots/desktop-folder-sync.png)
+![文件夹存储设置](docs/screenshots/v2/settings-data.webp)
 
 ### 第一次启用
 
@@ -305,7 +320,8 @@ pnpm preview --host 0.0.0.0
 ```text
 src/
   views/            今日、笔记、任务、标签、AI 助手、设置
-  features/         笔记 AI 面板、智能体访问与流式交互
+  features/         任务右栏、笔记 AI 面板、智能体访问与流式交互
+  workbench.css     工作台视觉系统（token、壳层、各页面 B 版式、主题变体）
   components/       编辑器外壳、任务行、命令面板、弹窗
   lib/
     ai.ts           OpenAI 兼容流式客户端、提示词、笔记检索
@@ -328,7 +344,7 @@ scripts/mock-ai.mjs 本地 AI 演示服务
 - **本地优先**：没有服务端依赖，应用启动不等待网络；数据读写走 IndexedDB。文件夹只是可选的持久化与跨设备层，不改变本地可用的前提。
 - **AI 是功能，不是入口**：设置页配置一次，笔记内直接总结 / 提取 / 续写；助手聊天才用整库检索。
 - **可解释的引用**：检索基于关键词与中文 bigram 打分，不是黑盒嵌入；每条引用都能点回原笔记。
-- **克制的视觉**：暖纸色、墨色、衬线大标题和手写感的强调色。浅色与深色都经过单独设计，而不是简单反色。
+- **工作台式视觉**：冷灰绿纸面、白色卡片、克制的松绿强调；桌面分「导航 / 内容 / 节奏栏」，笔记编辑器把宽度留给正文。浅色、深色与三套彩色主题都单独适配，而不是简单反色。
 - **响应式而非缩放**：手机端重排导航、编辑器和弹层，不把桌面侧栏硬塞进小屏。
 
 ## 快捷键
@@ -346,7 +362,7 @@ scripts/mock-ai.mjs 本地 AI 演示服务
 
 ## 已知限制
 
-这是 `0.11.1`，一个可以真实日用的本地 MVP，但不是完成品：
+这是 `0.12.0`，一个可以真实日用的本地 MVP，但不是完成品：
 
 - 文件夹同步是文件级的、最终一致的，不是实时协作；冲突采用更新时间优先，没有逐行合并
 - 手机 PWA 不能直接读取 iCloud Drive；目前需要备份迁移，原生 iOS 版尚未生成

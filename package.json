@@ -1,7 +1,7 @@
 {
   "name": "lafei",
   "private": true,
-  "version": "0.11.1",
+  "version": "0.12.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -47,6 +47,16 @@
     "node": ">=22",
     "pnpm": ">=11"
   },
-  "description": "Lafei — 本地优先的笔记、任务与内置 AI",
+  "description": "Lafei — AI 时代的原生 AI 笔记与任务软件，本地优先，内置 AI",
+  "license": "MIT",
+  "author": "Lafei contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tangf-ai/lafei.git"
+  },
+  "homepage": "https://github.com/tangf-ai/lafei#readme",
+  "bugs": {
+    "url": "https://github.com/tangf-ai/lafei/issues"
+  },
   "packageManager": "pnpm@11.18.0"
 }

@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-当前维护 `0.2.x`。
+当前维护 `0.12.x`。
 
 ## Reporting a vulnerability
 
