@@ -4020,3 +4020,511 @@ html[data-design="workbench"] .tag-section-empty {
     white-space: normal;
   }
 }
+
+/* --------------------------------------------------------------------------
+   AI 助手 · B 版式
+   -------------------------------------------------------------------------- */
+
+html[data-design="workbench"] .assistant-layout {
+  background: var(--wb-bg);
+}
+
+html[data-design="workbench"] .assistant-sidebar {
+  background: var(--wb-side);
+  border-right: 1px solid var(--wb-line);
+}
+
+html[data-design="workbench"] .assistant-side-head {
+  padding: 20px 16px 0;
+}
+
+html[data-design="workbench"] .assistant-side-head .eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .assistant-side-foot {
+  border-top: 1px solid var(--wb-line);
+  color: var(--wb-faint);
+  font-size: 9.5px;
+}
+
+html[data-design="workbench"] .chat-history-item {
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+html[data-design="workbench"] .chat-history-item:hover {
+  background: color-mix(in srgb, var(--wb-card) 60%, transparent);
+}
+
+html[data-design="workbench"] .chat-history-item.is-active {
+  background: var(--wb-card);
+  border-color: var(--wb-line);
+  box-shadow: var(--wb-sh-sm);
+}
+
+html[data-design="workbench"] .chat-history-empty {
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .assistant-main {
+  background: var(--wb-bg);
+}
+
+html[data-design="workbench"] .assistant-topbar {
+  height: 56px;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--wb-line-soft);
+  background: transparent;
+}
+
+html[data-design="workbench"] .assistant-orb {
+  background: var(--wb-green-soft);
+  color: var(--wb-green);
+  border-radius: 8px;
+}
+
+html[data-design="workbench"] .assistant-title-wrap strong {
+  color: var(--wb-ink);
+}
+
+html[data-design="workbench"] .assistant-title-wrap span {
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .assistant-welcome .eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .assistant-hero-mark {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 18px;
+  color: var(--wb-green);
+  background: var(--wb-green-soft);
+  border: 1px solid color-mix(in srgb, var(--wb-green) 16%, transparent);
+  border-radius: 14px;
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--wb-green-soft) 46%, transparent);
+}
+
+html[data-design="workbench"] .assistant-hero-title {
+  margin-top: 10px;
+  font-family: var(--font-ui);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+  color: var(--wb-ink);
+}
+
+html[data-design="workbench"] .assistant-hero-title em {
+  color: var(--wb-green);
+}
+
+html[data-design="workbench"] .assistant-hero-sub {
+  max-width: 480px;
+  margin-top: 12px;
+  color: var(--wb-muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+html[data-design="workbench"] .assistant-suggestions {
+  gap: 12px;
+  margin-top: 28px;
+}
+
+html[data-design="workbench"] .assistant-suggestion {
+  padding: 14px 16px;
+  border: 1px solid var(--wb-line);
+  border-radius: 12px;
+  background: var(--wb-card);
+  box-shadow: var(--wb-sh-sm);
+  gap: 11px;
+}
+
+html[data-design="workbench"] .assistant-suggestion:hover {
+  transform: none;
+  border-color: color-mix(in srgb, var(--wb-green) 28%, var(--wb-line));
+  box-shadow: var(--wb-sh);
+}
+
+html[data-design="workbench"] .assistant-suggestion-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--wb-green);
+  background: var(--wb-green-soft);
+}
+
+html[data-design="workbench"] .assistant-suggestion strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wb-ink);
+}
+
+html[data-design="workbench"] .assistant-suggestion em {
+  font-size: 10px;
+  color: var(--wb-muted);
+}
+
+html[data-design="workbench"] .assistant-capabilities {
+  margin-top: 22px;
+  gap: 18px;
+  color: var(--wb-faint);
+  font-size: 9.5px;
+}
+
+html[data-design="workbench"] .chat-user-bubble {
+  background: var(--wb-green-soft);
+  border: 1px solid color-mix(in srgb, var(--wb-green) 12%, transparent);
+  color: var(--wb-ink);
+  border-radius: 12px 12px 4px 12px;
+}
+
+html[data-design="workbench"] .chat-ai-avatar {
+  background: var(--wb-green-solid);
+  color: var(--on-primary);
+  border-radius: 8px;
+}
+
+html[data-design="workbench"] .chat-ai-head strong {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--wb-ink);
+}
+
+html[data-design="workbench"] .chat-time {
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .chat-source {
+  background: var(--wb-chip);
+  color: var(--wb-muted);
+  border-radius: 5px;
+}
+
+html[data-design="workbench"] .chat-sources-label {
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .assistant-composer-wrap {
+  width: min(820px, calc(100% - 48px));
+}
+
+html[data-design="workbench"] .assistant-composer {
+  border: 1px solid var(--wb-line);
+  border-radius: 14px;
+  background: var(--wb-card);
+  box-shadow: var(--wb-sh-sm);
+}
+
+html[data-design="workbench"] .assistant-composer:focus-within {
+  border-color: var(--wb-green);
+  box-shadow: 0 0 0 3px var(--wb-focus-ring), var(--wb-sh-sm);
+}
+
+html[data-design="workbench"] .assistant-setup-banner {
+  background: var(--wb-green-soft);
+  border-color: color-mix(in srgb, var(--wb-green) 16%, transparent);
+  border-radius: 10px;
+}
+
+html[data-design="workbench"] .assistant-setup-icon {
+  background: var(--wb-card);
+  color: var(--wb-green);
+}
+
+html[data-design="workbench"] .assistant-setup-banner strong {
+  color: var(--wb-ink);
+}
+
+html[data-design="workbench"] .assistant-setup-banner span:not(.assistant-setup-icon) {
+  color: var(--wb-muted);
+}
+
+html[data-design="workbench"] .context-toggle.is-on {
+  color: var(--wb-green);
+  background: var(--wb-green-soft);
+  border-color: color-mix(in srgb, var(--wb-green) 12%, transparent);
+}
+
+html[data-design="workbench"] .context-toggle span {
+  background: var(--wb-chip);
+  color: var(--wb-green);
+}
+
+html[data-design="workbench"] .assistant-send {
+  background: var(--wb-green-solid);
+  color: var(--on-primary);
+  border-radius: 8px;
+}
+
+html[data-design="workbench"] .assistant-send:hover:not(:disabled) {
+  background: var(--wb-green-solid-hover);
+}
+
+html[data-design="workbench"] .assistant-send.is-stop {
+  background: var(--wb-green-soft);
+  color: var(--wb-green);
+}
+
+html[data-design="workbench"] .assistant-disclaimer {
+  color: var(--wb-faint);
+}
+
+/* --------------------------------------------------------------------------
+   设置 · B 版式
+   -------------------------------------------------------------------------- */
+
+html[data-design="workbench"] .settings-modal {
+  background: var(--wb-bg);
+}
+
+html[data-design="workbench"] .settings-shell {
+  background: var(--wb-card);
+  border: 1px solid var(--wb-line);
+  border-radius: 16px;
+  box-shadow: var(--wb-sh-lg, 0 30px 80px rgba(20, 30, 20, 0.16));
+}
+
+html[data-design="workbench"] .settings-nav {
+  background: var(--wb-side);
+  border-right: 1px solid var(--wb-line);
+}
+
+html[data-design="workbench"] .settings-brand .brand-mark {
+  background: var(--wb-green-solid);
+  color: var(--wb-card);
+}
+
+html[data-design="workbench"] .settings-nav-item {
+  border-radius: 8px;
+  color: var(--wb-ink-2);
+}
+
+html[data-design="workbench"] .settings-nav-item:hover {
+  background: color-mix(in srgb, var(--wb-card) 55%, transparent);
+}
+
+html[data-design="workbench"] .settings-nav-item.active {
+  background: var(--wb-card);
+  border: 1px solid var(--wb-line);
+  box-shadow: var(--wb-sh-sm);
+  color: var(--wb-ink);
+  font-weight: 600;
+}
+
+html[data-design="workbench"] .settings-nav-foot {
+  border-top: 1px solid var(--wb-line);
+}
+
+html[data-design="workbench"] .settings-local {
+  background: var(--wb-card);
+  border: 1px solid var(--wb-line);
+  border-radius: 10px;
+}
+
+html[data-design="workbench"] .settings-head {
+  border-bottom: 1px solid var(--wb-line);
+}
+
+html[data-design="workbench"] .settings-head h2 {
+  font-family: var(--font-ui);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--wb-ink);
+}
+
+html[data-design="workbench"] .settings-head .eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .settings-content {
+  background: var(--wb-bg);
+}
+
+html[data-design="workbench"] .settings-block {
+  background: var(--wb-card);
+  border: 1px solid var(--wb-line);
+  border-radius: 12px;
+  box-shadow: var(--wb-sh-sm);
+}
+
+html[data-design="workbench"] .settings-block h3 {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wb-ink);
+}
+
+html[data-design="workbench"] .settings-block-head p,
+html[data-design="workbench"] .settings-block p {
+  color: var(--wb-muted);
+}
+
+html[data-design="workbench"] .theme-card {
+  border-radius: 10px;
+  border: 1px solid var(--wb-line);
+  background: var(--wb-card);
+  box-shadow: var(--wb-sh-sm);
+}
+
+html[data-design="workbench"] .theme-card.active {
+  border-color: var(--wb-green);
+  box-shadow: 0 0 0 1px var(--wb-green), var(--wb-sh-sm);
+}
+
+html[data-design="workbench"] .theme-card-foot strong {
+  color: var(--wb-ink);
+}
+
+html[data-design="workbench"] .theme-card-foot em {
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .font-scale-card,
+html[data-design="workbench"] .editor-mode-card {
+  border: 1px solid var(--wb-line);
+  border-radius: 10px;
+  background: var(--wb-card);
+  box-shadow: var(--wb-sh-sm);
+}
+
+html[data-design="workbench"] .font-scale-card.active,
+html[data-design="workbench"] .editor-mode-card.active {
+  border-color: var(--wb-green);
+  box-shadow: 0 0 0 1px var(--wb-green), var(--wb-sh-sm);
+  background: var(--wb-card);
+}
+
+html[data-design="workbench"] .font-scale-card strong,
+html[data-design="workbench"] .editor-mode-card strong {
+  color: var(--wb-ink);
+}
+
+html[data-design="workbench"] .font-scale-card em,
+html[data-design="workbench"] .editor-mode-card em {
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .editor-mode-art {
+  background: var(--wb-field);
+  border-radius: 8px;
+}
+
+html[data-design="workbench"] .settings-block-compact .settings-row {
+  border-color: var(--wb-line-soft);
+}
+
+html[data-design="workbench"] .settings-fixed-on {
+  background: var(--wb-green-soft);
+  color: var(--wb-green);
+}
+
+html[data-design="workbench"] .provider-card {
+  border: 1px solid var(--wb-line);
+  border-radius: 10px;
+  background: var(--wb-card);
+  box-shadow: var(--wb-sh-sm);
+}
+
+html[data-design="workbench"] .provider-card.active {
+  border-color: var(--wb-green);
+  box-shadow: 0 0 0 1px var(--wb-green), var(--wb-sh-sm);
+}
+
+html[data-design="workbench"] .provider-icon {
+  background: var(--wb-green-soft);
+  color: var(--wb-green);
+  border-radius: 8px;
+}
+
+html[data-design="workbench"] .input {
+  border: 1px solid var(--wb-line);
+  border-radius: 8px;
+  background: var(--wb-card);
+  color: var(--wb-ink);
+}
+
+html[data-design="workbench"] .input:focus {
+  border-color: var(--wb-green);
+  box-shadow: 0 0 0 3px var(--wb-focus-ring);
+}
+
+html[data-design="workbench"] .settings-note {
+  background: var(--wb-chip);
+  border: 1px solid var(--wb-line);
+  border-radius: 10px;
+}
+
+html[data-design="workbench"] .data-stat {
+  background: var(--wb-card);
+  border: 1px solid var(--wb-line);
+  border-radius: 10px;
+}
+
+html[data-design="workbench"] .data-action {
+  border: 1px solid var(--wb-line);
+  border-radius: 10px;
+  background: var(--wb-card);
+}
+
+html[data-design="workbench"] .data-action:hover {
+  border-color: color-mix(in srgb, var(--wb-green) 28%, var(--wb-line));
+}
+
+@media (max-width: 980px) {
+  html[data-design="workbench"] .settings-shell {
+    border-radius: 12px;
+  }
+}
+
+/* 主题缩略图使用各自固定配色，不跟随当前深色/浅色 */
+html[data-design="workbench"] .preview-light .theme-preview-side {
+  background: #edefe9;
+  border-right-color: #e1e5db;
+}
+
+html[data-design="workbench"] .preview-light .theme-preview-main {
+  background: #f3f4f0;
+}
+
+html[data-design="workbench"] .preview-light .theme-preview-main span {
+  background: #dde2d8;
+}
+
+html[data-design="workbench"] .preview-light .theme-preview-main span:first-child {
+  background: #9aa096;
+}
+
+html[data-design="workbench"] .preview-sunny .theme-preview-main span {
+  background: #e9dbc2;
+}
+
+html[data-design="workbench"] .preview-sunny .theme-preview-main span:first-child {
+  background: #b0a187;
+}
+
+html[data-design="workbench"] .preview-mint .theme-preview-main span {
+  background: #d5e1ce;
+}
+
+html[data-design="workbench"] .preview-mint .theme-preview-main span:first-child {
+  background: #9aa997;
+}
+
+html[data-design="workbench"] .preview-sea .theme-preview-main span {
+  background: #d4e2e6;
+}
+
+html[data-design="workbench"] .preview-sea .theme-preview-main span:first-child {
+  background: #9aaab1;
+}
