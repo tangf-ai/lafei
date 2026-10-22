@@ -2754,11 +2754,8 @@ html[data-design="workbench"] .lp-canvas {
 }
 
 html[data-design="workbench"] .lp-block-editor {
-  border-color: color-mix(in srgb, var(--wb-green) 38%, var(--wb-line));
-  border-radius: 8px;
-  background: var(--wb-field);
-  color: var(--wb-ink);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wb-green) 9%, transparent);
+  color: var(--wb-ink-2);
+  caret-color: var(--wb-green);
 }
 
 html[data-design="workbench"] .lp-block-editor::placeholder {

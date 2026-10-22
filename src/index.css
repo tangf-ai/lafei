@@ -2994,22 +2994,24 @@ html[data-shell="tauri"] .assistant-layout {
 .lp-block-editor {
   display: block;
   width: 100%;
-  min-height: 1.9em;
+  min-height: 1.88em;
   resize: none;
   overflow: hidden;
   margin: 0;
-  padding: 9px 12px;
-  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--line));
-  border-radius: 8px;
-  background: var(--surface-raised);
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  line-height: 1.8;
+  /* 与渲染结果同一套排版、去掉输入框的边框和底色：点击进入编辑时几乎无感 */
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-reading);
+  font-size: 16.5px;
+  line-height: 1.88;
   letter-spacing: 0;
   tab-size: 2;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 8%, transparent);
+  box-shadow: none;
   outline: none;
+  caret-color: var(--accent);
 }
 
 .lp-block-editor::placeholder {
@@ -4152,10 +4154,6 @@ html[data-shell="tauri"] .assistant-layout {
 
   .lp-block + .lp-block {
     margin-top: 0.9em;
-  }
-
-  .lp-block-editor {
-    font-size: 13.5px;
   }
 
   .lp-source-peek {
