@@ -19,6 +19,7 @@ import { DUE_PRESETS, dayKeyOffset, duePresetDate, type DuePresetId } from "../l
 import type { Priority, Task, TaskFilter } from "../types";
 import { TaskRow } from "../components/TaskRow";
 import { TaskCalendar } from "../features/TaskCalendar";
+import { TasksRail } from "../features/TasksRail";
 import { TagInput } from "../components/TagInput";
 
 const FILTERS: Array<{ id: TaskFilter; label: string }> = [
@@ -209,30 +210,56 @@ export function TasksView() {
 
   return (
     <div className="view-scroll">
-      <div className="page tasks-page" data-tauri-drag-region>
-        <header className="tasks-header">
-          <div className="tasks-header-copy">
-            <span className="eyebrow">Tasks</span>
-            <h1 className="tasks-title display">把下一步写下来。</h1>
-            <p className="tasks-subtitle">{summary}</p>
+      <div className="wb-tasks" data-tauri-drag-region>
+        <div className="wb-tasks-main">
+        <header className="wb-tasks-head">
+          <div>
+            <span className="wb-eyebrow">TASKS</span>
+            <h1 className="wb-tasks-title">把下一步写下来。</h1>
+            <p className="wb-tasks-sub">{summary}</p>
           </div>
-          <div className="tasks-stats">
-            <div className="task-stat">
+          <button
+            type="button"
+            className="wb-btn-primary"
+            onClick={() => inputRef.current?.focus()}
+          >
+            <Plus size={14} /> 新建任务
+          </button>
+        </header>
+
+        <section className="wb-overview">
+          <div className="wb-stats">
+            <div className="wb-stat">
               <strong>{counts.today}</strong>
               <span>今天</span>
             </div>
-            <span className="task-stat-line" />
-            <div className="task-stat">
+            <div className="wb-stat">
               <strong>{upcomingCount}</strong>
               <span>接下来</span>
             </div>
-            <span className="task-stat-line" />
-            <div className={cn("task-stat", overdueTasks.length > 0 && "is-alert")}>
+            <div className={cn("wb-stat", overdueTasks.length > 0 && "is-alert")}>
               <strong>{overdueTasks.length}</strong>
               <span>逾期</span>
             </div>
           </div>
-        </header>
+          <span className="wb-ov-sep" />
+          <div className="wb-sched">
+            <div className="wb-sched-head">
+              <span>排期</span>
+              <span>
+                已排期 {scheduledCount} / {open.length}
+              </span>
+            </div>
+            <div className="wb-sched-bar">
+              {Array.from({ length: Math.max(open.length, 1) }, (_, index) => (
+                <i key={index} className={index < scheduledCount ? "is-on" : ""} />
+              ))}
+            </div>
+            <div className="wb-sched-note">
+              {scheduledCount} 个有截止日期 · {noDateTasks.length} 个待安排
+            </div>
+          </div>
+        </section>
 
         {tagFilter && (
           <div className="task-tag-banner">
@@ -259,7 +286,9 @@ export function TasksView() {
         >
           <div className="task-add-bar">
             <div className="task-add-input">
-              <Plus size={18} />
+              <span className="wb-plus-badge">
+                <Plus size={11} />
+              </span>
               <input
                 ref={inputRef}
                 value={title}
@@ -505,6 +534,8 @@ export function TasksView() {
             打开 AI 助手
           </button>
         </div>
+        </div>
+        <TasksRail tasks={tasks} notes={notes} />
       </div>
     </div>
   );

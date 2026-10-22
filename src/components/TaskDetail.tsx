@@ -120,9 +120,10 @@ export function TaskDetailModal() {
               </button>
             </div>
 
-            <input
+            <textarea
               className="task-detail-title"
               value={draft.title}
+              rows={2}
               onChange={(event) => patch({ title: event.target.value })}
               placeholder="任务是什么？"
               aria-label="任务标题"

@@ -38,6 +38,7 @@ export function TaskRow({
         compact && "is-compact",
         inline && "is-inline",
       )}
+      data-priority={task.priority}
       role="button"
       tabIndex={0}
       onClick={() => setTaskDetailId(task.id)}

@@ -2,12 +2,14 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import "./workbench.css";
 import { bootstrapDatabase } from "./db";
 import { isTauri } from "./lib/util";
 import { initializeFolderSync } from "./lib/folderSync";
 import { initializeAgentExport } from "./lib/agentExport";
 
 document.documentElement.dataset.shell = isTauri ? "tauri" : "web";
+document.documentElement.dataset.design = "workbench";
 
 async function start() {
   try {

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Sidebar } from "./components/Sidebar";
+import { Topbar } from "./components/Topbar";
 import { MobileTopbar } from "./components/MobileTopbar";
 import { MobileNav } from "./components/MobileNav";
 import { CommandPalette } from "./components/CommandPalette";
@@ -20,10 +21,10 @@ import { dayKey } from "./lib/util";
 import { cn } from "./lib/util";
 
 const THEME_COLORS: Record<string, string> = {
-  light: "#F2EEE6",
-  dark: "#161410",
+  light: "#F3F4F0",
+  dark: "#161913",
   sunny: "#FBF2DF",
-  mint: "#ECF4E7",
+  mint: "#EAF3E5",
   sea: "#EDF4F6",
 };
 
@@ -36,6 +37,7 @@ export default function App() {
   const setCommandOpen = useUI((state) => state.setCommandOpen);
   const setView = useUI((state) => state.setView);
   const setTaskDetailId = useUI((state) => state.setTaskDetailId);
+  const sidebarCollapsed = useUI((state) => state.sidebarCollapsed);
   const resolvedTheme = useResolvedTheme(theme);
   const isMobile = useIsMobile();
   const editorOpen = isMobile && view === "notes" && Boolean(activeNoteId);
@@ -80,7 +82,11 @@ export default function App() {
   }, [setCommandOpen, setSettingsOpen, setTaskDetailId, setView]);
 
   return (
-    <div className={cn("app-shell", editorOpen && "editor-open")} data-tauri-drag-region>
+    <div
+      className={cn("app-shell", editorOpen && "editor-open", sidebarCollapsed && "wb-collapsed")}
+      data-tauri-drag-region
+    >
+      <Topbar />
       <Sidebar />
       <div className="app-main">
         {!editorOpen && <MobileTopbar />}

@@ -1,23 +1,20 @@
 import {
   CheckSquare,
-  Moon,
   NotebookPen,
   PanelLeftClose,
   PanelLeftOpen,
-  Plus,
   Settings2,
   Sparkles,
-  Sun,
   Sunrise,
   Tag,
 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, createNote } from "../db";
+import { db } from "../db";
 import { useUI } from "../store/ui";
 import { useFolderSync } from "../store/folderSync";
 import { cn, dayKey, isOverdue } from "../lib/util";
 import { collectTagCounts, sameTag } from "../lib/tags";
-import { Logo } from "./Logo";
+import type { TaskFilter } from "../types";
 
 const NAV = [
   { id: "today", label: "今日", icon: Sunrise },
@@ -27,16 +24,30 @@ const NAV = [
   { id: "assistant", label: "AI 助手", icon: Sparkles },
 ] as const;
 
+const VIEWS: Array<{ id: TaskFilter; label: string }> = [
+  { id: "all", label: "全部" },
+  { id: "today", label: "今天" },
+  { id: "upcoming", label: "接下来" },
+  { id: "done", label: "已完成" },
+];
+
+const TAG_COLORS = ["#6E8B7A", "#B57B24", "#7A8290", "#A86B58", "#8A8F5C", "#4C7D86", "#8B6A9B"];
+
+function tagColor(tag: string) {
+  let hash = 0;
+  for (let index = 0; index < tag.length; index += 1) hash = (hash * 31 + tag.charCodeAt(index)) >>> 0;
+  return TAG_COLORS[hash % TAG_COLORS.length];
+}
+
 export function Sidebar() {
   const view = useUI((state) => state.view);
   const setView = useUI((state) => state.setView);
-  const openNote = useUI((state) => state.openNote);
   const tagFilter = useUI((state) => state.tagFilter);
   const setTagFilter = useUI((state) => state.setTagFilter);
   const openTagView = useUI((state) => state.openTagView);
   const setSettingsOpen = useUI((state) => state.setSettingsOpen);
-  const theme = useUI((state) => state.theme);
-  const setTheme = useUI((state) => state.setTheme);
+  const taskFilter = useUI((state) => state.taskFilter);
+  const setTaskFilter = useUI((state) => state.setTaskFilter);
   const sidebarCollapsed = useUI((state) => state.sidebarCollapsed);
   const setSidebarCollapsed = useUI((state) => state.setSidebarCollapsed);
   const folderRoot = useUI((state) => state.folderRoot);
@@ -45,28 +56,44 @@ export function Sidebar() {
   const notes = useLiveQuery(() => db.notes.toArray(), [], []);
   const tasks = useLiveQuery(() => db.tasks.toArray(), [], []);
   const openTasks = tasks.filter((task) => !task.done);
+  const doneTasks = tasks.filter((task) => task.done);
   const today = dayKey();
-  const dueCount = openTasks.filter((task) => task.dueDate === today || isOverdue(task.dueDate)).length;
+  const todayCount = openTasks.filter((task) => task.dueDate === today).length;
+  const upcomingCount = openTasks.filter((task) => !task.dueDate || task.dueDate > today).length;
+
+  const viewCounts: Record<TaskFilter, number> = {
+    all: openTasks.length,
+    today: todayCount,
+    upcoming: upcomingCount,
+    done: doneTasks.length,
+  };
 
   const tagCounts = collectTagCounts(notes, tasks);
   const tags = tagCounts.slice(0, 9);
+  const hasOverdue = openTasks.some((task) => isOverdue(task.dueDate));
 
-  const startNote = async () => {
-    const note = await createNote();
-    openNote(note.id);
+  const openTag = (tag: string) => {
+    if (view === "tags" && tagFilter !== null && sameTag(tagFilter, tag)) setTagFilter(null);
+    else openTagView(tag);
   };
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+  const openTaskView = (filter: TaskFilter) => {
+    setView("tasks");
+    setTaskFilter(filter);
   };
 
   return (
-    <aside className={cn("sidebar", sidebarCollapsed && "is-collapsed")} data-tauri-drag-region>
-      <div className="sidebar-top">
-        <Logo />
+    <aside
+      className={cn("sidebar", "wb-sidebar", sidebarCollapsed && "is-collapsed")}
+      data-tauri-drag-region
+    >
+      <div className="wb-side-top" data-tauri-drag-region>
+        <div className="wb-brand">
+          lafei<span>.</span>
+        </div>
         <button
           type="button"
-          className="sidebar-collapse-btn"
+          className="wb-collapse"
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           title={sidebarCollapsed ? "展开侧栏" : "收起侧栏"}
           aria-label={sidebarCollapsed ? "展开侧栏" : "收起侧栏"}
@@ -76,20 +103,9 @@ export function Sidebar() {
         </button>
       </div>
 
-      <button
-        type="button"
-        className="sidebar-new"
-        onClick={() => void startNote()}
-        title="新建笔记"
-        aria-label="新建笔记"
-      >
-        <Plus size={16} strokeWidth={2} />
-        <span className="sidebar-new-label">新建笔记</span>
-        <span className="kbd">⌘N</span>
-      </button>
-
-      <div className="sidebar-scroll">
-        <nav className="nav-group" aria-label="主导航">
+      <div className="wb-side-scroll">
+        <nav className="wb-nav-group" aria-label="主导航">
+          <div className="wb-group-label">工作区</div>
           {NAV.map((item) => {
             const Icon = item.icon;
             const isActive = view === item.id;
@@ -97,50 +113,62 @@ export function Sidebar() {
               <button
                 key={item.id}
                 type="button"
-                className={cn("nav-item", isActive && "active")}
+                className={cn("wb-nav-item", isActive && "active")}
                 title={item.label}
                 onClick={() => {
                   setView(item.id);
                   setTagFilter(null);
                 }}
               >
-                <Icon size={17} strokeWidth={1.8} />
-                <span className="nav-item-label">{item.label}</span>
-                {item.id === "notes" && notes.length > 0 && <span className="nav-count">{notes.length}</span>}
+                <Icon size={16} strokeWidth={1.7} />
+                <span>{item.label}</span>
+                {item.id === "notes" && notes.length > 0 && <span className="wb-count">{notes.length}</span>}
                 {item.id === "tasks" && openTasks.length > 0 && (
-                  <span className={cn("nav-count", dueCount > 0 && "is-accent")}>{openTasks.length}</span>
+                  <span className={cn("wb-count", hasOverdue && "is-accent")}>{openTasks.length}</span>
                 )}
-                {item.id === "assistant" && (
-                  <span className="nav-count" style={{ fontSize: 9, letterSpacing: ".04em" }}>
-                    AI
-                  </span>
-                )}
+                {item.id === "assistant" && <span className="wb-ai-badge">AI</span>}
               </button>
             );
           })}
         </nav>
 
-        <div className="nav-group sidebar-tags">
-          <div className="nav-label">
+        <nav className="wb-nav-group" aria-label="任务视图">
+          <div className="wb-group-label">视图</div>
+          {VIEWS.map((item) => {
+            const isActive = view === "tasks" && taskFilter === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={cn("wb-view-item", isActive && "active")}
+                onClick={() => openTaskView(item.id)}
+              >
+                <span>{item.label}</span>
+                <span className="wb-count">{viewCounts[item.id]}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <nav className="wb-nav-group sidebar-tags" aria-label="标签">
+          <div className="wb-group-label">
             标签
-            <span style={{ letterSpacing: 0 }}>{tags.length ? `${tagCounts.length}` : ""}</span>
+            <span>{tagCounts.length}</span>
           </div>
           {tags.length > 0 ? (
-            <div className="tag-list">
+            <div className="wb-tag-list">
               {tags.map((item) => {
                 const active = view === "tags" && tagFilter !== null && sameTag(tagFilter, item.tag);
                 return (
                   <button
                     key={item.tag}
                     type="button"
-                    className={cn("tag-item", active && "active")}
+                    className={cn("wb-tag-item", active && "active")}
                     title={`${item.openTasks} 个待办 · ${item.notes} 篇笔记`}
-                    onClick={() => {
-                      if (active) setTagFilter(null);
-                      else openTagView(item.tag);
-                    }}
+                    onClick={() => openTag(item.tag)}
                   >
-                    <span className="tag-hash">#</span>
+                    <span className="wb-tag-dot" style={{ background: tagColor(item.tag) }} />
+                    <span className="wb-tag-hash">#</span>
                     <span
                       style={{
                         overflow: "hidden",
@@ -150,26 +178,26 @@ export function Sidebar() {
                     >
                       {item.tag}
                     </span>
-                    <span className="tag-count">{item.total}</span>
+                    <span className="wb-count">{item.total}</span>
                   </button>
                 );
               })}
             </div>
           ) : (
-            <p className="empty-tags">给笔记或任务加上标签，它们会出现在这里。</p>
+            <p className="wb-empty-tags">给笔记或任务加上标签，它们会出现在这里。</p>
           )}
-        </div>
+        </nav>
       </div>
 
-      <div className="sidebar-foot">
-        <div className="local-note">
-          <span
-            className={cn(
-              "local-dot",
-              folderRoot && syncPhase === "error" && "is-error",
-              folderRoot && syncPhase === "syncing" && "is-syncing",
-            )}
-          />
+      <div className="wb-side-bottom">
+        <div
+          className={cn(
+            "wb-storage",
+            folderRoot && syncPhase === "error" && "is-error",
+            folderRoot && syncPhase === "syncing" && "is-syncing",
+          )}
+        >
+          <i />
           {folderRoot
             ? syncPhase === "syncing"
               ? "文件夹同步中…"
@@ -178,25 +206,18 @@ export function Sidebar() {
                 : "文件夹存储 · 已连接"
             : "本地存储 · 数据属于你"}
         </div>
-        <div className="sidebar-user-row">
-          <button type="button" className="sidebar-user" onClick={() => setSettingsOpen(true)}>
-            <span className="avatar">L</span>
-            <span className="sidebar-user-info">
-              <strong>我的空间</strong>
-              <span>{notes.length} 篇笔记 · {openTasks.length} 个待办</span>
+        <button type="button" className="wb-user" onClick={() => setSettingsOpen(true)}>
+          <span className="wb-user-avatar">L</span>
+          <span className="wb-user-meta">
+            <span className="wb-user-name">我的空间</span>
+            <span className="wb-user-sub">
+              {notes.length} 篇笔记 · {openTasks.length} 个待办
             </span>
-            <Settings2 size={14} style={{ opacity: 0.55 }} />
-          </button>
-          <button
-            type="button"
-            className="icon-btn icon-btn-sm sidebar-theme"
-            title={theme === "dark" ? "切换到浅色" : "切换到深色"}
-            aria-label={theme === "dark" ? "切换到浅色模式" : "切换到深色模式"}
-            onClick={toggleTheme}
-          >
-            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
-          </button>
-        </div>
+          </span>
+          <span className="wb-user-icons">
+            <Settings2 size={14} />
+          </span>
+        </button>
       </div>
     </aside>
   );

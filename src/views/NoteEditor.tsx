@@ -355,6 +355,34 @@ export function NoteEditor({ noteId }: { noteId: string }) {
           </header>
 
           <div className="editor-title-block">
+            <div className="wb-doc-mode">
+              <div className="segmented editor-mode-switch" role="group" aria-label="编辑模式">
+                <button
+                  type="button"
+                  className={cn("segment", noteMode === "write" && "active")}
+                  title="编辑"
+                  onClick={() => setNoteMode("write")}
+                >
+                  <PenLine size={14} />
+                </button>
+                <button
+                  type="button"
+                  className={cn("segment mode-split-btn", noteMode === "split" && "active")}
+                  title="分栏预览"
+                  onClick={() => setNoteMode("split")}
+                >
+                  <Columns2 size={14} />
+                </button>
+                <button
+                  type="button"
+                  className={cn("segment", noteMode === "read" && "active")}
+                  title="阅读"
+                  onClick={() => setNoteMode("read")}
+                >
+                  <Eye size={14} />
+                </button>
+              </div>
+            </div>
             <textarea
               ref={titleRef}
               className="editor-title-input"
@@ -454,32 +482,6 @@ export function NoteEditor({ noteId }: { noteId: string }) {
               >
                 <Sparkles size={15} />
                 <span>AI</span>
-              </button>
-            </div>
-            <div className="segmented editor-mode-switch" role="group" aria-label="编辑模式">
-              <button
-                type="button"
-                className={cn("segment", noteMode === "write" && "active")}
-                title="编辑"
-                onClick={() => setNoteMode("write")}
-              >
-                <PenLine size={14} />
-              </button>
-              <button
-                type="button"
-                className={cn("segment mode-split-btn", noteMode === "split" && "active")}
-                title="分栏预览"
-                onClick={() => setNoteMode("split")}
-              >
-                <Columns2 size={14} />
-              </button>
-              <button
-                type="button"
-                className={cn("segment", noteMode === "read" && "active")}
-                title="阅读"
-                onClick={() => setNoteMode("read")}
-              >
-                <Eye size={14} />
               </button>
             </div>
           </div>
