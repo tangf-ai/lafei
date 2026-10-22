@@ -19,6 +19,7 @@ interface UIState {
   taskDetailId: string | null;
   taskFilter: TaskFilter;
   folderRoot: string | null;
+  agentAccessEnabled: boolean;
   setView: (view: AppView) => void;
   openNote: (id: string, options?: { keepTagFilter?: boolean }) => void;
   closeNote: () => void;
@@ -37,6 +38,7 @@ interface UIState {
   setTaskDetailId: (id: string | null) => void;
   setTaskFilter: (filter: TaskFilter) => void;
   setFolderRoot: (root: string | null) => void;
+  setAgentAccessEnabled: (enabled: boolean) => void;
 }
 
 export const useUI = create<UIState>()(
@@ -57,6 +59,7 @@ export const useUI = create<UIState>()(
       taskDetailId: null,
       taskFilter: "all",
       folderRoot: null,
+      agentAccessEnabled: false,
       // 切换主视图或打开笔记时收起标签筛选，避免旧标签在另一个视图里悄悄过滤内容
       setView: (view) => set({ view, tagFilter: null }),
       openNote: (id, options) =>
@@ -82,6 +85,7 @@ export const useUI = create<UIState>()(
       setTaskDetailId: (taskDetailId) => set({ taskDetailId }),
       setTaskFilter: (taskFilter) => set({ taskFilter }),
       setFolderRoot: (folderRoot) => set({ folderRoot }),
+      setAgentAccessEnabled: (agentAccessEnabled) => set({ agentAccessEnabled }),
     }),
     {
       name: "lafei:ui",
@@ -94,6 +98,7 @@ export const useUI = create<UIState>()(
         notesListCollapsed: state.notesListCollapsed,
         ai: state.ai,
         folderRoot: state.folderRoot,
+        agentAccessEnabled: state.agentAccessEnabled,
       }),
       merge: (persisted, current) => {
         const saved = (persisted ?? {}) as Partial<UIState>;

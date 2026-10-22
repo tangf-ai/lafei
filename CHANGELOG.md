@@ -5,6 +5,15 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-22
+
+### Added
+
+- 智能体访问（MCP）：设置页可开启只读快照导出，供 Codex、Pi 等智能体读取笔记和任务
+- 快照包含笔记 Markdown、任务 JSONL、标签索引、manifest 与 AGENTS.md，不包含 AI 对话或密钥
+- 随桌面版打包只读 stdio MCP server `lafei-mcp`，提供搜索笔记、读取笔记、列出/读取任务和标签工具
+- 新增 docs/agent-access.md，说明 MCP 配置、快照数据契约和本地验证方式
+
 ## [0.9.0] - 2026-10-21
 
 ### Added

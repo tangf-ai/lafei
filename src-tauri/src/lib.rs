@@ -1,7 +1,7 @@
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -263,6 +263,247 @@ fn clear_store_data_impl(root: &str) -> Result<(), String> {
     Ok(())
 }
 
+const AGENT_MAX_FILES: usize = 20_000;
+const AGENT_MAX_FILE_BYTES: usize = 16 * 1024 * 1024;
+
+#[derive(Deserialize)]
+struct AgentFileInput {
+    path: String,
+    contents: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AgentSnapshotStatus {
+    dir: String,
+    app_version: String,
+    exists: bool,
+    modified_at: Option<u64>,
+    file_count: usize,
+    notes: u64,
+    tasks: u64,
+    mcp_path: String,
+    mcp_exists: bool,
+}
+
+fn agent_snapshot_root(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map(|path| path.join("agent"))
+        .map_err(|error| format!("无法定位应用数据目录：{error}"))
+}
+
+fn agent_mcp_binary_path() -> String {
+    let name = if cfg!(windows) {
+        "lafei-mcp.exe"
+    } else {
+        "lafei-mcp"
+    };
+    std::env::current_exe()
+        .ok()
+        .and_then(|path| path.parent().map(|dir| dir.join(name)))
+        .map(|path| path.to_string_lossy().to_string())
+        .unwrap_or_else(|| name.to_string())
+}
+
+fn allowed_agent_path(relative: &str) -> Result<PathBuf, String> {
+    if relative.is_empty() || relative.len() > 512 {
+        return Err("智能体快照路径为空或过长".into());
+    }
+    let path = Path::new(relative);
+    if path.is_absolute() {
+        return Err("不允许绝对路径".into());
+    }
+    let mut components = path.components();
+    let first = match components.next() {
+        Some(Component::Normal(value)) => value.to_string_lossy().to_string(),
+        _ => return Err("非法智能体快照路径".into()),
+    };
+
+    if matches!(
+        first.as_str(),
+        "manifest.json" | "AGENTS.md" | "notes.index.json" | "tasks.jsonl" | "tags.json"
+    ) {
+        if components.next().is_some() {
+            return Err("非法智能体快照路径".into());
+        }
+        return Ok(path.to_path_buf());
+    }
+
+    if first != "notes" {
+        return Err("不允许写入该智能体快照目录".into());
+    }
+    let name = match components.next() {
+        Some(Component::Normal(value)) => value.to_string_lossy().to_string(),
+        _ => return Err("非法笔记文件名".into()),
+    };
+    if components.next().is_some()
+        || name.is_empty()
+        || name.len() > 160
+        || !name.ends_with(".md")
+        || !name
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '-' || ch == '_' || ch == '.')
+    {
+        return Err("非法笔记文件名".into());
+    }
+    Ok(path.to_path_buf())
+}
+
+fn read_agent_manifest(root: &Path) -> Option<Value> {
+    let text = fs::read_to_string(root.join("manifest.json")).ok()?;
+    serde_json::from_str::<Value>(&text).ok()
+}
+
+fn count_agent_files(root: &Path) -> usize {
+    let mut count = 0;
+    if let Ok(entries) = fs::read_dir(root) {
+        count += entries
+            .filter_map(Result::ok)
+            .filter(|entry| entry.path().is_file())
+            .count();
+    }
+    if let Ok(entries) = fs::read_dir(root.join("notes")) {
+        count += entries
+            .filter_map(Result::ok)
+            .filter(|entry| entry.path().is_file())
+            .count();
+    }
+    count
+}
+
+fn agent_snapshot_status_impl(app: &tauri::AppHandle) -> Result<AgentSnapshotStatus, String> {
+    let dir = agent_snapshot_root(app)?;
+    let manifest_path = dir.join("manifest.json");
+    let exists = manifest_path.is_file();
+    let manifest = if exists {
+        read_agent_manifest(&dir)
+    } else {
+        None
+    };
+    let modified_at = fs::metadata(&manifest_path)
+        .ok()
+        .and_then(|meta| meta.modified().ok())
+        .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+        .map(|duration| duration.as_millis() as u64);
+    let notes = manifest
+        .as_ref()
+        .and_then(|value| value.pointer("/counts/notes"))
+        .and_then(Value::as_u64)
+        .unwrap_or(0);
+    let tasks = manifest
+        .as_ref()
+        .and_then(|value| value.pointer("/counts/tasks"))
+        .and_then(Value::as_u64)
+        .unwrap_or(0);
+    let mcp_path = agent_mcp_binary_path();
+    let mcp_exists = Path::new(&mcp_path).is_file();
+
+    Ok(AgentSnapshotStatus {
+        dir: dir.to_string_lossy().to_string(),
+        app_version: app.package_info().version.to_string(),
+        exists,
+        modified_at,
+        file_count: count_agent_files(&dir),
+        notes,
+        tasks,
+        mcp_path,
+        mcp_exists,
+    })
+}
+
+fn write_agent_file_atomic(path: &Path, contents: &[u8]) -> Result<(), String> {
+    let parent = path.parent().ok_or("非法智能体快照路径")?;
+    fs::create_dir_all(parent).map_err(|error| format!("创建智能体快照目录失败：{error}"))?;
+    let name = path
+        .file_name()
+        .map(|value| value.to_string_lossy().to_string())
+        .unwrap_or_else(|| "file".to_string());
+    let temp = parent.join(format!(".{name}.tmp-{}", std::process::id()));
+    fs::write(&temp, contents).map_err(|error| format!("写入智能体快照失败：{error}"))?;
+    #[cfg(windows)]
+    if path.exists() {
+        let _ = fs::remove_file(path);
+    }
+    fs::rename(&temp, path).map_err(|error| {
+        let _ = fs::remove_file(&temp);
+        format!("替换智能体快照失败：{error}")
+    })
+}
+
+fn write_agent_files_into(dir: &Path, files: Vec<AgentFileInput>) -> Result<(), String> {
+    if files.len() > AGENT_MAX_FILES {
+        return Err("智能体快照文件数量过多".into());
+    }
+    let notes_dir = dir.join("notes");
+    fs::create_dir_all(&notes_dir).map_err(|error| format!("创建快照目录失败：{error}"))?;
+
+    let mut written_notes: HashSet<String> = HashSet::new();
+    for file in files {
+        if file.contents.len() > AGENT_MAX_FILE_BYTES {
+            return Err(format!("智能体快照文件过大：{}", file.path));
+        }
+        let relative = allowed_agent_path(&file.path)?;
+        let target = dir.join(&relative);
+        write_agent_file_atomic(&target, file.contents.as_bytes())?;
+        if relative.starts_with("notes") {
+            if let Some(name) = relative.file_name() {
+                written_notes.insert(name.to_string_lossy().to_string());
+            }
+        }
+    }
+
+    if let Ok(entries) = fs::read_dir(&notes_dir) {
+        for entry in entries.filter_map(Result::ok) {
+            if !entry.path().is_file() {
+                continue;
+            }
+            let name = entry.file_name().to_string_lossy().to_string();
+            if !written_notes.contains(&name) {
+                let _ = fs::remove_file(entry.path());
+            }
+        }
+    }
+    Ok(())
+}
+
+fn write_agent_snapshot_impl(
+    app: &tauri::AppHandle,
+    files: Vec<AgentFileInput>,
+) -> Result<AgentSnapshotStatus, String> {
+    let dir = agent_snapshot_root(app)?;
+    write_agent_files_into(&dir, files)?;
+    agent_snapshot_status_impl(app)
+}
+
+#[tauri::command]
+fn agent_snapshot_status(app: tauri::AppHandle) -> Result<AgentSnapshotStatus, String> {
+    agent_snapshot_status_impl(&app)
+}
+
+#[tauri::command]
+async fn write_agent_snapshot(
+    app: tauri::AppHandle,
+    files: Vec<AgentFileInput>,
+) -> Result<AgentSnapshotStatus, String> {
+    tauri::async_runtime::spawn_blocking(move || write_agent_snapshot_impl(&app, files))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn clear_agent_snapshot(app: tauri::AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let dir = agent_snapshot_root(&app)?;
+        if dir.exists() {
+            fs::remove_dir_all(&dir).map_err(|error| format!("清除智能体快照失败：{error}"))?;
+        }
+        Ok::<(), String>(())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
 #[tauri::command]
 async fn pick_store_folder(app: tauri::AppHandle) -> Result<Option<String>, String> {
     let picked = app.dialog().file().blocking_pick_folder();
@@ -358,6 +599,7 @@ async fn save_text_file(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::SystemTime;
 
     #[test]
     fn allows_expected_store_paths() {
@@ -391,6 +633,78 @@ mod tests {
                 "{path} should be rejected"
             );
         }
+    }
+
+    #[test]
+    fn allows_expected_agent_paths() {
+        for path in [
+            "manifest.json",
+            "AGENTS.md",
+            "notes.index.json",
+            "tasks.jsonl",
+            "tags.json",
+            "notes/2f1c.md",
+        ] {
+            assert!(allowed_agent_path(path).is_ok(), "{path} should be allowed");
+        }
+    }
+
+    #[test]
+    fn rejects_unsafe_agent_paths() {
+        for path in [
+            "",
+            "../secrets",
+            "notes/../x.md",
+            "notes/nested/a.md",
+            "notes/a.json",
+            "other/a.md",
+            "/etc/passwd",
+            "notes/中文.md",
+        ] {
+            assert!(
+                allowed_agent_path(path).is_err(),
+                "{path} should be rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn writes_and_prunes_agent_snapshot_files() {
+        let root = std::env::temp_dir().join(format!(
+            "lafei-agent-test-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(root.join("notes")).unwrap();
+        fs::write(root.join("notes/stale.md"), "old").unwrap();
+
+        write_agent_files_into(
+            &root,
+            vec![
+                AgentFileInput {
+                    path: "manifest.json".into(),
+                    contents: "{\"app\":\"lafei\"}".into(),
+                },
+                AgentFileInput {
+                    path: "notes/fresh.md".into(),
+                    contents: "---\nid: x\n---\n\nhello".into(),
+                },
+            ],
+        )
+        .unwrap();
+
+        assert!(root.join("manifest.json").is_file());
+        assert!(root.join("notes/fresh.md").is_file());
+        assert!(!root.join("notes/stale.md").exists());
+        assert_eq!(
+            fs::read_to_string(root.join("notes/fresh.md")).unwrap(),
+            "---\nid: x\n---\n\nhello"
+        );
+
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -759,6 +1073,9 @@ pub fn run() {
             write_store_file,
             remove_store_file,
             clear_store_data,
+            agent_snapshot_status,
+            write_agent_snapshot,
+            clear_agent_snapshot,
             ai_stream,
             ai_complete,
             ai_cancel,

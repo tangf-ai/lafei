@@ -5,6 +5,7 @@ import "./index.css";
 import { bootstrapDatabase } from "./db";
 import { isTauri } from "./lib/util";
 import { initializeFolderSync } from "./lib/folderSync";
+import { initializeAgentExport } from "./lib/agentExport";
 
 document.documentElement.dataset.shell = isTauri ? "tauri" : "web";
 
@@ -28,6 +29,7 @@ async function start() {
   }
 
   window.setTimeout(() => {
+    initializeAgentExport();
     void initializeFolderSync();
   }, 300);
 }

@@ -40,16 +40,18 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { openExternal } from "../lib/external";
 import { isTauri } from "../lib/util";
 import { FolderStorageSettings } from "../features/FolderStorageSettings";
+import { AgentAccessSettings } from "../features/AgentAccessSettings";
 import { FONT_SCALES } from "../lib/fontScale";
 import { LogseqImport } from "../features/LogseqImport";
 import { mirrorAllToFolder } from "../lib/folderSync";
 
-type SettingsTab = "ai" | "appearance" | "data" | "about";
+type SettingsTab = "ai" | "appearance" | "data" | "agent" | "about";
 
 const TABS: Array<{ id: SettingsTab; label: string; icon: typeof Cpu; caption: string }> = [
   { id: "ai", label: "AI 模型", icon: Cpu, caption: "接入你的模型" },
   { id: "appearance", label: "外观与写作", icon: Palette, caption: "调整阅读与编辑" },
   { id: "data", label: "数据与备份", icon: Database, caption: "随时带走你的内容" },
+  { id: "agent", label: "智能体访问", icon: Bot, caption: "让 Codex / Pi 读取" },
   { id: "about", label: "关于 Lafei", icon: Info, caption: "版本与快捷键" },
 ];
 
@@ -303,7 +305,7 @@ export function SettingsView() {
               </div>
               <div>
                 <strong>设置</strong>
-                <span>lafei · v0.9</span>
+                <span>lafei · v0.10</span>
               </div>
             </div>
             <div className="settings-nav-items">
@@ -780,6 +782,12 @@ export function SettingsView() {
                 </div>
               )}
 
+              {tab === "agent" && (
+                <div className="settings-section">
+                  <AgentAccessSettings />
+                </div>
+              )}
+
               {tab === "about" && (
                 <div className="settings-section">
                   <div className="about-hero">
@@ -788,7 +796,7 @@ export function SettingsView() {
                       <i />
                     </div>
                     <div>
-                      <span className="eyebrow">Lafei · v0.9.0</span>
+                      <span className="eyebrow">Lafei · v0.10.0</span>
                       <h3 className="display">把知识收好，把行动理清。</h3>
                       <p>一个本地优先的笔记与任务应用，AI 是内置的，不是后装的外挂。</p>
                     </div>

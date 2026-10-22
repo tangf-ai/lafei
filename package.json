@@ -1,7 +1,7 @@
 {
   "name": "lafei",
   "private": true,
-  "version": "0.9.0",
+  "version": "0.10.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +11,8 @@
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
     "mock:ai": "node scripts/mock-ai.mjs",
+    "mcp:build": "node scripts/build-mcp.mjs",
+    "mcp:test": "node scripts/test-mcp.mjs",
     "check": "tsc -b",
     "clean": "node scripts/clean.mjs",
     "clean:all": "node scripts/clean.mjs --all"

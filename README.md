@@ -76,6 +76,14 @@
 - 回答可以一键存为笔记、复制、追加回原文
 - 流式输出、可中止；对话与消息保存在本地
 
+### 智能体访问（MCP）
+
+- 在设置 → 智能体访问中开启后，Lafei 会把笔记和任务导出成一份只读快照
+- 快照包含笔记 Markdown、任务 JSONL、标签索引和给智能体的 `AGENTS.md`，不包含 AI 对话和 API Key
+- 桌面版随应用打包 `lafei-mcp`（stdio），Codex、Pi 等支持 MCP 的智能体可以直接读取
+- 提供 `notes_search`、`notes_get`、`tasks_list`、`tasks_get`、`tags_list` 五个只读工具
+- 详细配置与数据契约见 [docs/agent-access.md](docs/agent-access.md)
+
 ### 文件夹存储 / iCloud Drive
 
 - 在桌面版选择一个文件夹，Lafei 会把笔记、任务、AI 对话写成普通文件
@@ -152,9 +160,9 @@ pnpm desktop:build   # 生成 .app / .dmg（macOS）或对应平台安装包
 macOS 构建产物：
 
 ```text
-Lafei-0.9.0-macOS-arm64.dmg                                      # 可直接分发的安装包
+Lafei-0.10.0-macOS-arm64.dmg                                      # 可直接分发的安装包
 src-tauri/target/release/bundle/macos/Lafei.app                  # 未打包的应用
-src-tauri/target/release/bundle/dmg/Lafei_0.9.0_aarch64.dmg      # Tauri 原始产物
+src-tauri/target/release/bundle/dmg/Lafei_0.10.0_aarch64.dmg      # Tauri 原始产物
 ```
 
 > 构建产物（`.app` / `.dmg`）不进入 Git，正式版本请通过 GitHub Releases 分发。当前本地产物是 Apple Silicon（arm64）版本，使用 ad-hoc 签名，未做 Apple 公证；若系统提示无法验证，右键应用选择「打开」，或在终端执行：
@@ -287,7 +295,7 @@ pnpm preview --host 0.0.0.0
 ```text
 src/
   views/            今日、笔记、任务、标签、AI 助手、设置
-  features/         笔记 AI 面板与流式交互
+  features/         笔记 AI 面板、智能体访问与流式交互
   components/       编辑器外壳、任务行、命令面板、弹窗
   lib/
     ai.ts           OpenAI 兼容流式客户端、提示词、笔记检索
@@ -298,7 +306,8 @@ src/
     folderSync.ts  双向合并、tombstone、变更监听、自动同步
     folderBackend.ts Tauri 文件夹命令封装
   store/ui.ts       导航、设置、Toast（Zustand）
-src-tauri/          Tauri 2 外壳、文件夹选择/原子写入命令、原生保存、图标与权限
+mcp/                lafei-mcp 只读 stdio MCP server
+src-tauri/          Tauri 2 外壳、文件夹选择/原子写入命令、智能体快照、原生保存、图标与权限
 public/             PWA 图标与 favicon
 docs/screenshots/   产品截图
 scripts/mock-ai.mjs 本地 AI 演示服务
@@ -327,7 +336,7 @@ scripts/mock-ai.mjs 本地 AI 演示服务
 
 ## 已知限制
 
-这是 `0.9.0`，一个可以真实日用的本地 MVP，但不是完成品：
+这是 `0.10.0`，一个可以真实日用的本地 MVP，但不是完成品：
 
 - 文件夹同步是文件级的、最终一致的，不是实时协作；冲突采用更新时间优先，没有逐行合并
 - 手机 PWA 不能直接读取 iCloud Drive；目前需要备份迁移，原生 iOS 版尚未生成
