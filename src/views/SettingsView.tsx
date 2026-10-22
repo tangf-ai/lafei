@@ -71,7 +71,8 @@ const THEMES: Array<{ id: ThemeMode; label: string; icon: typeof Sun; caption: s
 ];
 
 const EDITOR_MODES: Array<{ id: NoteMode; label: string; caption: string }> = [
-  { id: "write", label: "纯编辑", caption: "只看见正在写的字" },
+  { id: "live", label: "即时预览", caption: "输入即渲染，悬停看源码" },
+  { id: "source", label: "纯源码", caption: "只看见正在写的字" },
   { id: "split", label: "分栏", caption: "左边写，右边看" },
   { id: "read", label: "阅读", caption: "沉浸阅读渲染结果" },
 ];
@@ -632,6 +633,12 @@ export function SettingsView() {
                               </>
                             ) : mode.id === "read" ? (
                               <span className="art-lines art-lines-read">
+                                <span />
+                                <span />
+                                <span />
+                              </span>
+                            ) : mode.id === "live" ? (
+                              <span className="art-lines art-lines-live">
                                 <span />
                                 <span />
                                 <span />

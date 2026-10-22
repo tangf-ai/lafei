@@ -2726,11 +2726,12 @@ html[data-design="workbench"] .editor-preview {
 }
 
 html[data-design="workbench"] .editor-preview .prose {
-  max-width: 680px;
+  max-width: var(--doc-width);
+  margin: 0 auto;
 }
 
 html[data-design="workbench"] .editor-textarea {
-  max-width: 760px;
+  max-width: var(--doc-width);
   padding: 22px 44px 90px;
   font-size: 14.5px;
   line-height: 1.9;
@@ -2740,6 +2741,104 @@ html[data-design="workbench"] .editor-textarea {
 html[data-design="workbench"] .editor-statusbar {
   border-top: 1px solid var(--wb-line-soft);
   color: var(--wb-faint);
+}
+
+/* 即时预览：沿用工作台的纸面与卡片语言 */
+html[data-design="workbench"] .editor-live {
+  background: var(--wb-card);
+}
+
+html[data-design="workbench"] .lp-canvas {
+  padding: 26px 44px 132px;
+  font-size: 14.5px;
+}
+
+html[data-design="workbench"] .lp-block-editor {
+  border-color: color-mix(in srgb, var(--wb-green) 38%, var(--wb-line));
+  border-radius: 8px;
+  background: var(--wb-field);
+  color: var(--wb-ink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wb-green) 9%, transparent);
+}
+
+html[data-design="workbench"] .lp-block-editor::placeholder {
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .lp-source-peek {
+  border-color: color-mix(in srgb, var(--wb-green) 20%, var(--wb-line));
+  background: color-mix(in srgb, var(--wb-card) 96%, var(--wb-green-soft));
+  box-shadow: 0 1px 2px rgba(20, 30, 20, 0.05), 0 18px 44px rgba(20, 30, 20, 0.14);
+}
+
+html[data-design="workbench"] .lp-source-tag {
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .lp-source-code {
+  color: var(--wb-ink-2);
+}
+
+html[data-design="workbench"] .lp-add-block {
+  border-color: var(--wb-chip-line);
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .lp-add-block:hover {
+  border-color: color-mix(in srgb, var(--wb-green) 42%, var(--wb-line));
+  background: var(--wb-green-soft);
+  color: var(--wb-green);
+}
+
+html[data-design="workbench"] .lp-empty {
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .lp-empty p {
+  color: var(--wb-ink-2);
+  font-family: var(--font-ui);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+html[data-design="workbench"] .lp-empty-start {
+  background: var(--wb-green-solid);
+  color: var(--on-primary);
+}
+
+html[data-design="workbench"] .lp-empty-start:hover {
+  background: var(--wb-green-solid-hover);
+}
+
+html[data-design="workbench"] .doc-width-handle {
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .doc-width-handle:hover,
+html[data-design="workbench"] .doc-width-handle[data-dragging="true"] {
+  background: var(--wb-hover);
+  color: var(--wb-muted);
+}
+
+html[data-design="workbench"] .split-divider::before {
+  background: var(--wb-line);
+}
+
+html[data-design="workbench"] .split-divider:hover::before,
+html[data-design="workbench"] .split-divider[data-dragging="true"]::before {
+  background: var(--wb-green);
+}
+
+html[data-design="workbench"] .split-divider-grip {
+  border-color: var(--wb-line);
+  background: var(--wb-card);
+  box-shadow: var(--wb-sh-sm);
+}
+
+html[data-design="workbench"] .split-divider:hover .split-divider-grip,
+html[data-design="workbench"] .split-divider[data-dragging="true"] .split-divider-grip {
+  border-color: var(--wb-green);
 }
 
 /* --------------------------------------------------------------------------
@@ -3307,7 +3406,7 @@ html[data-design="workbench"] .editor-title-block {
 }
 
 html[data-design="workbench"] .editor-title-input {
-  padding-right: 96px;
+  padding-right: 176px;
 }
 
 html[data-design="workbench"] .wb-doc-mode {
@@ -3391,6 +3490,31 @@ html[data-design="workbench"] .editor-tool.editor-tool-ai {
 
 html[data-design="workbench"] .editor-tool.editor-tool-ai:hover {
   background: color-mix(in srgb, var(--wb-green-soft) 70%, var(--wb-card));
+}
+
+/* 分栏模式：格式工具条回到正文上方，避免浮层压住左右两栏的文字 */
+@media (min-width: 821px) {
+  html[data-design="workbench"] .editor-toolbar.is-split {
+    position: static;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 3px 16px;
+    justify-content: flex-start;
+    border: 0;
+    border-top: 1px solid var(--wb-line-soft);
+    border-radius: 0;
+    background: var(--wb-card);
+    box-shadow: none;
+  }
+
+  html[data-design="workbench"] .editor-toolbar.is-split .editor-tool {
+    height: 26px;
+    min-width: 26px;
+  }
 }
 
 @media (max-width: 1100px) {

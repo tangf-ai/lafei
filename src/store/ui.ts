@@ -8,6 +8,10 @@ interface UIState {
   activeNoteId: string | null;
   tagFilter: string | null;
   noteMode: NoteMode;
+  /** 正文栏宽度（px），桌面端可拖动调整 */
+  contentWidth: number;
+  /** 分栏模式下左侧编辑区的宽度比例（0.25 - 0.75） */
+  splitRatio: number;
   theme: ThemeMode;
   fontScale: FontScale;
   sidebarCollapsed: boolean;
@@ -26,6 +30,8 @@ interface UIState {
   setTagFilter: (tag: string | null) => void;
   openTagView: (tag: string) => void;
   setNoteMode: (mode: NoteMode) => void;
+  setContentWidth: (width: number) => void;
+  setSplitRatio: (ratio: number) => void;
   setTheme: (theme: ThemeMode) => void;
   setFontScale: (scale: FontScale) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -41,13 +47,32 @@ interface UIState {
   setAgentAccessEnabled: (enabled: boolean) => void;
 }
 
+export const CONTENT_WIDTH_MIN = 560;
+export const CONTENT_WIDTH_MAX = 1320;
+export const CONTENT_WIDTH_DEFAULT = 760;
+export const SPLIT_RATIO_MIN = 0.28;
+export const SPLIT_RATIO_MAX = 0.72;
+export const SPLIT_RATIO_DEFAULT = 0.5;
+
+export function clampContentWidth(width: number) {
+  if (!Number.isFinite(width)) return CONTENT_WIDTH_DEFAULT;
+  return Math.round(Math.min(CONTENT_WIDTH_MAX, Math.max(CONTENT_WIDTH_MIN, width)));
+}
+
+export function clampSplitRatio(ratio: number) {
+  if (!Number.isFinite(ratio)) return SPLIT_RATIO_DEFAULT;
+  return Math.min(SPLIT_RATIO_MAX, Math.max(SPLIT_RATIO_MIN, ratio));
+}
+
 export const useUI = create<UIState>()(
   persist(
     (set) => ({
       view: "today",
       activeNoteId: null,
       tagFilter: null,
-      noteMode: "write",
+      noteMode: "live",
+      contentWidth: 760,
+      splitRatio: 0.5,
       theme: "light",
       fontScale: 1,
       sidebarCollapsed: false,
@@ -73,6 +98,8 @@ export const useUI = create<UIState>()(
       setTagFilter: (tagFilter) => set({ tagFilter }),
       openTagView: (tag) => set({ tagFilter: tag, view: "tags", aiPanelOpen: false }),
       setNoteMode: (noteMode) => set({ noteMode }),
+      setContentWidth: (contentWidth) => set({ contentWidth: clampContentWidth(contentWidth) }),
+      setSplitRatio: (splitRatio) => set({ splitRatio: clampSplitRatio(splitRatio) }),
       setTheme: (theme) => set({ theme }),
       setFontScale: (fontScale) => set({ fontScale }),
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
@@ -89,9 +116,11 @@ export const useUI = create<UIState>()(
     }),
     {
       name: "lafei:ui",
-      version: 1,
+      version: 2,
       partialize: (state) => ({
         noteMode: state.noteMode,
+        contentWidth: state.contentWidth,
+        splitRatio: state.splitRatio,
         theme: state.theme,
         fontScale: state.fontScale,
         sidebarCollapsed: state.sidebarCollapsed,
@@ -100,15 +129,33 @@ export const useUI = create<UIState>()(
         folderRoot: state.folderRoot,
         agentAccessEnabled: state.agentAccessEnabled,
       }),
+      migrate: (persisted, version) => {
+        const saved = { ...(persisted as Record<string, unknown>) };
+        // v2：写作模式升级为「即时预览」，旧的 write 直接迁移到 live
+        if (version < 2 && saved.noteMode === "write") {
+          saved.noteMode = "live";
+        }
+        return saved as unknown as UIState;
+      },
       merge: (persisted, current) => {
         const saved = (persisted ?? {}) as Partial<UIState>;
         const fontScale =
           typeof saved.fontScale === "number" && [0.9, 1, 1.1, 1.2].includes(saved.fontScale)
             ? saved.fontScale
             : current.fontScale;
+        const noteMode: NoteMode =
+          saved.noteMode === "live" ||
+          saved.noteMode === "source" ||
+          saved.noteMode === "split" ||
+          saved.noteMode === "read"
+            ? saved.noteMode
+            : current.noteMode;
         return {
           ...current,
           ...saved,
+          noteMode,
+          contentWidth: clampContentWidth(saved.contentWidth ?? current.contentWidth),
+          splitRatio: clampSplitRatio(saved.splitRatio ?? current.splitRatio),
           fontScale,
           ai: { ...DEFAULT_AI, ...(saved.ai ?? {}) },
         };

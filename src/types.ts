@@ -57,7 +57,8 @@ export interface ChatMessage {
 
 export type AppView = "today" | "notes" | "tasks" | "tags" | "assistant";
 export type TaskFilter = "all" | "today" | "upcoming" | "done";
-export type NoteMode = "write" | "split" | "read";
+/** 笔记编辑器视图：即时预览（Markdown 自动渲染）/ 源码 / 分栏 / 阅读 */
+export type NoteMode = "live" | "source" | "split" | "read";
 export type ThemeMode = "light" | "dark" | "system" | "sunny" | "mint" | "sea";
 export type FontScale = 0.9 | 1 | 1.1 | 1.2;
 export type AIProvider = "deepseek" | "openai" | "custom";

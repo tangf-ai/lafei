@@ -2797,11 +2797,15 @@ html[data-shell="tauri"] .assistant-layout {
   flex: 1;
   min-height: 0;
   display: flex;
+  position: relative;
+  --doc-width: 760px;
+  --split-left: 50%;
   border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
   background: var(--surface-raised);
 }
 
 .editor-write {
+  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -2811,7 +2815,7 @@ html[data-shell="tauri"] .assistant-layout {
 
 .editor-textarea {
   width: 100%;
-  max-width: 940px;
+  max-width: var(--doc-width);
   height: 100%;
   padding: 25px 52px 90px;
   resize: none;
@@ -2833,6 +2837,7 @@ html[data-shell="tauri"] .assistant-layout {
 }
 
 .editor-preview {
+  position: relative;
   flex: 1;
   min-width: 0;
   overflow-y: auto;
@@ -2841,19 +2846,18 @@ html[data-shell="tauri"] .assistant-layout {
 }
 
 .editor-preview .prose {
-  max-width: 760px;
+  max-width: var(--doc-width);
   margin: 0 auto;
 }
 
 .mode-split .editor-preview {
-  border-left: 1px solid var(--line);
   padding: 26px 34px 80px;
-  flex: 0 0 50%;
+  flex: 1 1 0;
   background: color-mix(in srgb, var(--surface) 52%, var(--surface-raised));
 }
 
 .mode-split .editor-write {
-  flex: 0 0 50%;
+  flex: 0 0 var(--split-left);
 }
 
 .mode-split .editor-textarea {
@@ -2915,6 +2919,375 @@ html[data-shell="tauri"] .assistant-layout {
 
 .editor-status-mode {
   color: var(--muted);
+}
+
+/* ---------- 即时预览（块级 Markdown 编辑） ---------- */
+
+.editor-live {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  background: var(--surface-raised);
+}
+
+.editor-read {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.editor-read > .editor-preview {
+  flex: 1;
+  min-width: 0;
+}
+
+.lp-doc {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.lp-canvas {
+  max-width: var(--doc-width);
+  margin: 0 auto;
+  min-height: 100%;
+  padding: 28px 52px 140px;
+}
+
+.lp-canvas-readonly {
+  padding: 0;
+}
+
+.lp-block {
+  position: relative;
+}
+
+/* 块与块之间用真实空行分隔，避免不同块的首尾外边距被重置后贴在一起 */
+.lp-block + .lp-block {
+  margin-top: 0.85em;
+}
+
+.lp-block + .lp-block:has(h1) {
+  margin-top: 1.6em;
+}
+
+.lp-block + .lp-block:has(h2) {
+  margin-top: 1.45em;
+}
+
+.lp-block + .lp-block:has(h3) {
+  margin-top: 1.2em;
+}
+
+.lp-block > .prose {
+  max-width: none;
+}
+
+.lp-block.is-editing {
+  z-index: 30;
+}
+
+.lp-block-editor {
+  display: block;
+  width: 100%;
+  min-height: 1.9em;
+  resize: none;
+  overflow: hidden;
+  margin: 0;
+  padding: 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--line));
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.8;
+  letter-spacing: 0;
+  tab-size: 2;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 8%, transparent);
+  outline: none;
+}
+
+.lp-block-editor::placeholder {
+  color: var(--faint);
+}
+
+/* 悬停时盖在段落上方的源码卡：pointer-events: none，不挡链接点击 */
+.lp-source-peek {
+  position: absolute;
+  top: -9px;
+  left: -16px;
+  right: -16px;
+  z-index: 26;
+  max-height: min(62vh, 520px);
+  overflow: hidden;
+  padding: 22px 14px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-raised) 94%, var(--accent-soft));
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  animation: lp-peek-in 0.13s ease-out;
+}
+
+.lp-source-tag {
+  position: absolute;
+  top: 7px;
+  left: 14px;
+  color: var(--faint);
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.lp-source-tag::after {
+  content: " · 鼠标移开回到渲染";
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.lp-source-code {
+  margin: 0;
+  padding: 0;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@keyframes lp-peek-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lp-add-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  margin-top: 20px;
+  padding: 0 12px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--faint);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.lp-add-block:hover {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  color: var(--accent-deep);
+}
+
+.lp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  padding-top: 26px;
+  color: var(--faint);
+}
+
+.lp-empty p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: var(--font-display);
+  font-size: 21px;
+}
+
+.lp-empty span {
+  max-width: 40em;
+  font-size: 11.5px;
+  line-height: 1.8;
+}
+
+.lp-empty-start {
+  height: 30px;
+  margin-top: 6px;
+  padding: 0 13px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--on-primary, #fff);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.lp-empty-start:hover {
+  background: var(--accent-deep);
+}
+
+/* ---------- 宽度拖拽控件 ---------- */
+
+.doc-width-handle {
+  position: absolute;
+  top: 50%;
+  left: min(calc(50% + var(--doc-width) / 2 + 2px), calc(100% - 18px));
+  z-index: 18;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 64px;
+  border-radius: 7px;
+  color: var(--faint);
+  cursor: col-resize;
+  opacity: 0;
+  touch-action: none;
+  transition: opacity 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.editor-write:hover .doc-width-handle,
+.editor-preview:hover .doc-width-handle,
+.editor-live:hover .doc-width-handle,
+.editor-read:hover .doc-width-handle,
+.doc-width-handle:focus-visible,
+.doc-width-handle[data-dragging="true"] {
+  opacity: 1;
+}
+
+.doc-width-handle:hover,
+.doc-width-handle:focus-visible,
+.doc-width-handle[data-dragging="true"] {
+  background: var(--surface-muted);
+  color: var(--ink-soft);
+}
+
+.doc-width-handle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.doc-width-grip {
+  width: 4px;
+  height: 30px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+.doc-width-handle:hover .doc-width-grip,
+.doc-width-handle[data-dragging="true"] .doc-width-grip {
+  opacity: 0.85;
+}
+
+/* 拖动时在把手上方显示当前宽度，方便预判 */
+.doc-width-handle[data-dragging="true"]::after {
+  content: attr(aria-valuenow) " px";
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--wb-ink, var(--ink));
+  color: var(--wb-card, var(--surface-raised));
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-md);
+}
+
+/* ---------- 分栏拖拽分隔线 ---------- */
+
+.split-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--split-left);
+  z-index: 18;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  transform: translateX(-50%);
+  cursor: col-resize;
+  opacity: 0;
+  touch-action: none;
+  transition: opacity 0.16s ease;
+}
+
+.mode-split:hover .split-divider,
+.split-divider:focus-visible,
+.split-divider[data-dragging="true"] {
+  opacity: 1;
+}
+
+.split-divider:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.split-divider::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: var(--line);
+  transition: background 0.15s ease, width 0.15s ease;
+}
+
+.split-divider:hover::before,
+.split-divider[data-dragging="true"]::before {
+  width: 2px;
+  background: var(--accent);
+}
+
+.split-divider-grip {
+  position: relative;
+  z-index: 1;
+  width: 9px;
+  height: 34px;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  background: var(--surface-raised);
+  box-shadow: 0 1px 3px rgba(20, 30, 20, 0.12);
+  transition: border-color 0.15s ease;
+}
+
+.split-divider:hover .split-divider-grip,
+.split-divider[data-dragging="true"] .split-divider-grip {
+  border-color: var(--accent);
+}
+
+/* 拖动分隔线时显示左右比例 */
+.split-divider[data-dragging="true"]::after {
+  content: attr(data-left) "% / " attr(data-right) "%";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--wb-ink, var(--ink));
+  color: var(--wb-card, var(--surface-raised));
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-md);
 }
 
 .mobile-ai-fab {
@@ -3771,6 +4144,28 @@ html[data-shell="tauri"] .assistant-layout {
   .editor-preview .prose {
     font-size: 16px;
     line-height: 1.88;
+  }
+
+  .lp-canvas {
+    padding: 18px 20px 120px;
+  }
+
+  .lp-block + .lp-block {
+    margin-top: 0.9em;
+  }
+
+  .lp-block-editor {
+    font-size: 13.5px;
+  }
+
+  .lp-source-peek {
+    left: -8px;
+    right: -8px;
+    max-height: 70vh;
+  }
+
+  .lp-empty p {
+    font-size: 19px;
   }
 
   .mode-split .editor-preview {
@@ -7221,7 +7616,7 @@ button.chat-source:hover {
 
 .editor-mode-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
 }
@@ -7298,6 +7693,24 @@ button.chat-source:hover {
   padding: 0 7px;
   background: var(--surface-raised);
   border-radius: 2px;
+}
+
+/* 即时预览：第一行渲染成标题，第二行带一段“源码”提示 */
+.art-lines-live span:nth-child(1) {
+  width: 58%;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.62;
+}
+
+.art-lines-live span:nth-child(2) {
+  width: 92%;
+}
+
+.art-lines-live span:nth-child(3) {
+  width: 72%;
+  background: color-mix(in srgb, var(--accent) 55%, var(--line-strong));
 }
 
 .editor-mode-card > span:last-child {
