@@ -29,7 +29,7 @@
 | --- | --- |
 | ![手机今日](docs/screenshots/v2/mobile-today.webp) | ![手机笔记](docs/screenshots/v2/mobile-notes.webp) |
 
-> **Lafei / 拉飞** 是当前的工作名，品牌名、图标和产品文案都集中在少量文件里，改名不需要动业务逻辑。
+> **Lafei（拉斐）** 是当前的工作名，品牌名、图标和产品文案都集中在少量文件里，改名不需要动业务逻辑。
 
 ## 下载
 
