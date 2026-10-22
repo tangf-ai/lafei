@@ -606,31 +606,35 @@ export async function initializeFolderSync() {
   }
 }
 
+export async function loadFolderCandidate(path: string): Promise<FolderCandidate> {
+  const root = await folderBackend.prepare(path);
+  const store = await fetchFolderStore(root);
+  const counts = { notes: store.notes.length, tasks: store.tasks.length, chats: store.chats.length };
+  return {
+    root,
+    store,
+    hasRemoteData: counts.notes + counts.tasks + counts.chats > 0,
+    counts,
+    remoteDevice: store.manifest?.deviceName ?? null,
+    remoteUpdatedAt: store.manifest?.updatedAt ?? null,
+  };
+}
+
 export async function selectFolderCandidate(): Promise<FolderCandidate | null> {
   if (currentSync) throw new Error("正在同步，请稍后再更换文件夹");
   const selected = await folderBackend.pickFolder();
   if (!selected) return null;
 
   try {
-    const root = await folderBackend.prepare(selected);
-    const store = await fetchFolderStore(root);
-    const counts = { notes: store.notes.length, tasks: store.tasks.length, chats: store.chats.length };
-    return {
-      root,
-      store,
-      hasRemoteData: counts.notes + counts.tasks + counts.chats > 0,
-      counts,
-      remoteDevice: store.manifest?.deviceName ?? null,
-      remoteUpdatedAt: store.manifest?.updatedAt ?? null,
-    };
+    return await loadFolderCandidate(selected);
   } catch (error) {
     markError(error);
     throw error;
   }
 }
 
-async function replaceLocalFromStore(store: ParsedStore) {
-  const messages = store.chats.flatMap((bundle) => bundle.messages);
+async function replaceLocalFromStore(store: ParsedStore | null) {
+  const messages = store?.chats.flatMap((bundle) => bundle.messages) ?? [];
   suppressHooks = true;
   try {
     await db.transaction("rw", db.notes, db.tasks, db.chats, db.messages, db.tombstones, async () => {
@@ -639,16 +643,68 @@ async function replaceLocalFromStore(store: ParsedStore) {
       await db.chats.clear();
       await db.messages.clear();
       await db.tombstones.clear();
-      if (store.notes.length) await db.notes.bulkPut(store.notes);
-      if (store.tasks.length) await db.tasks.bulkPut(store.tasks);
-      if (store.chats.length) await db.chats.bulkPut(store.chats.map((bundle) => bundle.chat));
-      if (messages.length) await db.messages.bulkPut(messages);
-      if (store.tombstones.length) await db.tombstones.bulkPut(store.tombstones);
+      if (store) {
+        if (store.notes.length) await db.notes.bulkPut(store.notes);
+        if (store.tasks.length) await db.tasks.bulkPut(store.tasks);
+        if (store.chats.length) await db.chats.bulkPut(store.chats.map((bundle) => bundle.chat));
+        if (messages.length) await db.messages.bulkPut(messages);
+        if (store.tombstones.length) await db.tombstones.bulkPut(store.tombstones);
+      }
     });
     localStorage.setItem("lafei:seeded:v1", "1");
   } finally {
     suppressHooks = false;
   }
+}
+
+function normalizedRoot(root: string) {
+  return root.replace(/[\\/]+$/, "");
+}
+
+/**
+ * 切换到另一个数据仓库。
+ * 当前仓库会先完整同步到它自己的目录；只有同步成功才允许清空本机缓存并载入目标目录，
+ * 避免把尚未落盘的数据丢掉。旧目录不会被删除，可随时切回。
+ */
+export async function switchFolderVault(candidate: FolderCandidate): Promise<void> {
+  if (currentSync) throw new Error("正在同步，请稍后再切换数据目录");
+  const currentRoot = getRoot();
+  if (!currentRoot) {
+    throw new Error("请先启用文件夹存储并同步当前数据，再切换数据目录");
+  }
+  if (normalizedRoot(currentRoot) === normalizedRoot(candidate.root)) return;
+
+  try {
+    await syncFolderNow();
+  } catch (error) {
+    throw new Error(`当前仓库同步失败，已取消切换：${errorMessage(error)}`);
+  }
+
+  // 重新读取目标目录，避免使用确认弹窗打开后过期的快照
+  const store = await fetchFolderStore(candidate.root);
+  const counts = { notes: store.notes.length, tasks: store.tasks.length, chats: store.chats.length };
+  const hasRemoteData = counts.notes + counts.tasks + counts.chats > 0;
+
+  if (flushTimer) {
+    window.clearTimeout(flushTimer);
+    flushTimer = null;
+  }
+  dirty.clear();
+
+  try {
+    await replaceLocalFromStore(hasRemoteData ? store : null);
+  } catch (error) {
+    markError(error);
+    throw new Error(`载入目标仓库失败，仍保留当前仓库：${errorMessage(error)}`);
+  }
+
+  useUI.getState().setFolderRoot(candidate.root);
+  lastManifestStamp = null;
+  if (!initialized) {
+    initialized = true;
+    initializeLifecycle();
+  }
+  useFolderSync.getState().markSynced("已切换数据目录");
 }
 
 export async function enableFolderCandidate(

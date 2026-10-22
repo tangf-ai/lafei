@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertCircle,
+  ArrowLeftRight,
   ChevronDown,
   Cloud,
   FolderOpen,
+  FolderPlus,
   Loader2,
   RefreshCw,
   ShieldCheck,
   Unplug,
+  X,
 } from "lucide-react";
 import { useUI, toast } from "../store/ui";
 import { useFolderSync } from "../store/folderSync";
@@ -16,10 +19,18 @@ import {
   disableFolderStorage,
   enableFolderCandidate,
   isFolderStorageAvailable,
+  loadFolderCandidate,
   selectFolderCandidate,
+  switchFolderVault,
   syncFolderNow,
   type FolderCandidate,
 } from "../lib/folderSync";
+import {
+  forgetVault,
+  loadVaults,
+  rememberVault,
+  type VaultEntry,
+} from "../lib/vaultRegistry";
 import { Modal } from "../components/Modal";
 import { cn } from "../lib/util";
 
@@ -36,6 +47,15 @@ function folderName(path: string) {
   return path.split(/[\\/]/).filter(Boolean).pop() || path;
 }
 
+function samePath(a: string, b: string) {
+  return a.replace(/[\\/]+$/, "") === b.replace(/[\\/]+$/, "");
+}
+
+function vaultCountsLabel(entry: VaultEntry) {
+  if (!entry.counts) return "";
+  return `${entry.counts.notes} 篇笔记 · ${entry.counts.tasks} 个任务`;
+}
+
 export function FolderStorageSettings() {
   const root = useUI((state) => state.folderRoot);
   const phase = useFolderSync((state) => state.phase);
@@ -44,9 +64,25 @@ export function FolderStorageSettings() {
   const lastMessage = useFolderSync((state) => state.lastMessage);
   const [busy, setBusy] = useState(false);
   const [candidate, setCandidate] = useState<FolderCandidate | null>(null);
+  const [switchTarget, setSwitchTarget] = useState<FolderCandidate | null>(null);
+  const [switchBusy, setSwitchBusy] = useState(false);
+  const [vaults, setVaults] = useState<VaultEntry[]>(() => loadVaults());
   const available = isFolderStorageAvailable();
   const syncing = phase === "syncing" || busy;
   const activeRoot = available ? root : null;
+
+  useEffect(() => {
+    if (!activeRoot) return;
+    setVaults(rememberVault(activeRoot));
+  }, [activeRoot]);
+
+  const orderedVaults = activeRoot
+    ? [...vaults].sort(
+        (a, b) =>
+          Number(samePath(b.root, activeRoot)) - Number(samePath(a.root, activeRoot)) ||
+          b.lastOpenedAt - a.lastOpenedAt,
+      )
+    : vaults;
 
   const enable = async () => {
     if (busy) return;
@@ -59,6 +95,7 @@ export function FolderStorageSettings() {
         return;
       }
       const result = await enableFolderCandidate(next, "merge");
+      setVaults(rememberVault(result.root, next.counts));
       toast(
         `已连接文件夹 · 写入 ${result.summary.uploaded} 项，读取 ${result.summary.downloaded} 项`,
         "success",
@@ -77,6 +114,7 @@ export function FolderStorageSettings() {
     setBusy(true);
     try {
       const result = await enableFolderCandidate(next, mode);
+      setVaults(rememberVault(result.root, next.counts));
       toast(
         mode === "folder"
           ? `已用文件夹内容替换本机 · ${result.summary.downloaded} 项`
@@ -110,7 +148,74 @@ export function FolderStorageSettings() {
 
   const disconnect = () => {
     disableFolderStorage();
+    setVaults(loadVaults());
     toast("已断开文件夹存储，文件夹中的数据不会被删除");
+  };
+
+  const chooseSwitchFolder = async () => {
+    if (busy || !activeRoot) return;
+    setBusy(true);
+    try {
+      const next = await selectFolderCandidate();
+      if (!next) return;
+      if (samePath(next.root, activeRoot)) {
+        toast("这个目录已经是当前仓库");
+        return;
+      }
+      setSwitchTarget(next);
+    } catch (reason) {
+      toast(reason instanceof Error ? reason.message : "无法读取目标目录", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openVault = async (entry: VaultEntry) => {
+    if (busy) return;
+    if (activeRoot && samePath(entry.root, activeRoot)) return;
+    setBusy(true);
+    try {
+      const next = await loadFolderCandidate(entry.root);
+      if (!activeRoot) {
+        if (next.hasRemoteData) {
+          setCandidate(next);
+        } else {
+          const result = await enableFolderCandidate(next, "merge");
+          setVaults(rememberVault(result.root, next.counts));
+          toast(`已打开 ${folderName(result.root)}`, "success");
+        }
+        return;
+      }
+      if (samePath(next.root, activeRoot)) return;
+      setSwitchTarget(next);
+    } catch (reason) {
+      toast(reason instanceof Error ? reason.message : "无法打开这个数据目录", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmSwitch = async () => {
+    const target = switchTarget;
+    if (!target || switchBusy) return;
+    setSwitchBusy(true);
+    try {
+      await switchFolderVault(target);
+      rememberVault(target.root, target.counts);
+      toast("正在切换到新的数据目录…", "success");
+      window.setTimeout(() => window.location.reload(), 450);
+    } catch (reason) {
+      toast(reason instanceof Error ? reason.message : "切换数据目录失败", "error");
+      setSwitchBusy(false);
+    }
+  };
+
+  const removeVault = (entry: VaultEntry) => {
+    if (activeRoot && samePath(entry.root, activeRoot)) {
+      toast("当前正在使用这个仓库，不能从列表移除", "error");
+      return;
+    }
+    setVaults(forgetVault(entry.root));
   };
 
   return (
@@ -118,12 +223,12 @@ export function FolderStorageSettings() {
       <div className="settings-block-head">
         <div>
           <h3>
-            文件夹存储
+            数据仓库
             <span className="folder-icloud-badge">
               <Cloud size={10} /> iCloud 友好
             </span>
           </h3>
-          <p>把每条笔记、任务和对话写成普通文件。放进 iCloud Drive，就让 iCloud 免费替你同步。</p>
+          <p>一个文件夹就是一个数据仓库。每个仓库保存自己的笔记、任务与对话，可以随时切换。</p>
         </div>
         <span className={cn("status-badge", activeRoot ? "is-ok" : "is-off")}>
           <span className="status-dot" />
@@ -150,7 +255,7 @@ export function FolderStorageSettings() {
               <span className="folder-empty-dot" />
             </div>
             <div className="folder-empty-copy">
-              <strong>选一个文件夹，让数据看得见</strong>
+              <strong>选一个文件夹，作为第一个数据仓库</strong>
               <p>
                 建议在 iCloud Drive 里新建 Lafei 文件夹，或直接选择 iCloud Drive；Lafei
                 会自动创建专用目录，并写入 Markdown 笔记与 JSON 数据。
@@ -162,7 +267,7 @@ export function FolderStorageSettings() {
             </button>
           </div>
           <p className="folder-hint">
-            目录中的数据是完整可迁移的。启用后，每次编辑会自动落盘；应用重新打开时会与文件夹双向合并。
+            每个仓库的数据都是完整可迁移的。启用后，每次编辑会自动落盘；应用重新打开时会与文件夹双向合并。
           </p>
         </>
       ) : (
@@ -199,6 +304,14 @@ export function FolderStorageSettings() {
             <button type="button" className="btn btn-sm btn-primary" onClick={() => void syncNow()} disabled={syncing}>
               <RefreshCw size={13} className={syncing ? "spin" : ""} />
               {syncing ? "同步中…" : "立即同步"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline"
+              onClick={() => void chooseSwitchFolder()}
+              disabled={syncing || busy}
+            >
+              <ArrowLeftRight size={13} /> 切换 / 新建
             </button>
             <button type="button" className="btn btn-sm btn-ghost" onClick={() => void revealInFolder(activeRoot)}>
               <FolderOpen size={13} /> 在文件管理器中显示
@@ -237,6 +350,74 @@ export function FolderStorageSettings() {
             手机 PWA 不能直接读取这个目录；在 iPhone 上目前用备份迁移。后续原生 iOS 版可以直接使用同一 iCloud 文件夹。
           </p>
         </>
+      )}
+
+      {available && vaults.length > 0 && (
+        <div className="vault-section">
+          <div className="vault-section-head">
+            <div>
+              <h4>最近的数据目录</h4>
+              <p>切换后会重新载入应用；旧仓库保留，可随时切回。</p>
+            </div>
+            {activeRoot && (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline"
+                onClick={() => void chooseSwitchFolder()}
+                disabled={syncing || busy}
+              >
+                <FolderPlus size={13} /> 新建 / 切换
+              </button>
+            )}
+          </div>
+          <div className="vault-list">
+            {orderedVaults.map((entry) => {
+              const active = Boolean(activeRoot && samePath(entry.root, activeRoot));
+              return (
+                <div className={cn("vault-item", active && "is-active")} key={entry.root}>
+                  <span className="vault-icon">
+                    <FolderOpen size={16} />
+                  </span>
+                  <div className="vault-copy">
+                    <strong>
+                      {entry.name}
+                      {active && <em>当前</em>}
+                    </strong>
+                    <span title={entry.root}>{entry.root}</span>
+                    <span className="vault-meta">
+                      {timeLabel(entry.lastOpenedAt)}
+                      {vaultCountsLabel(entry) ? ` · ${vaultCountsLabel(entry)}` : ""}
+                    </span>
+                  </div>
+                  <div className="vault-actions">
+                    {!active && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline"
+                        onClick={() => void openVault(entry)}
+                        disabled={syncing || busy}
+                      >
+                        {activeRoot ? "切换" : "打开"}
+                      </button>
+                    )}
+                    {!active && (
+                      <button
+                        type="button"
+                        className="icon-btn icon-btn-sm"
+                        title="从最近目录移除（不会删除文件夹）"
+                        aria-label="从最近目录移除"
+                        onClick={() => removeVault(entry)}
+                        disabled={busy}
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       <Modal
@@ -280,6 +461,60 @@ export function FolderStorageSettings() {
             <p className="folder-merge-hint">
               「合并」保留本机和文件夹的全部内容，按更新时间去重；「以文件夹为准」会用目录内容替换本机当前数据，适合在新设备上接入已有目录。
             </p>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={Boolean(switchTarget)}
+        onClose={() => {
+          if (!switchBusy) setSwitchTarget(null);
+        }}
+        title="切换数据目录"
+        subtitle="当前仓库会先同步；旧仓库不会删除，可随时切回。"
+        size="sm"
+      >
+        {switchTarget && (
+          <div className="vault-switch-body">
+            <div className="vault-switch-meta">
+              <span>{folderName(switchTarget.root)}</span>
+              <span>{switchTarget.root}</span>
+            </div>
+            {switchTarget.hasRemoteData ? (
+              <div className="folder-merge-counts">
+                <div>
+                  <strong>{switchTarget.counts.notes}</strong>
+                  <span>篇笔记</span>
+                </div>
+                <div>
+                  <strong>{switchTarget.counts.tasks}</strong>
+                  <span>个任务</span>
+                </div>
+                <div>
+                  <strong>{switchTarget.counts.chats}</strong>
+                  <span>段对话</span>
+                </div>
+              </div>
+            ) : (
+              <p className="vault-switch-empty">目标目录还没有 Lafei 数据，切换后会创建一个空白仓库。</p>
+            )}
+            <p className="vault-switch-warning">
+              切换前会先把当前仓库同步到 <strong>{activeRoot}</strong>。完成载入后应用会重新打开；旧仓库会保留在最近目录里。
+            </p>
+            <div className="vault-switch-actions">
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost"
+                onClick={() => setSwitchTarget(null)}
+                disabled={switchBusy}
+              >
+                取消
+              </button>
+              <button type="button" className="btn btn-sm btn-primary" onClick={() => void confirmSwitch()} disabled={switchBusy}>
+                {switchBusy ? <Loader2 size={13} className="spin" /> : <ArrowLeftRight size={13} />}
+                {switchBusy ? "正在切换…" : "切换并重新载入"}
+              </button>
+            </div>
           </div>
         )}
       </Modal>
