@@ -30,6 +30,9 @@ export function Modal({
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const stackId = useRef(Symbol("modal"));
+  // 父组件每次渲染都会传新的 onClose；放进 ref 避免弹窗重跑挂载副作用（重跑会再次抢焦点）
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -38,27 +41,41 @@ export function Modal({
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" && modalStack[modalStack.length - 1] === id) {
         event.stopPropagation();
-        onClose();
+        onCloseRef.current();
       }
     };
     document.addEventListener("keydown", onKey);
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    let focusTimer: number | undefined;
     if (focusOnOpen) {
-      window.setTimeout(() => {
-        const target = panelRef.current?.querySelector<HTMLElement>(
+      // 弹窗内容可能是异步加载的：找不到可聚焦元素时短暂重试；用户已点进面板则不抢焦点
+      let attempts = 0;
+      const focusFirst = () => {
+        const panel = panelRef.current;
+        if (!panel || panel.contains(document.activeElement)) return;
+        const target = panel.querySelector<HTMLElement>(
           "input:not([type=hidden]), textarea, select, [tabindex='0']",
         );
-        target?.focus();
-      }, 40);
+        if (target) {
+          target.focus();
+          return;
+        }
+        if (attempts < 10) {
+          attempts += 1;
+          focusTimer = window.setTimeout(focusFirst, 30);
+        }
+      };
+      focusTimer = window.setTimeout(focusFirst, 40);
     }
     return () => {
       const index = modalStack.lastIndexOf(id);
       if (index !== -1) modalStack.splice(index, 1);
       document.removeEventListener("keydown", onKey);
+      if (focusTimer !== undefined) window.clearTimeout(focusTimer);
       document.body.style.overflow = previous;
     };
-  }, [open, onClose, focusOnOpen]);
+  }, [open, focusOnOpen]);
 
   if (!open) return null;
 
