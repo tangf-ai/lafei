@@ -71,7 +71,7 @@ const THEMES: Array<{ id: ThemeMode; label: string; icon: typeof Sun; caption: s
 ];
 
 const EDITOR_MODES: Array<{ id: NoteMode; label: string; caption: string }> = [
-  { id: "live", label: "即时预览", caption: "输入即渲染，悬停看源码" },
+  { id: "live", label: "即时预览", caption: "像 Typora：光标处露出源码" },
   { id: "source", label: "纯源码", caption: "只看见正在写的字" },
   { id: "split", label: "分栏", caption: "左边写，右边看" },
   { id: "read", label: "阅读", caption: "沉浸阅读渲染结果" },
@@ -614,7 +614,7 @@ export function SettingsView() {
                     <div className="settings-block-head">
                       <div>
                         <h3>打开笔记时的默认视图</h3>
-                        <p>随时可以在编辑器右上角切换。</p>
+                        <p>随时可以在编辑器右上角切换，⌘/ 可在即时预览与纯源码之间来回。</p>
                       </div>
                     </div>
                     <div className="editor-mode-grid">

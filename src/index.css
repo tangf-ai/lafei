@@ -1955,6 +1955,40 @@ html[data-shell="tauri"] .assistant-layout {
   cursor: default;
 }
 
+/* 阅读 / 对话里的待办勾选框：用主题色画，避免系统原生灰块和整体风格打架 */
+.prose input[type="checkbox"][type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  box-sizing: border-box;
+  border: 1.5px solid color-mix(in srgb, var(--muted) 46%, transparent);
+  border-radius: 4px;
+  background: var(--surface-raised);
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.prose input[type="checkbox"][type="checkbox"]:checked {
+  border-color: var(--sage);
+  background: var(--sage);
+}
+
+.prose input[type="checkbox"][type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  left: 3.5px;
+  top: 0.5px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 1.8px 1.8px 0;
+  transform: rotate(43deg);
+  opacity: 0;
+}
+
+.prose input[type="checkbox"][type="checkbox"]:checked::after {
+  opacity: 1;
+}
+
 .prose blockquote {
   margin: 1.5em 0;
   padding: 0.15em 0 0.15em 1.25em;
@@ -2813,28 +2847,7 @@ html[data-shell="tauri"] .assistant-layout {
   overflow: hidden;
 }
 
-.editor-textarea {
-  width: 100%;
-  max-width: var(--doc-width);
-  height: 100%;
-  padding: 25px 52px 90px;
-  resize: none;
-  border: 0;
-  background: transparent;
-  font-family: var(--font-ui);
-  font-size: 15px;
-  line-height: 1.92;
-  letter-spacing: 0.002em;
-  color: var(--ink-soft);
-  tab-size: 2;
-  overflow-y: auto;
-}
 
-.editor-textarea::placeholder {
-  color: var(--faint);
-  opacity: 0.8;
-  line-height: 2.15;
-}
 
 .editor-preview {
   position: relative;
@@ -2860,9 +2873,6 @@ html[data-shell="tauri"] .assistant-layout {
   flex: 0 0 var(--split-left);
 }
 
-.mode-split .editor-textarea {
-  padding: 25px 34px 80px;
-}
 
 .mode-split .editor-preview .prose {
   font-size: 15px;
@@ -2943,196 +2953,6 @@ html[data-shell="tauri"] .assistant-layout {
   min-width: 0;
 }
 
-.lp-doc {
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.lp-canvas {
-  max-width: var(--doc-width);
-  margin: 0 auto;
-  min-height: 100%;
-  padding: 28px 52px 140px;
-}
-
-.lp-canvas-readonly {
-  padding: 0;
-}
-
-.lp-block {
-  position: relative;
-}
-
-/* 块与块之间用真实空行分隔，避免不同块的首尾外边距被重置后贴在一起 */
-.lp-block + .lp-block {
-  margin-top: 0.85em;
-}
-
-.lp-block + .lp-block:has(h1) {
-  margin-top: 1.6em;
-}
-
-.lp-block + .lp-block:has(h2) {
-  margin-top: 1.45em;
-}
-
-.lp-block + .lp-block:has(h3) {
-  margin-top: 1.2em;
-}
-
-.lp-block > .prose {
-  max-width: none;
-}
-
-.lp-block.is-editing {
-  z-index: 30;
-}
-
-.lp-block-editor {
-  display: block;
-  width: 100%;
-  min-height: 1.88em;
-  resize: none;
-  overflow: hidden;
-  margin: 0;
-  /* 与渲染结果同一套排版、去掉输入框的边框和底色：点击进入编辑时几乎无感 */
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--ink-soft);
-  font-family: var(--font-reading);
-  font-size: 16.5px;
-  line-height: 1.88;
-  letter-spacing: 0;
-  tab-size: 2;
-  box-shadow: none;
-  outline: none;
-  caret-color: var(--accent);
-}
-
-.lp-block-editor::placeholder {
-  color: var(--faint);
-}
-
-/* 悬停时盖在段落上方的源码卡：pointer-events: none，不挡链接点击 */
-.lp-source-peek {
-  position: absolute;
-  top: -9px;
-  left: -16px;
-  right: -16px;
-  z-index: 26;
-  max-height: min(62vh, 520px);
-  overflow: hidden;
-  padding: 22px 14px 12px;
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--surface-raised) 94%, var(--accent-soft));
-  box-shadow: var(--shadow-md);
-  pointer-events: none;
-  animation: lp-peek-in 0.13s ease-out;
-}
-
-.lp-source-tag {
-  position: absolute;
-  top: 7px;
-  left: 14px;
-  color: var(--faint);
-  font-family: var(--font-ui);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-
-.lp-source-tag::after {
-  content: " · 鼠标移开回到渲染";
-  font-weight: 400;
-  letter-spacing: 0;
-}
-
-.lp-source-code {
-  margin: 0;
-  padding: 0;
-  color: var(--ink-soft);
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  line-height: 1.75;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-@keyframes lp-peek-in {
-  from {
-    opacity: 0;
-    transform: translateY(2px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.lp-add-block {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 28px;
-  margin-top: 20px;
-  padding: 0 12px;
-  border: 1px dashed var(--line-strong);
-  border-radius: 7px;
-  background: transparent;
-  color: var(--faint);
-  font-family: var(--font-ui);
-  font-size: 11px;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-}
-
-.lp-add-block:hover {
-  border-color: var(--accent);
-  background: var(--accent-wash);
-  color: var(--accent-deep);
-}
-
-.lp-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 7px;
-  padding-top: 26px;
-  color: var(--faint);
-}
-
-.lp-empty p {
-  margin: 0;
-  color: var(--ink-soft);
-  font-family: var(--font-display);
-  font-size: 21px;
-}
-
-.lp-empty span {
-  max-width: 40em;
-  font-size: 11.5px;
-  line-height: 1.8;
-}
-
-.lp-empty-start {
-  height: 30px;
-  margin-top: 6px;
-  padding: 0 13px;
-  border-radius: 7px;
-  background: var(--accent);
-  color: var(--on-primary, #fff);
-  font-size: 11.5px;
-  font-weight: 600;
-}
-
-.lp-empty-start:hover {
-  background: var(--accent-deep);
-}
 
 /* ---------- 宽度拖拽控件 ---------- */
 
@@ -3938,10 +3758,6 @@ html[data-shell="tauri"] .assistant-layout {
     padding-left: 33px;
     padding-right: 33px;
   }
-  .editor-textarea {
-    padding-left: 36px;
-    padding-right: 36px;
-  }
   .editor-preview {
     padding-left: 36px;
     padding-right: 36px;
@@ -4132,12 +3948,6 @@ html[data-shell="tauri"] .assistant-layout {
     border-top-color: var(--line);
   }
 
-  .editor-textarea {
-    padding: 17px 20px 90px;
-    font-size: 15.5px;
-    line-height: 1.9;
-    max-width: none;
-  }
 
   .editor-preview {
     padding: 20px 22px 100px;
@@ -4146,24 +3956,6 @@ html[data-shell="tauri"] .assistant-layout {
   .editor-preview .prose {
     font-size: 16px;
     line-height: 1.88;
-  }
-
-  .lp-canvas {
-    padding: 18px 20px 120px;
-  }
-
-  .lp-block + .lp-block {
-    margin-top: 0.9em;
-  }
-
-  .lp-source-peek {
-    left: -8px;
-    right: -8px;
-    max-height: 70vh;
-  }
-
-  .lp-empty p {
-    font-size: 19px;
   }
 
   .mode-split .editor-preview {

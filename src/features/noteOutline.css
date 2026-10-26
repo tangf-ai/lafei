@@ -1,0 +1,174 @@
+/* ==========================================================================
+   笔记大纲面板
+   宽度 / 高度交给父容器；颜色全部来自 --wb-*（回落到旧主题变量），
+   因此浅色、深色、晴日、薄荷、海盐五套主题无需额外规则。
+   ========================================================================== */
+
+.note-outline {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+  color: var(--wb-ink-2, var(--ink-soft, #3b4139));
+}
+
+.note-outline-title {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 14px 14px 9px;
+  border-bottom: 1px solid var(--wb-line-soft, var(--line, #e1e5db));
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 650;
+  line-height: 1.4;
+  letter-spacing: 0.12em;
+  color: var(--wb-faint, var(--faint, #a79e8e));
+  user-select: none;
+}
+
+.note-outline-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 8px 14px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--wb-faint, var(--faint, #a79e8e)) 40%, transparent)
+    transparent;
+}
+
+.note-outline-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.note-outline-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--wb-faint, var(--faint, #a79e8e)) 35%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 8px;
+}
+
+.note-outline-scroll::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--wb-faint, var(--faint, #a79e8e)) 55%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+.note-outline-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.note-outline-item {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--wb-muted, var(--muted, #6b7168));
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 1.55;
+  text-align: left;
+  transition:
+    background 0.14s var(--ease, ease),
+    color 0.14s var(--ease, ease),
+    box-shadow 0.14s var(--ease, ease);
+}
+
+.note-outline-item:hover {
+  background: var(--wb-hover, var(--surface-hover, #f7f9f4));
+  color: var(--wb-ink, var(--ink, #151814));
+}
+
+.note-outline-item:focus-visible {
+  outline: 2px solid var(--wb-green, var(--accent, #1f5c43));
+  outline-offset: -2px;
+}
+
+.note-outline-item.is-active,
+.note-outline-item.is-active:hover {
+  background: var(--wb-active, var(--wb-green-soft, var(--accent-soft, #e2eae2)));
+  color: var(--wb-green, var(--accent, #1f5c43));
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--wb-green, var(--accent, #1f5c43));
+}
+
+.note-outline-item[data-level="1"] {
+  font-weight: 550;
+  color: var(--wb-ink-2, var(--ink-soft, #3b4139));
+}
+
+.note-outline-item[data-level="1"]:hover {
+  color: var(--wb-ink, var(--ink, #151814));
+}
+
+.note-outline-item[data-level="1"].is-active {
+  color: var(--wb-green, var(--accent, #1f5c43));
+}
+
+.note-outline-indent {
+  flex: 0 0 auto;
+  align-self: stretch;
+  transition: width 0.16s var(--ease, ease);
+}
+
+.note-outline-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.note-outline-empty {
+  margin: 0;
+  padding: 18px 10px;
+  color: var(--wb-faint, var(--faint, #a79e8e));
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-align: center;
+  user-select: none;
+}
+
+/* 移动端：缩进由条目内的 spacer 提供，这里只去掉横向多余留白 */
+@media (max-width: 820px) {
+  .note-outline-title {
+    padding: 10px 2px 7px;
+  }
+
+  .note-outline-scroll {
+    padding: 0 0 10px;
+    scrollbar-width: none;
+  }
+
+  .note-outline-scroll::-webkit-scrollbar {
+    width: 0;
+    display: none;
+  }
+
+  .note-outline-item {
+    padding: 5px 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-outline-item,
+  .note-outline-indent {
+    transition: none;
+  }
+}

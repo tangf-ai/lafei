@@ -1,0 +1,1040 @@
+/* ==========================================================================
+   任务四象限（Eisenhower matrix）
+   纵轴「重要 ↑」、横轴「紧急 →」——Q1 重要紧急落在右上角。
+   每个象限里是通栏任务行（一行一件），窗口矮时矩阵按内容长高、整页滚动。
+   只作用于 .wb-tasks.is-matrix；无矩阵视图时不影响现有列表。
+   ========================================================================== */
+
+/* 矩阵视图：高窗口里主区吃满高度；矮窗口里矩阵保底高度 */
+.wb-tasks.is-matrix {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  max-width: none;
+  padding: 16px 36px 20px;
+  gap: 0;
+}
+
+.wb-tasks.is-matrix .wb-tasks-main {
+  flex: 1 1 auto;
+  gap: 14px;
+}
+
+.wb-tasks.is-matrix .wb-matrix {
+  flex: 1 1 0;
+  min-height: 320px;
+}
+
+/* 工具条上的矩阵提示 */
+.wb-tasks .matrix-mode-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--wb-muted);
+  letter-spacing: 0.01em;
+}
+
+/* 板 */
+.wb-matrix {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--wb-card);
+  border: 1px solid var(--wb-line);
+  border-radius: 14px;
+  box-shadow: var(--wb-sh);
+  overflow: hidden;
+}
+
+.wb-matrix-head {
+  flex: none;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  background: var(--wb-topbar);
+  border-bottom: 1px solid var(--wb-line-soft);
+}
+
+.wb-matrix-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--wb-ink);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.wb-matrix-formula {
+  padding-left: 10px;
+  border-left: 1px solid var(--wb-line);
+  font-size: 9.5px;
+  color: var(--wb-faint);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+/* 点色图例 */
+.wb-matrix-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 14px;
+  font-size: 9.5px;
+  color: var(--wb-muted);
+  letter-spacing: 0.02em;
+}
+
+.wb-matrix-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.wb-matrix-legend i {
+  width: 6px;
+  height: 6px;
+  display: block;
+  border-radius: 50%;
+  flex: none;
+}
+
+.wb-matrix-legend i.is-high {
+  background: var(--wb-red);
+}
+
+.wb-matrix-legend i.is-medium {
+  background: var(--wb-gold);
+}
+
+.wb-matrix-legend i.is-low {
+  background: color-mix(in srgb, var(--wb-green) 52%, var(--wb-faint));
+}
+
+.wb-matrix-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--wb-muted);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  flex: none;
+}
+
+.wb-matrix-meta b {
+  font-weight: 600;
+  color: var(--wb-ink-2);
+}
+
+.wb-matrix-sep {
+  width: 1px;
+  height: 11px;
+  background: var(--wb-line);
+  margin: 0 5px;
+}
+
+/* 坐标轴 + 2×2 */
+.wb-plot {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: 24px minmax(0, 1fr) minmax(0, 1fr);
+  padding: 0 16px 14px 10px;
+}
+
+.wb-axis-top {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 9px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--wb-muted);
+  white-space: nowrap;
+}
+
+/* 轴上的小刻度 */
+.wb-axis-top::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  height: 6px;
+  margin-left: -0.5px;
+  background: color-mix(in srgb, var(--wb-muted) 42%, transparent);
+}
+
+.wb-axis-top .ar {
+  margin-left: 3px;
+  font-size: 9px;
+  color: var(--wb-faint);
+  letter-spacing: 0;
+}
+
+.wb-axis-left {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--wb-muted);
+  white-space: nowrap;
+}
+
+.wb-axis-left::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 6px;
+  height: 1px;
+  margin-top: -0.5px;
+  background: color-mix(in srgb, var(--wb-muted) 42%, transparent);
+}
+
+/* 四个格子 */
+.wb-quad {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--wb-card);
+  transition: background 0.14s ease;
+  cursor: pointer;
+}
+
+/* 外侧两条轴 */
+.wb-quad.is-top {
+  border-top: 1px solid color-mix(in srgb, var(--wb-muted) 38%, transparent);
+}
+
+.wb-quad.is-left {
+  border-left: 1px solid color-mix(in srgb, var(--wb-muted) 38%, transparent);
+}
+
+/* 十字分割线 */
+.wb-quad-q2 {
+  border-right: 1px solid var(--wb-line);
+  border-bottom: 1px solid var(--wb-line);
+}
+
+.wb-quad-q1 {
+  border-bottom: 1px solid var(--wb-line);
+}
+
+.wb-quad-q4 {
+  border-right: 1px solid var(--wb-line);
+}
+
+/* 十字交点的小金点 */
+.wb-quad-q2::after {
+  content: "";
+  position: absolute;
+  right: -2.5px;
+  bottom: -2.5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--wb-gold);
+  box-shadow: 0 0 0 4px var(--wb-card);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.wb-quad.is-drop {
+  background: color-mix(in srgb, var(--wb-green-soft) 46%, var(--wb-card));
+}
+
+.wb-quad.is-drop .wb-quad-head {
+  background: color-mix(in srgb, var(--wb-green-soft) 78%, var(--wb-card));
+}
+
+/* 格头 */
+.wb-quad-head {
+  flex: none;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 14px 0 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--wb-muted) 11%, transparent);
+}
+
+.wb-quad-q1 .wb-quad-head {
+  background: color-mix(in srgb, var(--wb-red-bg) 60%, var(--wb-card));
+}
+
+.wb-quad-q2 .wb-quad-head {
+  background: color-mix(in srgb, var(--wb-green-soft) 62%, var(--wb-card));
+}
+
+.wb-quad-q3 .wb-quad-head {
+  background: color-mix(in srgb, var(--wb-gold-bg) 56%, var(--wb-card));
+}
+
+.wb-quad-q4 .wb-quad-head {
+  background: color-mix(in srgb, var(--wb-chip) 72%, var(--wb-card));
+}
+
+.wb-quad-badge {
+  width: 21px;
+  height: 21px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--wb-muted) 16%, transparent);
+  background: color-mix(in srgb, var(--wb-card) 72%, transparent);
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.wb-quad-q1 .wb-quad-badge {
+  color: var(--wb-red-ink);
+}
+
+.wb-quad-q2 .wb-quad-badge {
+  color: var(--wb-green);
+}
+
+.wb-quad-q3 .wb-quad-badge {
+  color: var(--wb-gold-ink);
+}
+
+.wb-quad-q4 .wb-quad-badge {
+  color: var(--wb-muted);
+}
+
+.wb-quad-head-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  line-height: 1;
+}
+
+.wb-quad-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--wb-ink);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.wb-quad-hint {
+  font-size: 9px;
+  color: var(--wb-muted);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+/* 格头右侧：查看全部 / 添加 */
+.wb-quad-more {
+  margin-left: auto;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 6px;
+  font-size: 9.5px;
+  color: var(--wb-faint);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.wb-quad-more b {
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.wb-quad-count + .wb-quad-more {
+  margin-left: 6px;
+}
+
+.wb-quad:hover .wb-quad-more,
+.wb-quad-more:focus-visible {
+  background: color-mix(in srgb, var(--wb-green-soft) 62%, transparent);
+  color: var(--wb-green);
+}
+
+/* 通栏任务行（一格内一行一件任务，铺满格子宽度） */
+.wb-items-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wb-items {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  overflow: hidden;
+}
+
+.wb-item {
+  flex: none;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.wb-item:hover,
+.wb-item:focus-visible {
+  background: var(--wb-hover);
+  outline: none;
+}
+
+.wb-item.is-dragging {
+  opacity: 0.45;
+}
+
+.wb-pdot {
+  width: 5px;
+  height: 5px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--wb-gold);
+}
+
+.wb-pdot.is-high {
+  background: var(--wb-red);
+}
+
+.wb-pdot.is-low {
+  background: color-mix(in srgb, var(--wb-green) 52%, var(--wb-faint));
+}
+
+.wb-item-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 450;
+  color: var(--wb-ink-2);
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wb-item:hover .wb-item-title,
+.wb-item:focus-visible .wb-item-title {
+  color: var(--wb-green);
+}
+
+.wb-item-meta {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 9.5px;
+  color: var(--wb-muted);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.wb-item.is-overdue .wb-item-when {
+  color: var(--wb-red-ink);
+}
+
+.wb-item-tag {
+  color: var(--wb-faint);
+}
+
+.wb-items-more {
+  flex: none;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  border-top: 1px solid var(--wb-line-soft);
+  font-size: 9.5px;
+  color: var(--wb-muted);
+  letter-spacing: 0.02em;
+  text-align: left;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.wb-items-more:hover {
+  background: var(--wb-hover);
+  color: var(--wb-green);
+}
+
+.wb-items-empty {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.wb-items-zero {
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--wb-muted) 42%, transparent);
+}
+
+.wb-items-empty-text {
+  font-size: 10px;
+  color: var(--wb-faint);
+  letter-spacing: 0.02em;
+}
+
+/* 格头右侧的件数 */
+.wb-quad-count {
+  margin-left: auto;
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--wb-ink-2);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-quad-count span {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--wb-faint);
+}
+
+/* 悬停任务名（fixed 定位，渲染在 body 上，不会被板裁掉） */
+.wb-dot-tip {
+  position: fixed;
+  z-index: 90;
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--wb-line);
+  background: var(--wb-card);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--wb-ink) 14%, transparent);
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+}
+
+.wb-dot-tip.is-below {
+  transform: translate(-50%, 0);
+}
+
+.wb-dot-tip b {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--wb-ink);
+  line-height: 1.35;
+  letter-spacing: 0.005em;
+  white-space: normal;
+}
+
+.wb-dot-tip span {
+  display: block;
+  margin-top: 4px;
+  font-size: 9.5px;
+  color: var(--wb-muted);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.wb-dot-tip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  background: var(--wb-card);
+  border-right: 1px solid var(--wb-line);
+  border-bottom: 1px solid var(--wb-line);
+  transform: translateY(-5px) rotate(45deg);
+}
+
+.wb-dot-tip.is-below::after {
+  top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 1px solid var(--wb-line);
+  border-top: 1px solid var(--wb-line);
+  transform: translateY(-5px) rotate(45deg);
+}
+
+/* ── 下钻：单个象限的全部任务 ── */
+.wb-drill {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: wb-drill-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes wb-drill-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.wb-matrix.is-drilling .wb-matrix-head,
+.wb-matrix.is-drilling .wb-plot {
+  display: none;
+}
+
+.wb-drill-head {
+  flex: none;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  background: var(--wb-topbar);
+  border-bottom: 1px solid var(--wb-line-soft);
+}
+
+.wb-matrix[data-q="q1"] .wb-drill-head {
+  background: color-mix(in srgb, var(--wb-red-bg) 34%, var(--wb-topbar));
+}
+
+.wb-matrix[data-q="q2"] .wb-drill-head {
+  background: color-mix(in srgb, var(--wb-green-soft) 40%, var(--wb-topbar));
+}
+
+.wb-matrix[data-q="q3"] .wb-drill-head {
+  background: color-mix(in srgb, var(--wb-gold-bg) 34%, var(--wb-topbar));
+}
+
+.wb-matrix[data-q="q4"] .wb-drill-head {
+  background: color-mix(in srgb, var(--wb-chip) 52%, var(--wb-topbar));
+}
+
+.wb-drill-back {
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--wb-line);
+  background: var(--wb-card);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--wb-ink-2);
+  white-space: nowrap;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.wb-drill-back:hover {
+  background: var(--wb-hover);
+  color: var(--wb-green);
+  border-color: color-mix(in srgb, var(--wb-green) 32%, var(--wb-line));
+}
+
+.wb-drill-badge {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--wb-muted) 16%, transparent);
+  background: color-mix(in srgb, var(--wb-card) 72%, transparent);
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.wb-drill-badge.is-q1 {
+  color: var(--wb-red-ink);
+}
+
+.wb-drill-badge.is-q2 {
+  color: var(--wb-green);
+}
+
+.wb-drill-badge.is-q3 {
+  color: var(--wb-gold-ink);
+}
+
+.wb-drill-badge.is-q4 {
+  color: var(--wb-muted);
+}
+
+.wb-drill-title {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  line-height: 1;
+}
+
+.wb-drill-title > span {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--wb-ink);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.wb-drill-title small {
+  font-size: 9px;
+  color: var(--wb-muted);
+  letter-spacing: 0.06em;
+}
+
+.wb-drill-count {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-left: 2px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--wb-ink-2);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-drill-count span {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--wb-faint);
+}
+
+.wb-drill-switch {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wb-drill-switch button {
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--wb-muted) 14%, transparent);
+  background: var(--wb-chip);
+  font-size: 9.5px;
+  color: var(--wb-muted);
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.wb-drill-switch button:hover {
+  color: var(--wb-ink-2);
+  background: var(--wb-hover);
+}
+
+.wb-drill-switch button.is-active {
+  background: var(--wb-card);
+  color: var(--wb-green);
+  border-color: color-mix(in srgb, var(--wb-green) 32%, var(--wb-line));
+  font-weight: 600;
+}
+
+.wb-drill-add {
+  height: 27px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 9px;
+  border-radius: 6px;
+  background: var(--wb-green-solid);
+  color: #f8fbf7;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: filter 0.14s ease;
+}
+
+.wb-drill-add:hover {
+  background: var(--wb-green-solid-hover);
+}
+
+.wb-drill-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+}
+
+.wb-drill-row {
+  flex: none;
+  cursor: pointer;
+}
+
+.wb-drill-row + .wb-drill-row .task-row {
+  border-top: 1px solid var(--wb-line-soft);
+}
+
+.wb-tasks .wb-drill-row .task-row {
+  height: 60px;
+  padding: 0 20px;
+}
+
+.wb-tasks .wb-drill-row .task-row::before {
+  display: none;
+}
+
+.wb-drill-row.is-focus .task-row {
+  background: color-mix(in srgb, var(--wb-green-soft) 52%, var(--wb-card));
+  box-shadow: inset 3px 0 0 var(--wb-green);
+}
+
+.wb-drill-add-row {
+  flex: none;
+  width: 100%;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 20px;
+  border-top: 1px solid var(--wb-line-soft);
+  font-size: 10.5px;
+  color: var(--wb-muted);
+  text-align: left;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.wb-drill-add-row:hover {
+  background: var(--wb-hover);
+  color: var(--wb-green);
+}
+
+.wb-drill-empty {
+  margin: 18px 20px;
+  font-size: 10.5px;
+  color: var(--wb-faint);
+  letter-spacing: 0.02em;
+}
+
+.wb-drill-foot {
+  flex: none;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid var(--wb-line-soft);
+  font-size: 9px;
+  color: var(--wb-faint);
+  letter-spacing: 0.03em;
+}
+
+/* 输入条里的「新建到某象限」提示 */
+.wb-tasks .task-add-quadrant {
+  height: 27px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--wb-muted) 18%, transparent);
+  background: var(--wb-chip);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--wb-ink-2);
+  white-space: nowrap;
+}
+
+.wb-tasks .task-add-quadrant i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--wb-muted);
+}
+
+.wb-tasks .task-add-quadrant.q1 i {
+  background: var(--wb-red);
+}
+
+.wb-tasks .task-add-quadrant.q2 i {
+  background: var(--wb-green);
+}
+
+.wb-tasks .task-add-quadrant.q3 i {
+  background: var(--wb-gold);
+}
+
+.wb-tasks .task-add-quadrant button {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  color: var(--wb-faint);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.wb-tasks .task-add-quadrant button:hover {
+  background: color-mix(in srgb, var(--wb-muted) 14%, transparent);
+  color: var(--wb-ink);
+}
+
+/* 窄窗口 */
+@media (max-width: 1280px) {
+  .wb-plot {
+    grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr);
+    padding: 0 12px 12px 6px;
+  }
+
+  .wb-quad-head {
+    height: 48px;
+    padding: 0 10px 0 12px;
+  }
+
+  .wb-quad-title {
+    font-size: 13px;
+  }
+
+}
+
+@media (max-width: 1100px) {
+  .wb-matrix-legend {
+    display: none;
+  }
+
+  .wb-drill-switch {
+    gap: 3px;
+  }
+
+  .wb-drill-switch button {
+    padding: 0 5px;
+  }
+}
+
+@media (max-width: 820px) {
+  .wb-tasks.is-matrix {
+    padding: 14px 16px calc(80px + env(safe-area-inset-bottom));
+  }
+
+  .wb-tasks.is-matrix .wb-matrix {
+    min-height: 500px;
+  }
+
+  .wb-tasks.is-matrix .wb-tasks-main {
+    gap: 12px;
+  }
+
+  .wb-plot {
+    grid-template-columns: 20px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: 20px minmax(0, 1fr) minmax(0, 1fr);
+    padding: 0 8px 10px 4px;
+  }
+
+  .wb-axis-top,
+  .wb-axis-left {
+    font-size: 8.5px;
+    letter-spacing: 0.08em;
+  }
+
+  .wb-quad-head {
+    height: 44px;
+    gap: 7px;
+    padding: 0 8px 0 10px;
+  }
+
+  .wb-quad-badge {
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
+  }
+
+  .wb-quad-title {
+    font-size: 11.5px;
+  }
+
+  .wb-quad-hint {
+    display: none;
+  }
+
+  .wb-quad-more {
+    padding: 0 4px;
+    font-size: 9px;
+  }
+
+  .wb-items {
+    padding: 4px 8px;
+  }
+
+  .wb-item {
+    height: 30px;
+    padding: 0 6px;
+  }
+
+  .wb-item-meta {
+    gap: 5px;
+  }
+
+  .wb-drill-head {
+    height: 48px;
+    gap: 7px;
+    padding: 0 10px;
+  }
+
+  .wb-drill-back {
+    padding: 0 6px;
+  }
+
+  .wb-drill-switch {
+    display: none;
+  }
+
+  .wb-drill-add {
+    padding: 0 7px;
+  }
+
+  .wb-tasks .wb-drill-row .task-row {
+    height: 56px;
+    padding: 0 12px;
+  }
+
+  .wb-drill-foot {
+    display: none;
+  }
+}

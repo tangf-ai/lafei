@@ -12,6 +12,12 @@ interface UIState {
   contentWidth: number;
   /** 分栏模式下左侧编辑区的宽度比例（0.25 - 0.75） */
   splitRatio: number;
+  /** 笔记编辑器右侧大纲面板是否展开 */
+  outlineOpen: boolean;
+  /** 聚焦模式：除当前段落外的行变淡 */
+  focusMode: boolean;
+  /** 打字机模式：光标保持在视野中央 */
+  typewriterMode: boolean;
   theme: ThemeMode;
   fontScale: FontScale;
   sidebarCollapsed: boolean;
@@ -22,6 +28,8 @@ interface UIState {
   aiPanelOpen: boolean;
   taskDetailId: string | null;
   taskFilter: TaskFilter;
+  /** 从任务页「AI 分诊」带进助手输入框的一句话 */
+  assistantDraft: string | null;
   folderRoot: string | null;
   agentAccessEnabled: boolean;
   setView: (view: AppView) => void;
@@ -32,6 +40,9 @@ interface UIState {
   setNoteMode: (mode: NoteMode) => void;
   setContentWidth: (width: number) => void;
   setSplitRatio: (ratio: number) => void;
+  setOutlineOpen: (open: boolean) => void;
+  setFocusMode: (enabled: boolean) => void;
+  setTypewriterMode: (enabled: boolean) => void;
   setTheme: (theme: ThemeMode) => void;
   setFontScale: (scale: FontScale) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -43,6 +54,7 @@ interface UIState {
   setAIPanelOpen: (open: boolean) => void;
   setTaskDetailId: (id: string | null) => void;
   setTaskFilter: (filter: TaskFilter) => void;
+  setAssistantDraft: (draft: string | null) => void;
   setFolderRoot: (root: string | null) => void;
   setAgentAccessEnabled: (enabled: boolean) => void;
 }
@@ -73,6 +85,9 @@ export const useUI = create<UIState>()(
       noteMode: "live",
       contentWidth: 760,
       splitRatio: 0.5,
+      outlineOpen: false,
+      focusMode: false,
+      typewriterMode: false,
       theme: "light",
       fontScale: 1,
       sidebarCollapsed: false,
@@ -83,6 +98,7 @@ export const useUI = create<UIState>()(
       aiPanelOpen: false,
       taskDetailId: null,
       taskFilter: "all",
+      assistantDraft: null,
       folderRoot: null,
       agentAccessEnabled: false,
       // 切换主视图或打开笔记时收起标签筛选，避免旧标签在另一个视图里悄悄过滤内容
@@ -100,6 +116,9 @@ export const useUI = create<UIState>()(
       setNoteMode: (noteMode) => set({ noteMode }),
       setContentWidth: (contentWidth) => set({ contentWidth: clampContentWidth(contentWidth) }),
       setSplitRatio: (splitRatio) => set({ splitRatio: clampSplitRatio(splitRatio) }),
+      setOutlineOpen: (outlineOpen) => set({ outlineOpen }),
+      setFocusMode: (focusMode) => set({ focusMode }),
+      setTypewriterMode: (typewriterMode) => set({ typewriterMode }),
       setTheme: (theme) => set({ theme }),
       setFontScale: (fontScale) => set({ fontScale }),
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
@@ -111,6 +130,7 @@ export const useUI = create<UIState>()(
       setAIPanelOpen: (aiPanelOpen) => set({ aiPanelOpen }),
       setTaskDetailId: (taskDetailId) => set({ taskDetailId }),
       setTaskFilter: (taskFilter) => set({ taskFilter }),
+      setAssistantDraft: (assistantDraft) => set({ assistantDraft }),
       setFolderRoot: (folderRoot) => set({ folderRoot }),
       setAgentAccessEnabled: (agentAccessEnabled) => set({ agentAccessEnabled }),
     }),
@@ -121,6 +141,9 @@ export const useUI = create<UIState>()(
         noteMode: state.noteMode,
         contentWidth: state.contentWidth,
         splitRatio: state.splitRatio,
+        outlineOpen: state.outlineOpen,
+        focusMode: state.focusMode,
+        typewriterMode: state.typewriterMode,
         theme: state.theme,
         fontScale: state.fontScale,
         sidebarCollapsed: state.sidebarCollapsed,

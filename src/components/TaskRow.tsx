@@ -13,6 +13,7 @@ export function TaskRow({
   compact = false,
   showCompletedAt = false,
   inline = false,
+  maxTags = 2,
 }: {
   task: Task;
   note?: Note;
@@ -20,6 +21,8 @@ export function TaskRow({
   compact?: boolean;
   showCompletedAt?: boolean;
   inline?: boolean;
+  /** 行内最多显示几个标签，超出显示 +N */
+  maxTags?: number;
 }) {
   const setTaskDetailId = useUI((state) => state.setTaskDetailId);
   const openNote = useUI((state) => state.openNote);
@@ -86,7 +89,7 @@ export function TaskRow({
           {task.priority === "high" && <span className="task-priority">高优先</span>}
           {tags.length > 0 && (
             <span className="task-row-tags">
-              {tags.slice(0, 2).map((tag) => (
+              {tags.slice(0, maxTags).map((tag) => (
                 <button
                   key={tag}
                   type="button"
@@ -100,7 +103,7 @@ export function TaskRow({
                   #{tag}
                 </button>
               ))}
-              {tags.length > 2 && <span className="task-tag is-more">+{tags.length - 2}</span>}
+              {tags.length > maxTags && <span className="task-tag is-more">+{tags.length - maxTags}</span>}
             </span>
           )}
           {showNote && note && (

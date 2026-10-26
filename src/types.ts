@@ -1,4 +1,6 @@
 export type Priority = "high" | "medium" | "low";
+/** 四象限：q1 重要紧急 / q2 重要不紧急 / q3 紧急不重要 / q4 不重要不紧急 */
+export type Quadrant = "q1" | "q2" | "q3" | "q4";
 export type EntityKind = "note" | "task" | "chat";
 
 export interface Tombstone {
@@ -26,6 +28,8 @@ export interface Task {
   dueDate: string | null;
   priority: Priority;
   tags: string[];
+  /** 手动归到的象限；null / 缺省时按「截止日期 + 优先级」自动落位 */
+  quadrant?: Quadrant | null;
   done: boolean;
   completedAt: number | null;
   createdAt: number;
@@ -57,6 +61,8 @@ export interface ChatMessage {
 
 export type AppView = "today" | "notes" | "tasks" | "tags" | "assistant";
 export type TaskFilter = "all" | "today" | "upcoming" | "done";
+/** 任务页主区的呈现方式 */
+export type TaskViewMode = "list" | "matrix" | "calendar";
 /** 笔记编辑器视图：即时预览（Markdown 自动渲染）/ 源码 / 分栏 / 阅读 */
 export type NoteMode = "live" | "source" | "split" | "read";
 export type ThemeMode = "light" | "dark" | "system" | "sunny" | "mint" | "sea";

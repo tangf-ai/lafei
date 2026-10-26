@@ -48,6 +48,25 @@ class LafeiDatabase extends Dexie {
             if (!Array.isArray(note.tags)) note.tags = [];
           });
       });
+    this.version(4)
+      .stores({
+        notes: "id, updatedAt, createdAt, pinned, *tags",
+        tasks: "id, done, dueDate, updatedAt, noteId, *tags",
+        chats: "id, updatedAt",
+        messages: "id, chatId, createdAt",
+        tombstones: "key, deletedAt",
+      })
+      .upgrade(async (transaction) => {
+        // v4：四象限。旧任务补 quadrant = null，交给自动落位规则
+        await transaction
+          .table("tasks")
+          .toCollection()
+          .modify((task: Record<string, unknown>) => {
+            if (task.quadrant !== "q1" && task.quadrant !== "q2" && task.quadrant !== "q3" && task.quadrant !== "q4") {
+              task.quadrant = null;
+            }
+          });
+      });
   }
 }
 
@@ -98,6 +117,7 @@ export async function createTask(partial: Partial<Task> = {}): Promise<Task> {
     dueDate: null,
     priority: "medium",
     tags: [],
+    quadrant: null,
     done: false,
     completedAt: null,
     createdAt: now,

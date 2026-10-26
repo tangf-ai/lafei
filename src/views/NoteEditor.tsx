@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
+  AlignCenterVertical,
   ArrowLeft,
   Bold,
   Check,
@@ -9,11 +10,13 @@ import {
   Code2,
   Columns2,
   Eye,
+  Focus,
   Heading2,
   Italic,
   Link2,
   List,
   ListTodo,
+  ListTree,
   Loader2,
   NotebookPen,
   PanelLeftClose,
@@ -48,12 +51,13 @@ import {
 } from "../lib/util";
 import type { Note } from "../types";
 import { Markdown } from "../lib/markdown";
-import {
-  applyFormatSpec,
-  applyLinkSpec,
-  type FormatSpec,
-} from "../lib/markdownFormat";
-import { LiveMarkdownEditor, MarkdownBlocks, type LiveEditorHandle } from "../features/LiveMarkdownEditor";
+import type { FormatSpec } from "../lib/markdownFormat";
+import { MarkdownEditor, type CursorInfo, type MarkdownEditorHandle } from "../features/markdownEditor/MarkdownEditor";
+import { MarkdownReader } from "../features/MarkdownReader";
+import { NoteOutline } from "../features/NoteOutline";
+import { extractOutline, type OutlineItem } from "../lib/outline";
+import { openWikiLink } from "../lib/wikiLink";
+import "./noteEditor.css";
 import { ContentWidthHandle, SplitDivider } from "../features/EditorResize";
 import { NoteAIPanel } from "../features/NoteAIPanel";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -76,16 +80,16 @@ const FORMAT_BUTTONS: FormatButton[] = [
 
 const MODE_LABEL = {
   live: "即时预览",
-  source: "源码编辑",
+  source: "源码模式",
   split: "分栏预览",
   read: "阅读模式",
 } as const;
 
 const MODE_HINT = {
-  live: "输入即渲染 · 悬停看源码 · 点击编辑",
-  source: "Markdown 源码模式",
+  live: "光标处露出源码 · 其余即时排版 · ⌘/ 切源码",
+  source: "Markdown 源码模式 · ⌘/ 切回即时预览",
   split: "拖动中间分隔线调整左右宽度",
-  read: "悬停任意段落查看 Markdown 源码",
+  read: "纯阅读模式 · 大纲可跳转",
 } as const;
 
 export function NoteEditor({ noteId }: { noteId: string }) {
@@ -103,6 +107,12 @@ export function NoteEditor({ noteId }: { noteId: string }) {
   const setContentWidth = useUI((state) => state.setContentWidth);
   const splitRatio = useUI((state) => state.splitRatio);
   const setSplitRatio = useUI((state) => state.setSplitRatio);
+  const outlineOpen = useUI((state) => state.outlineOpen);
+  const setOutlineOpen = useUI((state) => state.setOutlineOpen);
+  const focusMode = useUI((state) => state.focusMode);
+  const setFocusMode = useUI((state) => state.setFocusMode);
+  const typewriterMode = useUI((state) => state.typewriterMode);
+  const setTypewriterMode = useUI((state) => state.setTypewriterMode);
   const isMobile = useIsMobile();
 
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -111,11 +121,12 @@ export function NoteEditor({ noteId }: { noteId: string }) {
   const [addingTag, setAddingTag] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
+  const [cursor, setCursor] = useState<CursorInfo | null>(null);
+  const [readActiveHeading, setReadActiveHeading] = useState<number | null>(null);
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const tagRef = useRef<HTMLInputElement>(null);
-  const liveRef = useRef<LiveEditorHandle>(null);
+  const editorRef = useRef<MarkdownEditorHandle>(null);
   const dirtyRef = useRef(false);
   const deletedRef = useRef(false);
   const loadedRef = useRef(false);
@@ -187,6 +198,52 @@ export function NoteEditor({ noteId }: { noteId: string }) {
     [allNotes, draft?.title],
   );
 
+  /** 大纲：跟正文同步刷新；当前项按光标所在行推断（阅读模式由滚动位置推断） */
+  const outline = useMemo(() => extractOutline(draft?.content ?? ""), [draft?.content]);
+  const activeHeadingIndex = useMemo(() => {
+    if (!cursor) return null;
+    let active: number | null = null;
+    for (const item of outline) {
+      if (item.line <= cursor.line) active = item.index;
+      else break;
+    }
+    return active;
+  }, [outline, cursor]);
+
+  /** 阅读模式的大纲高亮：按滚动位置找出「当前读到哪个标题」 */
+  useEffect(() => {
+    if (noteMode !== "read" || !outlineOpen) {
+      setReadActiveHeading(null);
+      return;
+    }
+    const scroller = document.querySelector<HTMLElement>(".editor-read .editor-preview");
+    if (!scroller) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const top = scroller.getBoundingClientRect().top + 90;
+      let active: number | null = null;
+      for (const item of outline) {
+        const heading = document.getElementById(`md-h-${item.line}`);
+        if (!heading) continue;
+        if (heading.getBoundingClientRect().top <= top) active = item.index;
+        else break;
+      }
+      setReadActiveHeading((current) => (current === active ? current : active));
+    };
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(update);
+    };
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    const timer = window.setTimeout(update, 100);
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      window.clearTimeout(timer);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [noteMode, outlineOpen, outline, draft?.content]);
+
   if (!note || !draft) {
     return (
       <section className="editor-shell">
@@ -241,71 +298,35 @@ export function NoteEditor({ noteId }: { noteId: string }) {
     patchDraft({ tags: draft.tags.filter((item) => item !== tag) });
   };
 
-  const replaceSelection = (next: string, selectStart?: number, selectEnd?: number) => {
-    patchDraft({ content: next });
-    window.requestAnimationFrame(() => {
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-      textarea.focus();
-      if (typeof selectStart === "number") {
-        textarea.setSelectionRange(selectStart, selectEnd ?? selectStart);
-      }
-    });
-  };
-
-  /** 源码模式：在整篇文本的当前选区上执行格式操作 */
-  const applyFormatInSource = (format: FormatSpec) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const result = applyFormatSpec(draft.content, textarea.selectionStart, textarea.selectionEnd, format);
-    replaceSelection(result.text, result.start, result.end);
-  };
-
-  const addLinkInSource = () => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const result = applyLinkSpec(draft.content, textarea.selectionStart, textarea.selectionEnd);
-    replaceSelection(result.text, result.start, result.end);
-  };
-
-  /** 工具栏与 AI 面板统一入口：即时预览模式交给块级编辑器处理 */
+  /** 工具栏统一入口：所有编辑模式都交给 CodeMirror 编辑器处理 */
   const applyFormatFromToolbar = (format: FormatSpec) => {
-    if (noteMode === "live") {
-      liveRef.current?.applyFormat(format);
-      return;
-    }
-    applyFormatInSource(format);
+    editorRef.current?.applyFormat(format);
   };
 
   const addLinkFromToolbar = () => {
-    if (noteMode === "live") {
-      liveRef.current?.addLink();
-      return;
-    }
-    addLinkInSource();
+    editorRef.current?.addLink();
   };
 
-  const insertAtCursor = (text: string) => {
-    if (noteMode === "live") {
-      liveRef.current?.insertAtCursor(text);
-      return;
-    }
-    const textarea = textareaRef.current;
-    if (!textarea) {
-      patchDraft({ content: `${draft.content.trimEnd()}\n\n${text}` });
-      return;
-    }
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const next = draft.content.slice(0, start) + text + draft.content.slice(end);
-    replaceSelection(next, start + text.length, start + text.length);
-  };
+  const currentSelection = () => editorRef.current?.getSelection() ?? "";
 
-  const currentSelection = () => {
-    if (noteMode === "live") return liveRef.current?.getSelection() ?? "";
-    const textarea = textareaRef.current;
-    if (!textarea) return "";
-    return draft.content.slice(textarea.selectionStart, textarea.selectionEnd);
+  const jumpToOutline = (item: OutlineItem) => {
+    if (noteMode === "read") {
+      const heading = document.getElementById(`md-h-${item.line}`);
+      const scroller = document.querySelector<HTMLElement>(".editor-read .editor-preview");
+      if (!heading) return;
+      if (!scroller) {
+        heading.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      const top =
+        heading.getBoundingClientRect().top -
+        scroller.getBoundingClientRect().top +
+        scroller.scrollTop -
+        18;
+      scroller.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+      return;
+    }
+    editorRef.current?.jumpToLine(item.line);
   };
 
   const appendToNote = (text: string) => {
@@ -333,9 +354,26 @@ export function NoteEditor({ noteId }: { noteId: string }) {
 
   const openLinkedNote = (id: string) => openNote(id);
 
+  /** Typora 同款：⌘/ 在即时预览与源码之间切换；⌘S 立即保存 */
+  const handleEditorShortcuts = (event: ReactKeyboardEvent<HTMLElement>) => {
+    const mod = event.metaKey || event.ctrlKey;
+    if (!mod) return;
+    const key = event.key.toLowerCase();
+    if (key === "/") {
+      event.preventDefault();
+      setNoteMode(noteMode === "live" ? "source" : "live");
+    } else if (key === "s") {
+      event.preventDefault();
+      void saveNow();
+    }
+  };
+
   return (
     <>
-      <section className={cn("editor-shell", aiPanelOpen && "ai-open")}>
+      <section
+        className={cn("editor-shell", aiPanelOpen && "ai-open")}
+        onKeyDownCapture={handleEditorShortcuts}
+      >
         <div className="editor-main">
           <header className="editor-topbar">
             <div className="editor-topbar-left">
@@ -370,6 +408,18 @@ export function NoteEditor({ noteId }: { noteId: string }) {
               </span>
             </div>
             <div className="editor-topbar-actions">
+              {!isMobile && noteMode !== "split" && (
+                <button
+                  type="button"
+                  className={cn("icon-btn", outlineOpen && "is-active")}
+                  title={outlineOpen ? "隐藏大纲" : "显示大纲"}
+                  aria-label={outlineOpen ? "隐藏大纲" : "显示大纲"}
+                  aria-pressed={outlineOpen}
+                  onClick={() => setOutlineOpen(!outlineOpen)}
+                >
+                  <ListTree size={16} />
+                </button>
+              )}
               <button
                 type="button"
                 className={cn("icon-btn", note.pinned && "is-active")}
@@ -411,7 +461,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
                 <button
                   type="button"
                   className={cn("segment", noteMode === "live" && "active")}
-                  title="即时预览：输入 Markdown 自动渲染，点击段落编辑"
+                  title="即时预览：像 Typora 一样直接写，光标处露出源码，其余内容即时排版（⌘/ 切源码）"
                   onClick={() => setNoteMode("live")}
                 >
                   <WandSparkles size={14} />
@@ -419,7 +469,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
                 <button
                   type="button"
                   className={cn("segment", noteMode === "source" && "active")}
-                  title="源码模式：直接编辑 Markdown"
+                  title="源码模式：直接编辑 Markdown（⌘/ 切回即时预览）"
                   onClick={() => setNoteMode("source")}
                 >
                   <PenLine size={14} />
@@ -556,14 +606,21 @@ export function NoteEditor({ noteId }: { noteId: string }) {
               } as CSSProperties
             }
           >
-            {noteMode === "live" && (
-              <div className="editor-live">
-                <LiveMarkdownEditor
-                  ref={liveRef}
-                  content={draft.content}
+            {noteMode !== "read" && noteMode !== "split" && (
+              <div className={cn(noteMode === "live" ? "editor-live" : "editor-write", "editor-pane")}>
+                <MarkdownEditor
+                  ref={editorRef}
+                  value={draft.content}
                   onChange={(next) => patchDraft({ content: next })}
+                  mode={noteMode === "live" ? "live" : "source"}
+                  focusMode={focusMode}
+                  typewriterMode={typewriterMode}
+                  onCursorChange={setCursor}
+                  onOpenWiki={(title) => void openWikiLink(title)}
                   placeholder={
-                    "从这里开始写。\n\n直接输入 Markdown：# 标题、**加粗**、- 列表、- [ ] 待办、> 引用，以及 [[双向链接]]。"
+                    noteMode === "live"
+                      ? "直接开始写。光标处会露出 Markdown 源码，其余内容即时排版；⌘/ 切换源码模式。"
+                      : "直接编辑 Markdown 源码；⌘/ 切回即时预览。"
                   }
                 />
                 {!isMobile && (
@@ -578,50 +635,19 @@ export function NoteEditor({ noteId }: { noteId: string }) {
               </div>
             )}
 
-            {(noteMode === "source" || noteMode === "split") && (
-              <div className="editor-write">
-                <textarea
-                  ref={textareaRef}
-                  className="editor-textarea"
-                  value={draft.content}
-                  onChange={(event) => patchDraft({ content: event.target.value })}
-                  placeholder={
-                    "从这里开始写。\n\n支持 Markdown：# 标题、**加粗**、- 列表、- [ ] 待办、> 引用，以及 [[双向链接]]。"
-                  }
-                  spellCheck={false}
-                  onKeyDown={(event) => {
-                    if (event.key === "Tab") {
-                      event.preventDefault();
-                      insertAtCursor("  ");
-                    }
-                    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
-                      event.preventDefault();
-                      void saveNow();
-                    }
-                    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "b") {
-                      event.preventDefault();
-                      applyFormatInSource(FORMAT_BUTTONS[0]);
-                    }
-                    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "i") {
-                      event.preventDefault();
-                      applyFormatInSource(FORMAT_BUTTONS[1]);
-                    }
-                  }}
-                />
-                {noteMode === "source" && !isMobile && (
-                  <ContentWidthHandle
-                    value={contentWidth}
-                    min={CONTENT_WIDTH_MIN}
-                    max={CONTENT_WIDTH_MAX}
-                    defaultValue={CONTENT_WIDTH_DEFAULT}
-                    onChange={setContentWidth}
-                  />
-                )}
-              </div>
-            )}
-
             {noteMode === "split" && (
               <>
+                <div className="editor-write editor-pane">
+                  <MarkdownEditor
+                    ref={editorRef}
+                    value={draft.content}
+                    onChange={(next) => patchDraft({ content: next })}
+                    mode="source"
+                    className="md-editor--split"
+                    onCursorChange={setCursor}
+                    placeholder="左边写 Markdown，右边实时预览。"
+                  />
+                </div>
                 {!isMobile && (
                   <SplitDivider
                     value={splitRatio}
@@ -649,7 +675,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
               <div className="editor-read">
                 <div className="editor-preview">
                   {draft.content.trim() ? (
-                    <MarkdownBlocks content={draft.content} />
+                    <MarkdownReader content={draft.content} />
                   ) : (
                     <div className="editor-preview-empty">
                       <PenLine size={20} />
@@ -669,13 +695,55 @@ export function NoteEditor({ noteId }: { noteId: string }) {
                 )}
               </div>
             )}
+
+            {outlineOpen && !isMobile && noteMode !== "split" && (
+              <aside className="editor-outline" aria-label="笔记大纲">
+                <NoteOutline
+                  content={draft.content}
+                  onJump={jumpToOutline}
+                  activeIndex={noteMode === "read" ? readActiveHeading : activeHeadingIndex}
+                />
+              </aside>
+            )}
           </div>
 
           <footer className="editor-statusbar">
             <span className="editor-status-mode">{MODE_LABEL[noteMode]}</span>
+            {!isMobile && noteMode !== "read" && (
+              <>
+                <span className="editor-status-dot" />
+                <span className="editor-status-cursor">
+                  第 {cursor?.line ?? 1} 行 · 第 {cursor?.column ?? 1} 列
+                </span>
+              </>
+            )}
             <span className="editor-status-spacer" />
             <span>{charCount(draft.content)} 字</span>
             <span className="editor-status-dot" />
+            {!isMobile && noteMode !== "read" && (
+              <span className="editor-status-toggles">
+                <button
+                  type="button"
+                  className={cn("editor-status-toggle", focusMode && "is-active")}
+                  title="聚焦模式：只突出当前段落，其余内容变淡"
+                  aria-label="聚焦模式"
+                  aria-pressed={focusMode}
+                  onClick={() => setFocusMode(!focusMode)}
+                >
+                  <Focus size={12} />
+                </button>
+                <button
+                  type="button"
+                  className={cn("editor-status-toggle", typewriterMode && "is-active")}
+                  title="打字机模式：光标始终停在视线中央"
+                  aria-label="打字机模式"
+                  aria-pressed={typewriterMode}
+                  onClick={() => setTypewriterMode(!typewriterMode)}
+                >
+                  <AlignCenterVertical size={12} />
+                </button>
+              </span>
+            )}
             <span className="editor-status-hint">
               {isMobile ? "自动保存" : MODE_HINT[noteMode]}
             </span>

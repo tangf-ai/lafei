@@ -2730,13 +2730,6 @@ html[data-design="workbench"] .editor-preview .prose {
   margin: 0 auto;
 }
 
-html[data-design="workbench"] .editor-textarea {
-  max-width: var(--doc-width);
-  padding: 22px 44px 90px;
-  font-size: 14.5px;
-  line-height: 1.9;
-  color: var(--wb-ink-2);
-}
 
 html[data-design="workbench"] .editor-statusbar {
   border-top: 1px solid var(--wb-line-soft);
@@ -2746,66 +2739,6 @@ html[data-design="workbench"] .editor-statusbar {
 /* 即时预览：沿用工作台的纸面与卡片语言 */
 html[data-design="workbench"] .editor-live {
   background: var(--wb-card);
-}
-
-html[data-design="workbench"] .lp-canvas {
-  padding: 26px 44px 132px;
-  font-size: 14.5px;
-}
-
-html[data-design="workbench"] .lp-block-editor {
-  color: var(--wb-ink-2);
-  caret-color: var(--wb-green);
-}
-
-html[data-design="workbench"] .lp-block-editor::placeholder {
-  color: var(--wb-faint);
-}
-
-html[data-design="workbench"] .lp-source-peek {
-  border-color: color-mix(in srgb, var(--wb-green) 20%, var(--wb-line));
-  background: color-mix(in srgb, var(--wb-card) 96%, var(--wb-green-soft));
-  box-shadow: 0 1px 2px rgba(20, 30, 20, 0.05), 0 18px 44px rgba(20, 30, 20, 0.14);
-}
-
-html[data-design="workbench"] .lp-source-tag {
-  color: var(--wb-faint);
-}
-
-html[data-design="workbench"] .lp-source-code {
-  color: var(--wb-ink-2);
-}
-
-html[data-design="workbench"] .lp-add-block {
-  border-color: var(--wb-chip-line);
-  color: var(--wb-faint);
-}
-
-html[data-design="workbench"] .lp-add-block:hover {
-  border-color: color-mix(in srgb, var(--wb-green) 42%, var(--wb-line));
-  background: var(--wb-green-soft);
-  color: var(--wb-green);
-}
-
-html[data-design="workbench"] .lp-empty {
-  color: var(--wb-faint);
-}
-
-html[data-design="workbench"] .lp-empty p {
-  color: var(--wb-ink-2);
-  font-family: var(--font-ui);
-  font-size: 19px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-html[data-design="workbench"] .lp-empty-start {
-  background: var(--wb-green-solid);
-  color: var(--on-primary);
-}
-
-html[data-design="workbench"] .lp-empty-start:hover {
-  background: var(--wb-green-solid-hover);
 }
 
 html[data-design="workbench"] .doc-width-handle {
@@ -2936,8 +2869,7 @@ html[data-design="workbench"] .split-divider[data-dragging="true"] .split-divide
 
   html[data-design="workbench"] .editor-title-block,
   html[data-design="workbench"] .editor-toolbar,
-  html[data-design="workbench"] .editor-preview,
-  html[data-design="workbench"] .editor-textarea {
+  html[data-design="workbench"] .editor-preview {
     padding-left: 18px;
     padding-right: 18px;
   }

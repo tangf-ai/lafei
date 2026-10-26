@@ -1,0 +1,418 @@
+/**
+ * MarkdownEditor（CodeMirror 6）的样式。
+ *
+ * 排版尽量贴近阅读模式（.prose）：同一套字体、字号、标题层级，
+ * 这样「即时预览」和「阅读」看起来是同一篇文档。
+ * 颜色全部走主题变量（--wb-* 为主，缺失时回退到 --ink 等旧变量）。
+ */
+
+.md-editor {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: transparent;
+}
+
+.md-editor .cm-editor {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: transparent;
+  color: var(--wb-ink-2, var(--ink-soft));
+}
+
+.md-editor .cm-editor.cm-focused {
+  outline: none;
+}
+
+.md-editor .cm-scroller {
+  font-family: var(--font-reading, Georgia, serif);
+  font-size: 16.5px;
+  line-height: 1.88;
+  letter-spacing: 0.002em;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.md-editor .cm-content {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--doc-width, 760px);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 26px 44px 160px;
+  caret-color: var(--wb-green, #1f5c43);
+}
+
+.md-editor .cm-line {
+  padding: 0;
+}
+
+.md-editor .cm-placeholder {
+  color: var(--wb-faint, #9aa096);
+  opacity: 0.85;
+  line-height: 2.1;
+}
+
+/* ---------- 光标与选区 ---------- */
+
+.md-editor .cm-editor .cm-cursor,
+.md-editor .cm-editor .cm-dropCursor {
+  border-left-color: var(--wb-green, #1f5c43);
+  border-left-width: 2px;
+}
+
+.md-editor .cm-editor .cm-selectionBackground,
+.md-editor .cm-editor.cm-focused .cm-selectionBackground {
+  background: color-mix(in srgb, var(--wb-green, #1f5c43) 18%, transparent);
+}
+
+/* ---------- 行内排版 ---------- */
+
+.md-editor .cm-md-strong {
+  font-weight: 650;
+  color: var(--wb-ink, var(--ink));
+}
+
+.md-editor .cm-md-em {
+  font-style: italic;
+}
+
+.md-editor .cm-md-strike {
+  text-decoration: line-through;
+  color: var(--wb-muted, var(--muted));
+}
+
+.md-editor .cm-md-inline-code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--wb-field, #f2f4ed);
+  color: var(--wb-ink-2, var(--ink-soft));
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.87em;
+}
+
+.md-editor .cm-md-link {
+  color: var(--wb-green, #1f5c43);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--wb-green, #1f5c43) 38%, transparent);
+}
+
+.md-editor .cm-md-wikilink {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--wb-green-soft, var(--accent-wash));
+  color: var(--wb-green, #1f5c43);
+  font-weight: 550;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.md-editor .cm-md-url {
+  color: var(--wb-muted, var(--muted));
+  font-size: 0.9em;
+}
+
+.md-editor .cm-md-image-source {
+  color: var(--wb-muted, var(--muted));
+}
+
+/* 当前行露出来的 Markdown 标记：弱化、不抢视线 */
+.md-editor .cm-md-marker {
+  color: var(--wb-faint, #9aa096);
+  font-weight: 400;
+  font-size: 0.92em;
+  letter-spacing: 0.01em;
+}
+
+/* ---------- 标题 ---------- */
+
+.md-editor .cm-line.cm-md-h1,
+.md-editor .cm-line.cm-md-h2,
+.md-editor .cm-line.cm-md-h3,
+.md-editor .cm-line.cm-md-h4 {
+  font-family: var(--font-display, Georgia, serif);
+  color: var(--wb-ink, var(--ink));
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.md-editor .cm-line.cm-md-h1 {
+  font-size: 2em;
+  line-height: 1.32;
+  padding: 0.3em 0 0.06em;
+}
+
+.md-editor .cm-line.cm-md-h2 {
+  font-size: 1.46em;
+  line-height: 1.36;
+  padding: 0.5em 0 0.06em;
+}
+
+.md-editor .cm-line.cm-md-h3 {
+  font-family: var(--font-ui, inherit);
+  font-size: 1.17em;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+  padding: 0.42em 0 0.04em;
+}
+
+.md-editor .cm-line.cm-md-h4 {
+  font-family: var(--font-ui, inherit);
+  font-size: 1em;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  padding: 0.3em 0 0.02em;
+}
+
+.md-editor .cm-line.cm-md-h5,
+.md-editor .cm-line.cm-md-h6 {
+  font-family: var(--font-ui, inherit);
+  color: var(--wb-ink, var(--ink));
+  font-weight: 650;
+  font-size: 0.94em;
+  padding: 0.24em 0 0.02em;
+}
+
+.md-editor .cm-line.cm-md-h1 .cm-md-marker,
+.md-editor .cm-line.cm-md-h2 .cm-md-marker {
+  font-size: 0.5em;
+  opacity: 0.65;
+}
+
+/* ---------- 段落与空行 ---------- */
+
+/* 空行代表段间距：压低高度，让段落之间是「间距」而不是一整行空白 */
+.md-editor .cm-line.cm-md-blank {
+  line-height: 1.02em;
+}
+
+/* ---------- 引用 ---------- */
+
+.md-editor .cm-line.cm-md-quote {
+  padding-left: 16px;
+  border-left: 3px solid color-mix(in srgb, var(--wb-green, #1f5c43) 38%, transparent);
+  background: color-mix(in srgb, var(--wb-green, #1f5c43) 5%, transparent);
+  color: var(--wb-muted, var(--muted));
+}
+
+/* ---------- 列表与待办 ---------- */
+
+.md-editor .cm-md-listmark {
+  color: var(--wb-green, #1f5c43);
+  font-weight: 650;
+  padding-right: 2px;
+}
+
+.md-editor .cm-md-listmark.is-bullet[data-depth="1"] {
+  opacity: 0.8;
+}
+
+.md-editor .cm-md-listmark.is-bullet[data-depth="2"] {
+  opacity: 0.65;
+}
+
+.md-editor .cm-md-listmark.is-ordered {
+  color: var(--wb-muted, var(--muted));
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.88em;
+  font-weight: 500;
+}
+
+.md-editor .cm-md-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 15px;
+  height: 15px;
+  margin: 0 4px 0 0;
+  vertical-align: -2px;
+  box-sizing: border-box;
+  border: 1.5px solid color-mix(in srgb, var(--wb-muted, #6b7168) 46%, transparent);
+  border-radius: 4px;
+  background: var(--wb-card, #fff);
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.md-editor .cm-md-checkbox:checked {
+  border-color: var(--wb-green, #1f5c43);
+  background: var(--wb-green, #1f5c43);
+}
+
+.md-editor .cm-md-checkbox::after {
+  content: "";
+  position: absolute;
+  left: 3.5px;
+  top: 0.5px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 1.8px 1.8px 0;
+  transform: rotate(43deg);
+  opacity: 0;
+}
+
+.md-editor .cm-md-checkbox:checked::after {
+  opacity: 1;
+}
+
+/* ---------- 代码块 ---------- */
+
+.md-editor .cm-line.cm-md-code {
+  padding-left: 16px;
+  padding-right: 16px;
+  background: var(--wb-field, #f2f4ed);
+  color: var(--wb-ink-2, var(--ink-soft));
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13.5px;
+  line-height: 1.75;
+}
+
+.md-editor .cm-line.cm-md-code-first {
+  padding-top: 8px;
+  border-radius: 9px 9px 0 0;
+}
+
+.md-editor .cm-line.cm-md-code-last {
+  padding-bottom: 8px;
+  border-radius: 0 0 9px 9px;
+}
+
+.md-editor .cm-line.cm-md-code-first.cm-md-code-last {
+  border-radius: 9px;
+}
+
+/* ---------- 表格（暂时保留源码，只做等宽提示） ---------- */
+
+.md-editor .cm-line.cm-md-table {
+  color: var(--wb-muted, var(--muted));
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  line-height: 1.7;
+  background: color-mix(in srgb, var(--wb-field, #f2f4ed) 55%, transparent);
+}
+
+.md-editor .cm-line.cm-md-table:last-of-type {
+  margin-bottom: 0.2em;
+}
+
+/* ---------- 表格预览 ---------- */
+
+.md-editor .cm-md-table-widget {
+  width: 100%;
+  padding: 8px 0 11px;
+  overflow-x: auto;
+  cursor: text;
+}
+
+.md-editor .cm-md-table-widget table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-ui, inherit);
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--wb-ink-2, var(--ink-soft));
+}
+
+.md-editor .cm-md-table-widget th,
+.md-editor .cm-md-table-widget td {
+  padding: 7px 11px;
+  border: 1px solid var(--wb-line, var(--line));
+  text-align: left;
+  vertical-align: top;
+}
+
+.md-editor .cm-md-table-widget th {
+  background: var(--wb-field, #f2f4ed);
+  color: var(--wb-ink, var(--ink));
+  font-weight: 650;
+}
+
+.md-editor .cm-md-table-widget tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--wb-field, #f2f4ed) 42%, transparent);
+}
+
+.md-editor .cm-md-table-widget .cm-md-table-wikilink {
+  color: var(--wb-green, #1f5c43);
+  background: var(--wb-green-soft, var(--accent-wash));
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+.md-editor .cm-md-table-widget .cm-md-table-link {
+  color: var(--wb-green, #1f5c43);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---------- 图片与分隔线 ---------- */
+
+.md-editor .cm-md-image {
+  display: block;
+  max-width: 100%;
+  max-height: 560px;
+  margin: 6px 0;
+  border-radius: 10px;
+}
+
+.md-editor .cm-md-rule {
+  display: inline-block;
+  width: 100%;
+  height: 1px;
+  margin: 0.85em 0;
+  vertical-align: middle;
+  background: var(--wb-line, var(--line));
+}
+
+/* ---------- 聚焦模式 ---------- */
+
+.md-editor .cm-md-dim {
+  opacity: 0.3;
+  transition: opacity 0.18s ease;
+}
+
+/* ---------- 源码模式 ---------- */
+
+.md-editor--source .cm-scroller {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13.5px;
+  line-height: 1.8;
+  letter-spacing: 0;
+}
+
+.md-editor--source .cm-content {
+  padding: 22px 44px 120px;
+  color: var(--wb-ink-2, var(--ink-soft));
+}
+
+/* 分栏模式：左右两栏都窄一些，内边距同步收紧 */
+.md-editor--split .cm-content {
+  padding: 22px 30px 90px;
+}
+
+/* ---------- 移动端 ---------- */
+
+@media (max-width: 820px) {
+  .md-editor .cm-scroller {
+    font-size: 15.5px;
+  }
+
+  .md-editor .cm-content {
+    padding: 18px 18px 130px;
+  }
+
+  .md-editor--source .cm-content {
+    padding: 16px 18px 110px;
+  }
+
+  .md-editor .cm-line.cm-md-quote {
+    padding-left: 12px;
+  }
+}

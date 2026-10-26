@@ -1,12 +1,14 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
   CalendarDays,
   CheckCheck,
   ChevronDown,
   Flag,
+  LayoutGrid,
   List,
   ListTodo,
+  MousePointer2,
   Plus,
   Sparkles,
   Tag,
@@ -16,11 +18,14 @@ import { useUI, toast } from "../store/ui";
 import { cn, dayGroupLabel, dayKey, dueLabel, isOverdue, remainingLabel } from "../lib/util";
 import { collectTagCounts, hasTag } from "../lib/tags";
 import { DUE_PRESETS, dayKeyOffset, duePresetDate, type DuePresetId } from "../lib/date";
-import type { Priority, Task, TaskFilter } from "../types";
+import type { Priority, Quadrant, Task, TaskFilter, TaskViewMode } from "../types";
 import { TaskRow } from "../components/TaskRow";
 import { TaskCalendar } from "../features/TaskCalendar";
 import { TasksRail } from "../features/TasksRail";
 import { TagInput } from "../components/TagInput";
+import { TaskMatrix } from "../features/TaskMatrix";
+import { TaskOverviewBand } from "../features/TaskOverviewBand";
+import { quadrantMeta } from "../lib/quadrant";
 
 const FILTERS: Array<{ id: TaskFilter; label: string }> = [
   { id: "all", label: "全部" },
@@ -52,6 +57,7 @@ export function TasksView() {
   const setView = useUI((state) => state.setView);
   const tagFilter = useUI((state) => state.tagFilter);
   const setTagFilter = useUI((state) => state.setTagFilter);
+  const setAssistantDraft = useUI((state) => state.setAssistantDraft);
   const openTagView = useUI((state) => state.openTagView);
   const [title, setTitle] = useState("");
   const [duePreset, setDuePreset] = useState<DuePresetId | "custom">("today");
@@ -60,7 +66,8 @@ export function TasksView() {
   const [newTags, setNewTags] = useState<string[]>([]);
   const [tagRowOpen, setTagRowOpen] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [viewMode, setViewMode] = useState<TaskViewMode>("matrix");
+  const [newQuadrant, setNewQuadrant] = useState<Quadrant | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const tasks = useMemo(
@@ -172,6 +179,27 @@ export function TasksView() {
     ];
   }, [doneGroups, dueTodayTasks, filter, futureGroups, noDateTasks, overdueTasks]);
 
+  useEffect(() => {
+    // 「已完成」是列表的概念：矩阵里只看没做完的事
+    if (filter === "done" && viewMode === "matrix") setViewMode("list");
+  }, [filter, viewMode]);
+
+  const changeViewMode = (mode: TaskViewMode) => {
+    if (mode === "matrix" && filter === "done") setFilter("all");
+    setViewMode(mode);
+  };
+
+  const showDone = () => {
+    setFilter("done");
+    setViewMode("list");
+  };
+
+  const addTaskToQuadrant = (quadrant: Quadrant) => {
+    setNewQuadrant(quadrant);
+    changeViewMode("matrix");
+    window.requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
   const addTask = async () => {
     const value = title.trim();
     if (!value || adding) return;
@@ -179,22 +207,27 @@ export function TasksView() {
     const dueDate = duePreset === "custom" ? customDueDate || null : duePresetDate(duePreset);
     // 正在按标签筛选时，新任务默认沿用这个标签，否则刚添加就会从当前列表消失
     const tags = newTags.length ? newTags : tagFilter ? [tagFilter] : [];
-    await createTask({ title: value, dueDate, priority, tags });
+    const quadrant = newQuadrant;
+    await createTask({ title: value, dueDate, priority, tags, quadrant });
     setTitle("");
     setNewTags([]);
     setTagRowOpen(false);
     setAdding(false);
+    setNewQuadrant(null);
     const visibleInCurrentFilter =
+      viewMode !== "list" ||
       filter === "all" ||
       (filter === "today" && Boolean(dueDate) && dueDate! <= today) ||
       (filter === "upcoming" && Boolean(dueDate) && dueDate! > today);
     if (!visibleInCurrentFilter) setFilter("all");
     toast(
-      dueDate
-        ? `已添加到「${dueLabel(dueDate).label}」${tags.length ? ` · #${tags[0]}` : ""}`
-        : tags.length
-          ? `已添加任务 · #${tags[0]}`
-          : "已添加任务",
+      quadrant
+        ? `已加入「${quadrantMeta(quadrant).title}」${tags.length ? ` · #${tags[0]}` : ""}`
+        : dueDate
+          ? `已添加到「${dueLabel(dueDate).label}」${tags.length ? ` · #${tags[0]}` : ""}`
+          : tags.length
+            ? `已添加任务 · #${tags[0]}`
+            : "已添加任务",
       "success",
     );
     inputRef.current?.focus();
@@ -209,24 +242,29 @@ export function TasksView() {
         : `今天 ${dueTodayTasks.length} 件，接下来 ${upcomingCount} 件${noDateTasks.length ? `（${noDateTasks.length} 件待安排）` : ""}。任务按截止日期铺开，不必一次做完。`;
 
   return (
-    <div className="view-scroll">
-      <div className="wb-tasks" data-tauri-drag-region>
+    <div className={cn("view-scroll", viewMode === "matrix" && "is-matrix")}>
+      <div className={cn("wb-tasks", viewMode === "matrix" && "is-matrix")} data-tauri-drag-region>
         <div className="wb-tasks-main">
-        <header className="wb-tasks-head">
-          <div>
-            <span className="wb-eyebrow">TASKS</span>
-            <h1 className="wb-tasks-title">把下一步写下来。</h1>
-            <p className="wb-tasks-sub">{summary}</p>
-          </div>
-          <button
-            type="button"
-            className="wb-btn-primary"
-            onClick={() => inputRef.current?.focus()}
-          >
-            <Plus size={14} /> 新建任务
-          </button>
-        </header>
+        {/* 矩阵模式：标题区整块收掉 —— 输入条已经把「新建任务」这件事做了，
+            矩阵板头就是页面的标题，省下来的高度留给象限 */}
+        {viewMode !== "matrix" && (
+          <header className="wb-tasks-head">
+            <div>
+              <span className="wb-eyebrow">TASKS</span>
+              <h1 className="wb-tasks-title">把下一步写下来。</h1>
+              <p className="wb-tasks-sub">{summary}</p>
+            </div>
+            <button
+              type="button"
+              className="wb-btn-primary"
+              onClick={() => inputRef.current?.focus()}
+            >
+              <Plus size={14} /> 新建任务
+            </button>
+          </header>
+        )}
 
+        {viewMode !== "matrix" && (
         <section className="wb-overview">
           <div className="wb-stats">
             <div className="wb-stat">
@@ -260,6 +298,7 @@ export function TasksView() {
             </div>
           </div>
         </section>
+        )}
 
         {tagFilter && (
           <div className="task-tag-banner">
@@ -298,6 +337,15 @@ export function TasksView() {
               />
             </div>
             <div className="task-add-controls">
+              {newQuadrant && (
+                <span className={cn("task-add-quadrant", newQuadrant)}>
+                  <i />
+                  {quadrantMeta(newQuadrant).title}
+                  <button type="button" aria-label="取消指定象限" onClick={() => setNewQuadrant(null)}>
+                    ×
+                  </button>
+                </span>
+              )}
               <label className="task-add-select-wrap">
                 <span className="sr-only">截止日期</span>
                 <select
@@ -402,8 +450,13 @@ export function TasksView() {
                 </button>
               ))}
             </div>
-          ) : (
+          ) : viewMode === "calendar" ? (
             <span className="calendar-mode-hint">所有未完成任务 · 按截止日期分布</span>
+          ) : (
+            <span className="matrix-mode-hint">
+              <MousePointer2 size={12} />
+              点任务看详情 · 拖动换象限 · 格头看全部
+            </span>
           )}
           <div className="tasks-toolbar-right">
             {viewMode === "list" && (
@@ -421,7 +474,7 @@ export function TasksView() {
               <button
                 type="button"
                 className={cn("segment", viewMode === "list" && "active")}
-                onClick={() => setViewMode("list")}
+                onClick={() => changeViewMode("list")}
                 title="列表视图"
                 aria-pressed={viewMode === "list"}
               >
@@ -430,8 +483,18 @@ export function TasksView() {
               </button>
               <button
                 type="button"
+                className={cn("segment", viewMode === "matrix" && "active")}
+                onClick={() => changeViewMode("matrix")}
+                title="矩阵视图"
+                aria-pressed={viewMode === "matrix"}
+              >
+                <LayoutGrid size={13} />
+                <span>矩阵</span>
+              </button>
+              <button
+                type="button"
                 className={cn("segment", viewMode === "calendar" && "active")}
-                onClick={() => setViewMode("calendar")}
+                onClick={() => changeViewMode("calendar")}
                 title="日历视图"
                 aria-pressed={viewMode === "calendar"}
               >
@@ -522,8 +585,27 @@ export function TasksView() {
             )
           )}
         </div>
+        ) : viewMode === "calendar" ? (
+          <TaskCalendar tasks={open} notes={notes} onShowList={() => changeViewMode("list")} />
         ) : (
-          <TaskCalendar tasks={open} notes={notes} onShowList={() => setViewMode("list")} />
+          <TaskMatrix
+            tasks={filter === "today" ? dueTodayTasks : filter === "upcoming" ? [...upcomingTasks, ...noDateTasks] : open}
+            onAddToQuadrant={addTaskToQuadrant}
+          />
+        )}
+
+        {viewMode === "matrix" && (
+          <TaskOverviewBand
+            tasks={allTasks}
+            notes={notes}
+            onShowDone={showDone}
+            onOpenAssistant={() => {
+              setAssistantDraft(
+                "帮我把现在没完成的任务按「重要 × 紧急」分到四个象限里，并给我一个建议顺序：先做哪三件、为什么。",
+              );
+              setView("assistant");
+            }}
+          />
         )}
 
         <div className="tasks-footer">
@@ -535,7 +617,7 @@ export function TasksView() {
           </button>
         </div>
         </div>
-        <TasksRail tasks={tasks} notes={notes} />
+        {viewMode !== "matrix" && <TasksRail tasks={tasks} notes={notes} />}
       </div>
     </div>
   );

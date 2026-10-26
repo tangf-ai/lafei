@@ -1,0 +1,543 @@
+/* ==========================================================================
+   任务页 · 底部概览带（四象限视图）
+   1. 本周节奏  2. 进度  3. 标签  4. AI 分诊
+   颜色全部来自工作台 --wb-* token，浅色 / 深色 / 各主题自动适配；
+   字号保持在 9–11.5px（环心数字是视觉焦点，沿用 B 版环心大数字的做法）。
+   ========================================================================== */
+
+.wb-band {
+  flex: none;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  font-family: var(--font-ui);
+  color: var(--wb-ink);
+}
+
+.wb-band-card {
+  height: 188px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px 13px;
+  background: var(--wb-card);
+  border: 1px solid var(--wb-line);
+  border-radius: 12px;
+  box-shadow: var(--wb-sh);
+}
+
+.wb-band button {
+  font-family: inherit;
+}
+
+.wb-band button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--wb-green) 48%, transparent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* 卡头 ------------------------------------------------------------------- */
+
+.wb-band-head {
+  flex: none;
+  height: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wb-band-title {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.015em;
+  color: var(--wb-ink);
+  white-space: nowrap;
+}
+
+.wb-band-meta {
+  font-size: 9px;
+  color: var(--wb-faint);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 文字链接 / 按钮 -------------------------------------------------------- */
+
+.wb-band-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 9.5px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--wb-green) 38%, var(--wb-muted));
+  cursor: pointer;
+  transition: color 0.14s ease;
+}
+
+.wb-band-link:hover {
+  color: var(--wb-green);
+}
+
+.wb-band-link svg {
+  width: 9px;
+  height: 9px;
+  flex: none;
+}
+
+/* 1 · 本周节奏 ----------------------------------------------------------- */
+
+.wb-band-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 11px;
+}
+
+.wb-band-day {
+  position: relative;
+  height: 50px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 7px;
+}
+
+.wb-band-day-label {
+  font-size: 9px;
+  line-height: 1;
+  color: var(--wb-faint);
+  letter-spacing: 0.02em;
+}
+
+.wb-band-day-num {
+  font-size: 11.5px;
+  line-height: 1;
+  font-weight: 500;
+  color: var(--wb-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-band-day.is-today {
+  background: var(--wb-green-soft);
+}
+
+.wb-band-day.is-today .wb-band-day-label {
+  color: color-mix(in srgb, var(--wb-green) 72%, var(--wb-faint));
+  font-weight: 600;
+}
+
+.wb-band-day.is-today .wb-band-day-num {
+  color: var(--wb-green);
+  font-weight: 700;
+}
+
+.wb-band-day.is-due::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--wb-gold);
+}
+
+.wb-band-due {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.wb-band-due-row {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-top: 1px dotted var(--wb-line-soft);
+  font-size: 9.5px;
+  letter-spacing: 0.01em;
+  color: var(--wb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-band-due-label {
+  flex: none;
+  width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wb-muted);
+}
+
+.wb-band-due-dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.wb-band-due-dots i {
+  width: 4.5px;
+  height: 4.5px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--wb-gold);
+}
+
+.wb-band-due-count {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--wb-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 2 · 进度 --------------------------------------------------------------- */
+
+.wb-band-prog {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 2px;
+}
+
+.wb-band-ring {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  flex: none;
+}
+
+.wb-band-ring-svg {
+  width: 104px;
+  height: 104px;
+  transform: rotate(-90deg);
+}
+
+.wb-band-ring-svg circle {
+  fill: none;
+  stroke-width: 7;
+}
+
+.wb-band-ring-base {
+  stroke: var(--wb-ring-track);
+  opacity: 0.55;
+}
+
+.wb-band-ring-seg.is-done {
+  stroke: var(--wb-green);
+}
+
+.wb-band-ring-seg.is-scheduled {
+  stroke: color-mix(in srgb, var(--wb-green) 45%, var(--wb-card));
+}
+
+.wb-band-ring-seg.is-todo {
+  stroke: var(--wb-ring-track);
+}
+
+.wb-band-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.wb-band-ring-num {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--wb-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-band-ring-num small {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--wb-faint);
+}
+
+.wb-band-ring-cap {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--wb-faint);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-band-prog-side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wb-band-side-title {
+  font-size: 10px;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: var(--wb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-band-bar {
+  width: 100%;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--wb-line-soft);
+  overflow: hidden;
+}
+
+.wb-band-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--wb-green) 76%, var(--wb-card));
+  transition: width 0.24s ease;
+}
+
+.wb-band-side-note {
+  font-size: 9px;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  color: var(--wb-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-band-prog-side .wb-band-link {
+  align-self: flex-start;
+  margin-top: 1px;
+}
+
+/* 3 · 标签 --------------------------------------------------------------- */
+
+.wb-band-tag-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.wb-band-tag-chips {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+}
+
+.wb-band-chip {
+  max-width: 100%;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  border: 1px solid var(--wb-chip-line);
+  border-radius: 6px;
+  background: var(--wb-chip);
+  font-size: 10px;
+  letter-spacing: 0.01em;
+  color: var(--wb-ink-2);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease;
+}
+
+.wb-band-chip:hover {
+  background: var(--wb-hover);
+  border-color: color-mix(in srgb, var(--wb-green) 24%, var(--wb-chip-line));
+}
+
+.wb-band-chip i {
+  width: 5px;
+  height: 5px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.wb-band-chip span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-band-chip b {
+  margin-left: 1px;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--wb-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-band-tag-empty {
+  margin: 0;
+  font-size: 9.5px;
+  letter-spacing: 0.01em;
+  color: var(--wb-faint);
+}
+
+.wb-band-tag-note {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  color: var(--wb-faint);
+}
+
+.wb-band-tag-note svg {
+  width: 9px;
+  height: 9px;
+  flex: none;
+}
+
+/* 4 · AI 分诊 ------------------------------------------------------------ */
+
+.wb-band-ai {
+  background: var(--wb-green-soft);
+  border-color: color-mix(in srgb, var(--wb-green) 16%, var(--wb-line));
+}
+
+.wb-band-ai-top {
+  flex: none;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-band-ai-icon {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--wb-green) 16%, transparent);
+  border-radius: 7px;
+  background: var(--wb-card);
+  color: var(--wb-green);
+}
+
+.wb-band-ai-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+.wb-band-ai-title {
+  margin: 0;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.015em;
+  color: var(--wb-green);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wb-band-ai-copy {
+  margin: 9px 0 0;
+  font-size: 9.5px;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--wb-muted) 55%, var(--wb-green));
+}
+
+.wb-band-ai-copy b {
+  font-weight: 600;
+  color: var(--wb-green);
+}
+
+.wb-band-ai-foot {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.wb-band-ai-btn {
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--wb-green-solid);
+  color: #f8fbf7;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: var(--wb-sh-sm);
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+.wb-band-ai-btn:hover {
+  background: var(--wb-green-solid-hover);
+}
+
+.wb-band-ai-btn svg {
+  width: 9px;
+  height: 9px;
+}
+
+.wb-band-ai-note {
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--wb-green) 42%, var(--wb-muted));
+}
+
+/* 响应式 ---------------------------------------------------------------- */
+
+@media (max-width: 1280px) {
+  .wb-band {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wb-band-card {
+    height: auto;
+  }
+
+  .wb-band-due {
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 820px) {
+  .wb-band {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

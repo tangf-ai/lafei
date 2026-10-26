@@ -1,4 +1,11 @@
-import ReactMarkdown, { type Components } from "react-markdown";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
+import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { openExternal } from "./external";
@@ -60,7 +67,159 @@ function remarkWikiLinks() {
   };
 }
 
-export function Markdown({ content, className = "" }: { content: string; className?: string }) {
+/* --------------------------------------------------------------------------
+   阅读模式（reading）
+   - h1~h6 输出 id="md-h-<1 基行号>"，与 lib/outline.ts 的 line 对齐
+   - 代码块包一层带「复制」按钮的容器
+   默认 reading=false 时完全不启用，既有调用方渲染结果不变。
+   -------------------------------------------------------------------------- */
+
+type HeadingProps = ComponentPropsWithoutRef<"h1"> & ExtraProps;
+
+function readingHeadingId(node: ExtraProps["node"]): string | undefined {
+  const line = node?.position?.start?.line;
+  return typeof line === "number" ? `md-h-${line}` : undefined;
+}
+
+function ReadingH1({ node, children, ...rest }: HeadingProps) {
+  return (
+    <h1 {...rest} id={readingHeadingId(node)}>
+      {children}
+    </h1>
+  );
+}
+
+function ReadingH2({ node, children, ...rest }: HeadingProps) {
+  return (
+    <h2 {...rest} id={readingHeadingId(node)}>
+      {children}
+    </h2>
+  );
+}
+
+function ReadingH3({ node, children, ...rest }: HeadingProps) {
+  return (
+    <h3 {...rest} id={readingHeadingId(node)}>
+      {children}
+    </h3>
+  );
+}
+
+function ReadingH4({ node, children, ...rest }: HeadingProps) {
+  return (
+    <h4 {...rest} id={readingHeadingId(node)}>
+      {children}
+    </h4>
+  );
+}
+
+function ReadingH5({ node, children, ...rest }: HeadingProps) {
+  return (
+    <h5 {...rest} id={readingHeadingId(node)}>
+      {children}
+    </h5>
+  );
+}
+
+function ReadingH6({ node, children, ...rest }: HeadingProps) {
+  return (
+    <h6 {...rest} id={readingHeadingId(node)}>
+      {children}
+    </h6>
+  );
+}
+
+async function copyPlainText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // 剪贴板 API 被限制时走兜底
+  }
+  try {
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.top = "-1000px";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(area);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+function ReadingCodeBlock({ node, children, ...rest }: ComponentPropsWithoutRef<"pre"> & ExtraProps) {
+  // node 只用于类型契约；纯文本从真实 DOM 读取，天然包含 highlight 后的文字
+  void node;
+  const preRef = useRef<HTMLPreElement | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const handleCopy = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const text = (preRef.current?.textContent ?? "").replace(/\n$/, "");
+    if (!text) return;
+    void copyPlainText(text).then((ok) => {
+      if (!ok) return;
+      setCopied(true);
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+      timerRef.current = window.setTimeout(() => setCopied(false), 1600);
+    });
+  };
+
+  return (
+    <div className="md-code-block">
+      <pre {...rest} ref={preRef}>
+        {children}
+      </pre>
+      <button
+        type="button"
+        className="md-code-copy"
+        data-copied={copied ? "true" : undefined}
+        title={copied ? "已复制" : "复制代码"}
+        aria-label="复制代码"
+        onClick={handleCopy}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        {copied ? "已复制" : "复制"}
+      </button>
+    </div>
+  );
+}
+
+const readingComponents: Pick<Components, "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "pre"> = {
+  h1: ReadingH1,
+  h2: ReadingH2,
+  h3: ReadingH3,
+  h4: ReadingH4,
+  h5: ReadingH5,
+  h6: ReadingH6,
+  pre: ReadingCodeBlock,
+};
+
+export function Markdown({
+  content,
+  className = "",
+  reading = false,
+}: {
+  content: string;
+  className?: string;
+  reading?: boolean;
+}) {
   const openNote = useUI((state) => state.openNote);
 
   const handleWiki = async (target: string) => {
@@ -113,6 +272,7 @@ export function Markdown({ content, className = "" }: { content: string; classNa
     img({ src, alt }) {
       return <img src={src} alt={alt ?? ""} loading="lazy" />;
     },
+    ...(reading ? readingComponents : {}),
   };
 
   return (

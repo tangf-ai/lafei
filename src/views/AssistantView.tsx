@@ -75,9 +75,17 @@ export function AssistantView() {
   const setSettingsOpen = useUI((state) => state.setSettingsOpen);
   const openNote = useUI((state) => state.openNote);
   const configured = isAIConfigured(ai);
+  const assistantDraft = useUI((state) => state.assistantDraft);
+  const setAssistantDraft = useUI((state) => state.setAssistantDraft);
 
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [input, setInput] = useState("");
+
+  useEffect(() => {
+    if (!assistantDraft) return;
+    setInput(assistantDraft);
+    setAssistantDraft(null);
+  }, [assistantDraft, setAssistantDraft]);
   const [useNotes, setUseNotes] = useState(true);
   const [busy, setBusy] = useState(false);
   const [streaming, setStreaming] = useState<StreamingReply | null>(null);

@@ -55,6 +55,8 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      // 编辑器已经处理过的组合键（例如 ⌘B / ⌘K / ⌘1）不要再触发全局动作
+      if (event.defaultPrevented) return;
       const mod = event.metaKey || event.ctrlKey;
       if (!mod) return;
       const key = event.key.toLowerCase();

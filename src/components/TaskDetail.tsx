@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { CalendarDays, Check, Flag, Link2, Loader2, SquareArrowOutUpRight, Tag, Trash2 } from "lucide-react";
+import { CalendarDays, Check, Flag, LayoutGrid, Link2, Loader2, SquareArrowOutUpRight, Tag, Trash2 } from "lucide-react";
 import { db, deleteTask, updateTask } from "../db";
 import { useUI, toast } from "../store/ui";
 import { cn, dueLabel, noteTitle } from "../lib/util";
 import { collectTagCounts, tagsOf } from "../lib/tags";
-import type { Priority, Task } from "../types";
+import type { Priority, Quadrant, Task } from "../types";
 import { Modal } from "./Modal";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { TagInput } from "./TagInput";
+import { QUADRANTS } from "../lib/quadrant";
 
 const PRIORITIES: Array<{ id: Priority; label: string }> = [
   { id: "high", label: "高" },
@@ -42,6 +43,7 @@ export function TaskDetailModal() {
       noteId: value.noteId,
       dueDate: value.dueDate,
       priority: value.priority,
+      quadrant: value.quadrant ?? null,
       tags: tagsOf(value),
       done: value.done,
       completedAt: value.completedAt,
@@ -162,6 +164,28 @@ export function TaskDetailModal() {
                       {priority.label}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              <div className="task-field">
+                <span className="task-field-label">
+                  <LayoutGrid size={14} /> 象限
+                </span>
+                <div className="task-field-control">
+                  <select
+                    className="select"
+                    value={draft.quadrant ?? ""}
+                    onChange={(event) =>
+                      patch({ quadrant: (event.target.value || null) as Quadrant | null })
+                    }
+                  >
+                    <option value="">自动（按日期与优先级）</option>
+                    {QUADRANTS.map((quadrant) => (
+                      <option key={quadrant.id} value={quadrant.id}>
+                        {quadrant.title}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
