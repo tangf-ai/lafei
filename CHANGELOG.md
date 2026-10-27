@@ -3,6 +3,14 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.16.2] - 2026-10-27
+
+### Changed
+
+- 页面留白改成四边统一：任务（列表 / 矩阵）、今日、标签四个页面用同一个 `--wb-gutter` 变量，上 = 下 = 左 = 右 = 18px。原来矩阵页是「上 16 / 下 20 / 左右 36」，卡片贴着顶栏、两边却留一大条，上下和左右对不齐
+- 顺带收掉 `≤1280px` 里把左右压到 26px 的覆盖：窄窗口和宽窗口都用 18px，切列表 / 矩阵视图时卡片不再左右横跳
+- 矩阵「＋ 新建任务」浮层的定位改成跟随同一个变量（`top: calc(var(--wb-gutter) + 54px)`、`right: var(--wb-gutter)`），不再写死 70 / 36
+
 ## [0.16.1] - 2026-10-27
 
 ### Fixed
