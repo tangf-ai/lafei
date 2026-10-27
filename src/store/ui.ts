@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AISettings, AppView, FontScale, NoteMode, TaskFilter, ThemeMode } from "../types";
+import type { AISettings, AppView, FontScale, NoteMode, TaskFilter, TaskViewMode, ThemeMode } from "../types";
 import { DEFAULT_AI } from "../lib/ai";
 
 interface UIState {
@@ -28,6 +28,8 @@ interface UIState {
   aiPanelOpen: boolean;
   taskDetailId: string | null;
   taskFilter: TaskFilter;
+  /** 任务页视图：列表 / 矩阵 / 日历 */
+  taskView: TaskViewMode;
   /** 从任务页「AI 分诊」带进助手输入框的一句话 */
   assistantDraft: string | null;
   folderRoot: string | null;
@@ -54,6 +56,7 @@ interface UIState {
   setAIPanelOpen: (open: boolean) => void;
   setTaskDetailId: (id: string | null) => void;
   setTaskFilter: (filter: TaskFilter) => void;
+  setTaskView: (view: TaskViewMode) => void;
   setAssistantDraft: (draft: string | null) => void;
   setFolderRoot: (root: string | null) => void;
   setAgentAccessEnabled: (enabled: boolean) => void;
@@ -98,6 +101,7 @@ export const useUI = create<UIState>()(
       aiPanelOpen: false,
       taskDetailId: null,
       taskFilter: "all",
+      taskView: "matrix",
       assistantDraft: null,
       folderRoot: null,
       agentAccessEnabled: false,
@@ -130,6 +134,7 @@ export const useUI = create<UIState>()(
       setAIPanelOpen: (aiPanelOpen) => set({ aiPanelOpen }),
       setTaskDetailId: (taskDetailId) => set({ taskDetailId }),
       setTaskFilter: (taskFilter) => set({ taskFilter }),
+      setTaskView: (taskView) => set({ taskView }),
       setAssistantDraft: (assistantDraft) => set({ assistantDraft }),
       setFolderRoot: (folderRoot) => set({ folderRoot }),
       setAgentAccessEnabled: (agentAccessEnabled) => set({ agentAccessEnabled }),
@@ -148,6 +153,7 @@ export const useUI = create<UIState>()(
         fontScale: state.fontScale,
         sidebarCollapsed: state.sidebarCollapsed,
         notesListCollapsed: state.notesListCollapsed,
+        taskView: state.taskView,
         ai: state.ai,
         folderRoot: state.folderRoot,
         agentAccessEnabled: state.agentAccessEnabled,

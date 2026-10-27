@@ -35,7 +35,7 @@
 
 | 平台 | 版本 | 说明 |
 | --- | --- | --- |
-| macOS（Apple Silicon） | [v0.14.0](https://github.com/tangf-ai/lafei/releases/latest) | `Lafei-0.14.0-macOS-arm64.dmg`，ad-hoc 签名、未公证；首次打开如被拦截，右键应用选「打开」 |
+| macOS（Apple Silicon） | [v0.15.0](https://github.com/tangf-ai/lafei/releases/latest) | `Lafei-0.15.0-macOS-arm64.dmg`，ad-hoc 签名、未公证；首次打开如被拦截，右键应用选「打开」 |
 | Web / PWA | 源码构建 | `pnpm build` 后把 `dist/` 部署到任意静态托管 |
 | Windows / Linux | 源码构建 | Tauri 2 支持，暂未提供预编译包 |
 

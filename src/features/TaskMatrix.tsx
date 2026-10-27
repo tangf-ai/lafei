@@ -17,6 +17,8 @@ interface TaskMatrixProps {
   tasks: Task[];
   /** 新建任务时默认归到这个象限 */
   onAddToQuadrant: (quadrant: Quadrant) => void;
+  /** 矩阵模式的新建入口（浮层快捷新建） */
+  onNewTask: () => void;
 }
 
 const PRIORITY_WEIGHT: Record<Task["priority"], number> = { high: 0, medium: 1, low: 2 };
@@ -69,7 +71,7 @@ function tipMeta(task: Task) {
  * 每格用通栏任务行铺开（一行一件），窗口矮时矩阵按内容长高、整页滚动；
  * 格头「查看全部」下钻看该象限的全部任务。
  */
-export function TaskMatrix({ tasks, onAddToQuadrant }: TaskMatrixProps) {
+export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProps) {
   const groups = useMemo(() => groupTasksByQuadrant(tasks), [tasks]);
   const weekDue = useMemo(
     () => tasks.filter((task) => task.dueDate && task.dueDate <= dayKeyOffset(7)).length,
@@ -96,7 +98,8 @@ export function TaskMatrix({ tasks, onAddToQuadrant }: TaskMatrixProps) {
   useEffect(() => {
     if (!drillQuadrant) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setDrillQuadrant(null);
+      // 快捷新建浮层开着时，Esc 先收浮层（TasksView 里处理），不要同时退出下钻
+      if (event.key === "Escape" && !document.querySelector(".task-quick-layer")) setDrillQuadrant(null);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -376,6 +379,10 @@ export function TaskMatrix({ tasks, onAddToQuadrant }: TaskMatrixProps) {
             本周到期 <b>{weekDue}</b>
           </span>
         </div>
+        <button type="button" className="wb-matrix-new" onClick={onNewTask}>
+          <Plus size={11} />
+          新建任务
+        </button>
       </header>
 
       <div className="wb-plot">

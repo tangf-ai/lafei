@@ -1,9 +1,10 @@
-import { Moon, Plus, Search, Sun } from "lucide-react";
+import { CalendarDays, LayoutGrid, List, Moon, Plus, Search, Sun } from "lucide-react";
 import { format } from "date-fns";
 import { useUI } from "../store/ui";
 import { useNow, useResolvedTheme } from "../lib/hooks";
 import { newNote } from "../lib/actions";
-import type { AppView, TaskFilter } from "../types";
+import type { AppView, TaskFilter, TaskViewMode } from "../types";
+import { cn } from "../lib/util";
 
 const VIEW_LABEL: Record<AppView, string> = {
   today: "今日",
@@ -12,6 +13,12 @@ const VIEW_LABEL: Record<AppView, string> = {
   tags: "标签",
   assistant: "AI 助手",
 };
+
+const TASK_VIEWS: { id: TaskViewMode; label: string; icon: typeof List }[] = [
+  { id: "list", label: "列表视图", icon: List },
+  { id: "matrix", label: "矩阵视图", icon: LayoutGrid },
+  { id: "calendar", label: "日历视图", icon: CalendarDays },
+];
 
 const FILTER_LABEL: Record<TaskFilter, string> = {
   all: "全部",
@@ -23,6 +30,9 @@ const FILTER_LABEL: Record<TaskFilter, string> = {
 export function Topbar() {
   const view = useUI((state) => state.view);
   const filter = useUI((state) => state.taskFilter);
+  const setTaskFilter = useUI((state) => state.setTaskFilter);
+  const taskView = useUI((state) => state.taskView);
+  const setTaskView = useUI((state) => state.setTaskView);
   const tagFilter = useUI((state) => state.tagFilter);
   const theme = useUI((state) => state.theme);
   const setTheme = useUI((state) => state.setTheme);
@@ -50,6 +60,29 @@ export function Topbar() {
             </>
           )}
         </span>
+        {view === "tasks" && (
+          <div className="wb-task-view" role="group" aria-label="任务视图">
+            {TASK_VIEWS.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={cn("wb-task-view-btn", taskView === item.id && "is-active")}
+                  onClick={() => {
+                    if (item.id === "matrix" && filter === "done") setTaskFilter("all");
+                    setTaskView(item.id);
+                  }}
+                  title={item.label}
+                  aria-label={item.label}
+                  aria-pressed={taskView === item.id}
+                >
+                  <Icon size={13} />
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="wb-tb-center">

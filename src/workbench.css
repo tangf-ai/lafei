@@ -4592,3 +4592,158 @@ html[data-design="workbench"] .preview-sea .theme-preview-main span {
 html[data-design="workbench"] .preview-sea .theme-preview-main span:first-child {
   background: #9aaab1;
 }
+
+/* ==========================================================================
+   任务视图切换（顶栏）· 快捷新建浮层（矩阵模式）
+   ========================================================================== */
+
+.wb-task-view {
+  align-self: center;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  height: 28px;
+  margin-left: 4px;
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--wb-line-soft);
+  background: color-mix(in srgb, var(--wb-ink) 4%, transparent);
+}
+
+.wb-task-view-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 22px;
+  border-radius: 6px;
+  color: var(--wb-faint);
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.wb-task-view-btn:hover {
+  color: var(--wb-ink);
+  background: color-mix(in srgb, var(--wb-ink) 6%, transparent);
+}
+
+.wb-task-view-btn.is-active {
+  background: var(--wb-card);
+  color: var(--wb-green);
+  box-shadow: var(--wb-sh-sm);
+}
+
+/* 矩阵模式的快捷新建：浮层，不占布局高度 */
+.wb-tasks.is-matrix {
+  position: relative;
+}
+
+.wb-tasks .task-quick-layer {
+  position: absolute;
+  top: 70px;
+  right: 36px;
+  z-index: 40;
+  width: 600px;
+  padding: 10px 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--wb-line);
+  background: var(--wb-card);
+  box-shadow: 0 18px 44px rgba(20, 30, 20, 0.16), var(--wb-sh-sm);
+  animation: wb-quick-in 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes wb-quick-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.wb-tasks .task-quick-layer .task-add-bar {
+  height: 52px;
+  padding: 0 2px;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.wb-tasks .task-quick-layer .task-add-bar:focus-within {
+  border: 0;
+  box-shadow: none;
+}
+
+.wb-tasks .task-quick-layer:focus-within {
+  border-color: var(--wb-green);
+  box-shadow: 0 18px 44px rgba(20, 30, 20, 0.16), 0 0 0 3px var(--wb-focus-ring), var(--wb-sh-sm);
+}
+
+.wb-tasks .task-quick-layer .task-add-tag-row {
+  margin-top: 6px;
+  padding: 8px 2px 0;
+  border-top: 1px solid var(--wb-line-soft);
+}
+
+.task-quick-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px 5px;
+}
+
+.task-quick-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--wb-ink);
+}
+
+.task-quick-hint {
+  margin-left: auto;
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+  color: var(--wb-faint);
+}
+
+.task-quick-close {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--wb-faint);
+}
+
+.task-quick-close:hover {
+  background: color-mix(in srgb, var(--wb-ink) 6%, transparent);
+  color: var(--wb-ink);
+}
+
+@media (max-width: 1100px) {
+  .wb-tasks .task-quick-layer {
+    width: 520px;
+  }
+}
+
+@media (max-width: 820px) {
+  .wb-tasks .task-quick-layer {
+    top: 68px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+
+  .wb-task-view.is-mobile {
+    margin: 0 2px 0 0;
+    height: 30px;
+  }
+
+  .wb-task-view.is-mobile .wb-task-view-btn {
+    width: 30px;
+    height: 24px;
+  }
+}
