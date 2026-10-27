@@ -21,6 +21,8 @@ interface UIState {
   theme: ThemeMode;
   fontScale: FontScale;
   sidebarCollapsed: boolean;
+  /** 左侧栏宽度（px，拖动侧栏右边缘调整） */
+  sidebarWidth: number;
   notesListCollapsed: boolean;
   ai: AISettings;
   settingsOpen: boolean;
@@ -48,6 +50,7 @@ interface UIState {
   setTheme: (theme: ThemeMode) => void;
   setFontScale: (scale: FontScale) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  setSidebarWidth: (width: number) => void;
   setNotesListCollapsed: (collapsed: boolean) => void;
   setAI: (ai: AISettings) => void;
   patchAI: (patch: Partial<AISettings>) => void;
@@ -94,6 +97,7 @@ export const useUI = create<UIState>()(
       theme: "light",
       fontScale: 1,
       sidebarCollapsed: false,
+      sidebarWidth: 236,
       notesListCollapsed: false,
       ai: DEFAULT_AI,
       settingsOpen: false,
@@ -126,6 +130,8 @@ export const useUI = create<UIState>()(
       setTheme: (theme) => set({ theme }),
       setFontScale: (fontScale) => set({ fontScale }),
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
+      setSidebarWidth: (sidebarWidth) =>
+        set({ sidebarWidth: Math.min(380, Math.max(200, Math.round(sidebarWidth))) }),
       setNotesListCollapsed: (notesListCollapsed) => set({ notesListCollapsed }),
       setAI: (ai) => set({ ai }),
       patchAI: (patch) => set((state) => ({ ai: { ...state.ai, ...patch } })),
@@ -152,6 +158,7 @@ export const useUI = create<UIState>()(
         theme: state.theme,
         fontScale: state.fontScale,
         sidebarCollapsed: state.sidebarCollapsed,
+        sidebarWidth: state.sidebarWidth,
         notesListCollapsed: state.notesListCollapsed,
         taskView: state.taskView,
         ai: state.ai,

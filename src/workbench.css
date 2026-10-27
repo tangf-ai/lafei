@@ -4747,3 +4747,59 @@ html[data-design="workbench"] .preview-sea .theme-preview-main span:first-child 
     height: 24px;
   }
 }
+
+/* ==========================================================================
+   侧栏宽度（拖动侧栏右边缘调整；App 在 .app-shell 上写 --wb-side-w）
+   ========================================================================== */
+
+html[data-design="workbench"] .app-shell {
+  grid-template-columns: var(--wb-side-w, 236px) minmax(0, 1fr);
+}
+
+html[data-design="workbench"] .sidebar.wb-sidebar {
+  width: var(--wb-side-w, 236px);
+}
+
+.wb-side-resize {
+  position: absolute;
+  top: 0;
+  right: -5px;
+  bottom: 0;
+  z-index: 25;
+  width: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+  touch-action: none;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+
+.wb-side-resize:hover,
+.wb-side-resize:focus-visible,
+.wb-side-resize[data-dragging="true"] {
+  opacity: 1;
+  outline: none;
+}
+
+.wb-side-resize::before {
+  content: "";
+  width: 2px;
+  height: 100%;
+  background: color-mix(in srgb, var(--wb-green) 40%, transparent);
+}
+
+.wb-side-resize:hover::before,
+.wb-side-resize[data-dragging="true"]::before {
+  background: color-mix(in srgb, var(--wb-green) 70%, transparent);
+}
+
+.wb-side-resize:focus-visible::before {
+  background: var(--wb-green);
+}
+
+body.is-col-resizing {
+  cursor: col-resize !important;
+  user-select: none;
+}

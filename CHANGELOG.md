@@ -3,6 +3,12 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.16.0] - 2026-10-27
+
+### Added
+
+- 左侧栏可以拖动右边缘调整宽度（200 - 380px），双击边缘恢复默认 236px；宽度会记住
+
 ## [0.15.1] - 2026-10-27
 
 ### Fixed

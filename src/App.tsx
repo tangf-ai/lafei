@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import type { CSSProperties } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { Topbar } from "./components/Topbar";
 import { MobileTopbar } from "./components/MobileTopbar";
@@ -38,6 +39,7 @@ export default function App() {
   const setView = useUI((state) => state.setView);
   const setTaskDetailId = useUI((state) => state.setTaskDetailId);
   const sidebarCollapsed = useUI((state) => state.sidebarCollapsed);
+  const sidebarWidth = useUI((state) => state.sidebarWidth);
   const resolvedTheme = useResolvedTheme(theme);
   const isMobile = useIsMobile();
   const editorOpen = isMobile && view === "notes" && Boolean(activeNoteId);
@@ -86,6 +88,7 @@ export default function App() {
   return (
     <div
       className={cn("app-shell", editorOpen && "editor-open", sidebarCollapsed && "wb-collapsed")}
+      style={{ "--wb-side-w": `${sidebarCollapsed ? 64 : sidebarWidth}px` } as CSSProperties}
       data-tauri-drag-region
     >
       <Topbar />

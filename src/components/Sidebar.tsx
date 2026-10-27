@@ -1,3 +1,8 @@
+import { useRef, useState } from "react";
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+} from "react";
 import {
   CheckSquare,
   NotebookPen,
@@ -15,6 +20,15 @@ import { useFolderSync } from "../store/folderSync";
 import { cn, dayKey, isOverdue } from "../lib/util";
 import { collectTagCounts, sameTag } from "../lib/tags";
 import type { TaskFilter } from "../types";
+
+/** 侧栏宽度范围与默认值（拖动右侧边缘调整） */
+const SIDEBAR_MIN = 200;
+const SIDEBAR_MAX = 380;
+const SIDEBAR_DEFAULT = 236;
+
+function clampSidebarWidth(value: number) {
+  return Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(value)));
+}
 
 const NAV = [
   { id: "today", label: "今日", icon: Sunrise },
@@ -49,6 +63,61 @@ export function Sidebar() {
   const taskFilter = useUI((state) => state.taskFilter);
   const setTaskFilter = useUI((state) => state.setTaskFilter);
   const sidebarCollapsed = useUI((state) => state.sidebarCollapsed);
+  const sidebarWidth = useUI((state) => state.sidebarWidth);
+  const setSidebarWidth = useUI((state) => state.setSidebarWidth);
+  const [resizing, setResizing] = useState(false);
+  const resizeActiveRef = useRef(false);
+  const resizeStartXRef = useRef(0);
+  const resizeStartWidthRef = useRef(SIDEBAR_DEFAULT);
+  const resizeLastWidthRef = useRef(SIDEBAR_DEFAULT);
+
+  const handleResizeStart = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.currentTarget.focus({ preventScroll: true });
+    const start = clampSidebarWidth(sidebarWidth);
+    resizeActiveRef.current = true;
+    resizeStartXRef.current = event.clientX;
+    resizeStartWidthRef.current = start;
+    resizeLastWidthRef.current = start;
+    setResizing(true);
+    document.body.classList.add("is-col-resizing");
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleResizeMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!resizeActiveRef.current) return;
+    const next = clampSidebarWidth(
+      resizeStartWidthRef.current + (event.clientX - resizeStartXRef.current),
+    );
+    if (next === resizeLastWidthRef.current) return;
+    resizeLastWidthRef.current = next;
+    setSidebarWidth(next);
+  };
+
+  const finishResize = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!resizeActiveRef.current) return;
+    resizeActiveRef.current = false;
+    setResizing(false);
+    document.body.classList.remove("is-col-resizing");
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  const handleResizeKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      setSidebarWidth(clampSidebarWidth(sidebarWidth + (event.key === "ArrowLeft" ? -16 : 16)));
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      setSidebarWidth(SIDEBAR_MIN);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      setSidebarWidth(SIDEBAR_MAX);
+    }
+  };
+
   const setSidebarCollapsed = useUI((state) => state.setSidebarCollapsed);
   const folderRoot = useUI((state) => state.folderRoot);
   const syncPhase = useFolderSync((state) => state.phase);
@@ -87,6 +156,27 @@ export function Sidebar() {
       className={cn("sidebar", "wb-sidebar", sidebarCollapsed && "is-collapsed")}
       data-tauri-drag-region
     >
+      {!sidebarCollapsed && (
+        <div
+          className="wb-side-resize"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="拖动调整侧栏宽度，双击恢复默认"
+          aria-valuemin={SIDEBAR_MIN}
+          aria-valuemax={SIDEBAR_MAX}
+          aria-valuenow={sidebarWidth}
+          tabIndex={0}
+          title="拖动调整侧栏宽度，双击恢复默认"
+          data-dragging={resizing ? "true" : undefined}
+          onPointerDown={handleResizeStart}
+          onPointerMove={handleResizeMove}
+          onPointerUp={finishResize}
+          onPointerCancel={finishResize}
+          onLostPointerCapture={finishResize}
+          onDoubleClick={() => setSidebarWidth(SIDEBAR_DEFAULT)}
+          onKeyDown={handleResizeKeyDown}
+        />
+      )}
       <div className="wb-side-top" data-tauri-drag-region>
         <div className="wb-brand">
           lafei<span>.</span>
