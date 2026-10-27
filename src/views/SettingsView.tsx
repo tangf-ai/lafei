@@ -47,6 +47,25 @@ import { mirrorAllToFolder } from "../lib/folderSync";
 
 type SettingsTab = "ai" | "appearance" | "data" | "agent" | "about";
 
+/** 读取真实版本号：Tauri 里用 getVersion()，Web / PWA 用构建时注入的 package.json 版本 */
+function useAppVersion(): string {
+  const [version, setVersion] = useState(__APP_VERSION__);
+  useEffect(() => {
+    if (!isTauri) return;
+    let cancelled = false;
+    void import("@tauri-apps/api/app")
+      .then(({ getVersion }) => getVersion())
+      .then((value) => {
+        if (!cancelled && value) setVersion(value);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return version;
+}
+
 const TABS: Array<{ id: SettingsTab; label: string; icon: typeof Cpu; caption: string }> = [
   { id: "ai", label: "AI 模型", icon: Cpu, caption: "接入你的模型" },
   { id: "appearance", label: "外观与写作", icon: Palette, caption: "调整阅读与编辑" },
@@ -78,6 +97,7 @@ const EDITOR_MODES: Array<{ id: NoteMode; label: string; caption: string }> = [
 ];
 
 export function SettingsView() {
+  const appVersion = useAppVersion();
   const open = useUI((state) => state.settingsOpen);
   const setOpen = useUI((state) => state.setSettingsOpen);
   const ai = useUI((state) => state.ai);
@@ -306,7 +326,7 @@ export function SettingsView() {
               </div>
               <div>
                 <strong>设置</strong>
-                <span>lafei · v0.12</span>
+                <span>lafei · v{appVersion}</span>
               </div>
             </div>
             <div className="settings-nav-items">
@@ -803,7 +823,7 @@ export function SettingsView() {
                       <i />
                     </div>
                     <div>
-                      <span className="eyebrow">Lafei · 拉斐 · v0.12.0</span>
+                      <span className="eyebrow">Lafei · 拉斐 · v{appVersion}</span>
                       <h3 className="display">把知识收好，把行动理清。</h3>
                       <p>Lafei（拉斐）是一个本地优先的笔记与任务应用，AI 是内置的，不是后装的外挂。</p>
                     </div>

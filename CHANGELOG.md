@@ -3,6 +3,12 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.16.1] - 2026-10-27
+
+### Fixed
+
+- 设置页的版本号改为读取真实版本：原来导航栏写死「lafei · v0.12」、「关于 Lafei」写死「v0.12.0」，现在 Tauri 里读 `getVersion()`，Web / PWA 用构建时注入的 `package.json` 版本
+
 ## [0.16.0] - 2026-10-27
 
 ### Added
