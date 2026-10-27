@@ -22,6 +22,8 @@
 }
 
 .wb-tasks.is-matrix .wb-matrix {
+  -webkit-user-select: none;
+  user-select: none;
   flex: 1 1 0;
   min-height: 320px;
 }
@@ -536,6 +538,7 @@
 .wb-dot-tip {
   position: fixed;
   z-index: 90;
+  pointer-events: none;
   width: max-content;
   max-width: 280px;
   padding: 8px 10px;
@@ -1065,4 +1068,38 @@
 .wb-matrix-new svg {
   width: 10px;
   height: 10px;
+}
+
+/* ── 行拖拽（pointer 事件实现） ── */
+body.is-row-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+body.is-row-dragging .wb-item {
+  cursor: grabbing;
+}
+
+.wb-row-ghost {
+  position: fixed;
+  z-index: 90;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 320px;
+  padding: 7px 11px;
+  border-radius: 8px;
+  background: var(--wb-card);
+  border: 1px solid var(--wb-line);
+  box-shadow: 0 10px 28px rgba(20, 30, 20, 0.2);
+  font-size: 11.5px;
+  color: var(--wb-ink);
+  transform: rotate(-0.4deg);
+}
+
+.wb-row-ghost-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }

@@ -3,6 +3,13 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.15.1] - 2026-10-27
+
+### Fixed
+
+- 任务矩阵「拖动换象限」在桌面端拖了没反应：Tauri 2 默认开启的原生拖拽处理会接管窗口里的拖拽，页面收不到 `dragover` / `drop`。现在关掉窗口的 `dragDropEnabled`，并把行拖拽改成 pointer / mouse 事件自己实现（拖动时跟手一张任务卡、目标象限高亮、松手写入 `quadrant`）
+- 顺手修掉拖拽的三个连带问题：矩阵区禁止选中文字（否则 WKWebView 先触发「选中文字再拖」）、悬停提示不再拦截点击、格子补上 `data-q` 用来判断落点
+
 ## [0.15.0] - 2026-10-27
 
 ### Added

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import type { DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, Plus } from "lucide-react";
 import type { Quadrant, Task } from "../types";
@@ -20,6 +20,9 @@ interface TaskMatrixProps {
   /** 矩阵模式的新建入口（浮层快捷新建） */
   onNewTask: () => void;
 }
+
+const isQuadrantId = (value: string | undefined): value is Quadrant =>
+  value === "q1" || value === "q2" || value === "q3" || value === "q4";
 
 const PRIORITY_WEIGHT: Record<Task["priority"], number> = { high: 0, medium: 1, low: 2 };
 const PRIORITY_LABEL: Record<Task["priority"], string> = {
@@ -83,6 +86,16 @@ export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProp
   const [hover, setHover] = useState<RowHover | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overQuadrant, setOverQuadrant] = useState<Quadrant | null>(null);
+  const [dragGhost, setDragGhost] = useState<{ taskId: string; x: number; y: number } | null>(null);
+  // 拖拽用 pointer 事件自己实现：WebKit（Tauri 的 WKWebView）里 HTML5 drag 会被原生拖拽会话吃掉，
+  // pointer 事件在 Chrome / WKWebView 行为一致，也方便自己做 ghost 和落点判断
+  const dragRef = useRef<{ taskId: string; startX: number; startY: number; active: boolean } | null>(null);
+  const dragEndAtRef = useRef(0);
+  const tasksRef = useRef(tasks);
+
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   // 板子随内容长高：行数多的格子决定板的最低高度，窗口矮时整页滚动
   const matrixMinHeight = useMemo(() => {
@@ -120,21 +133,70 @@ export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProp
   const closeDrill = () => setDrillQuadrant(null);
 
   const handleRowEnter = (task: Task, element: HTMLElement) => {
+    if (dragRef.current) return;
     const rect = element.getBoundingClientRect();
     setHover({ task, x: rect.left + Math.min(rect.width / 2, 220), y: rect.top });
   };
 
-  const handleDragStart = (event: DragEvent<HTMLElement>, task: Task) => {
-    event.dataTransfer.setData("text/plain", task.id);
-    event.dataTransfer.effectAllowed = "move";
-    setHover(null);
-    setDraggingId(task.id);
+  const handleRowMouseDown = (event: ReactMouseEvent<HTMLElement>, task: Task) => {
+    if (event.button !== 0) return;
+    dragRef.current = { taskId: task.id, startX: event.clientX, startY: event.clientY, active: false };
   };
 
-  const clearDrag = () => {
-    setDraggingId(null);
-    setOverQuadrant(null);
-  };
+  // 行拖拽：移动超过 5px 才算拖动，松手时按落点所在象限写 task.quadrant
+  useEffect(() => {
+    const onMove = (event: MouseEvent) => {
+      const drag = dragRef.current;
+      if (!drag) return;
+      if (!drag.active) {
+        if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 5) return;
+        drag.active = true;
+        setHover(null);
+        setDraggingId(drag.taskId);
+        document.body.classList.add("is-row-dragging");
+      }
+      event.preventDefault();
+      setDragGhost({ taskId: drag.taskId, x: event.clientX, y: event.clientY });
+      const element = document.elementFromPoint(event.clientX, event.clientY);
+      const quad = element?.closest<HTMLElement>(".wb-quad")?.dataset.q;
+      setOverQuadrant(isQuadrantId(quad) ? quad : null);
+    };
+
+    const finishDrag = (event: MouseEvent) => {
+      const drag = dragRef.current;
+      dragRef.current = null;
+      if (!drag || !drag.active) return;
+      dragEndAtRef.current = Date.now();
+      setDraggingId(null);
+      setDragGhost(null);
+      setOverQuadrant(null);
+      document.body.classList.remove("is-row-dragging");
+      const element = document.elementFromPoint(event.clientX, event.clientY);
+      const quad = element?.closest<HTMLElement>(".wb-quad")?.dataset.q;
+      if (!isQuadrantId(quad)) return;
+      const task = tasksRef.current.find((item) => item.id === drag.taskId);
+      if (!task || quadrantOf(task) === quad) return;
+      void updateTask(drag.taskId, { quadrant: quad });
+    };
+
+    const cancelDrag = () => {
+      dragRef.current = null;
+      setDraggingId(null);
+      setDragGhost(null);
+      setOverQuadrant(null);
+      document.body.classList.remove("is-row-dragging");
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", finishDrag);
+    window.addEventListener("blur", cancelDrag);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", finishDrag);
+      window.removeEventListener("blur", cancelDrag);
+      document.body.classList.remove("is-row-dragging");
+    };
+  }, []);
 
   const renderRow = (task: Task) => {
     const due = dueLabel(task.dueDate);
@@ -149,11 +211,12 @@ export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProp
         className={cn("wb-item", overdue && "is-overdue", draggingId === task.id && "is-dragging")}
         role="button"
         tabIndex={0}
-        draggable
         onClick={(event) => {
           event.stopPropagation();
+          if (Date.now() - dragEndAtRef.current < 200) return;
           setTaskDetailId(task.id);
         }}
+        onMouseDown={(event) => handleRowMouseDown(event, task)}
         onKeyDown={(event) => {
           if (event.target !== event.currentTarget) return;
           if (event.key !== "Enter" && event.key !== " ") return;
@@ -165,8 +228,6 @@ export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProp
         onMouseLeave={() => setHover(null)}
         onFocus={(event) => handleRowEnter(task, event.currentTarget)}
         onBlur={() => setHover(null)}
-        onDragStart={(event) => handleDragStart(event, task)}
-        onDragEnd={clearDrag}
       >
         <i className={cn("wb-pdot", `is-${task.priority}`)} />
         <span className="wb-item-title">{task.title || "未命名任务"}</span>
@@ -199,28 +260,11 @@ export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProp
           isLeft && "is-left",
           isOver && "is-drop",
         )}
+        data-q={quadrant}
         onClick={(event) => {
+          if (Date.now() - dragEndAtRef.current < 200) return;
           if ((event.target as HTMLElement).closest("button, [role='button']")) return;
           openDrill(quadrant);
-        }}
-        onDragOver={(event) => {
-          if (!draggingId) return;
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "move";
-          setOverQuadrant((current) => (current === quadrant ? current : quadrant));
-        }}
-        onDragLeave={(event) => {
-          if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
-          setOverQuadrant((current) => (current === quadrant ? null : current));
-        }}
-        onDrop={(event) => {
-          event.preventDefault();
-          const id = event.dataTransfer.getData("text/plain") || draggingId;
-          clearDrag();
-          if (!id) return;
-          const task = tasks.find((item) => item.id === id);
-          if (!task || quadrantOf(task) === quadrant) return;
-          void updateTask(id, { quadrant });
         }}
       >
         <div className="wb-quad-head">
@@ -345,6 +389,8 @@ export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProp
   };
 
   const tipAbove = hover ? hover.y > 170 : true;
+  const ghostTask = dragGhost ? tasks.find((item) => item.id === dragGhost.taskId) : null;
+
   const tipX = hover
     ? Math.min(Math.max(hover.x, 160), (typeof window === "undefined" ? 1600 : window.innerWidth) - 160)
     : 0;
@@ -409,6 +455,16 @@ export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProp
           >
             <b>{hover.task.title || "未命名任务"}</b>
             <span>{tipMeta(hover.task)}</span>
+          </div>,
+          document.body,
+        )}
+
+      {dragGhost &&
+        ghostTask &&
+        createPortal(
+          <div className="wb-row-ghost" style={{ left: dragGhost.x + 14, top: dragGhost.y + 12 }}>
+            <i className={cn("wb-pdot", `is-${ghostTask.priority}`)} />
+            <span className="wb-row-ghost-title">{ghostTask.title || "未命名任务"}</span>
           </div>,
           document.body,
         )}
