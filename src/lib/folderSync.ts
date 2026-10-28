@@ -52,6 +52,12 @@ let currentSync: Promise<SyncSummary> | null = null;
 let operationQueue: Promise<unknown> = Promise.resolve();
 let lastManifestStamp: string | null = null;
 let lastManifestCheck = 0;
+/** 定时同步的 setTimeout 句柄；null 表示当前没有排期 */
+let scheduledTimer: number | null = null;
+/** 正在启用 / 切换数据仓库：这段时间不该再插入一次完整同步 */
+let vaultTransition = false;
+/** 导入 / 清空等全量覆盖期间暂停自动同步，避免把中间状态写进文件夹 */
+let autoSyncSuspended = false;
 
 function withLock<T>(task: () => Promise<T>): Promise<T> {
   const result = operationQueue.then(task, task);
@@ -545,6 +551,116 @@ async function performFullSync(root: string): Promise<SyncSummary> {
   return summary;
 }
 
+/* ---------- 定时同步 ---------- */
+
+/** 每次重排都递增，用来忽略已经入队的旧定时器回调 */
+let scheduleGeneration = 0;
+/** 当前定时器计划触发的时刻；休眠 / 挂起后用来判断是否错过 */
+let scheduledDueAt: number | null = null;
+/** 导入 / 清空等全量覆盖可能嵌套调用，用计数确保最后一个结束时才恢复 */
+let autoSyncSuspendDepth = 0;
+
+function clearScheduledSync() {
+  scheduleGeneration += 1;
+  scheduledDueAt = null;
+  if (scheduledTimer !== null) {
+    window.clearTimeout(scheduledTimer);
+    scheduledTimer = null;
+  }
+}
+
+function armScheduledSync(delayMs: number) {
+  clearScheduledSync();
+  const generation = scheduleGeneration;
+  const nextAt = Date.now() + delayMs;
+  scheduledDueAt = nextAt;
+  useFolderSync.getState().setNextSyncAt(nextAt);
+  scheduledTimer = window.setTimeout(() => {
+    // 句柄可能已经被新的排期替换，旧回调只负责退出，不能清掉新定时器
+    if (generation !== scheduleGeneration) return;
+    scheduledTimer = null;
+    scheduledDueAt = null;
+    void runScheduledSync();
+  }, delayMs);
+}
+
+/**
+ * 按设置里的间隔重排下一次定时同步。
+ * 启用 / 关闭数据仓库、修改间隔、切换仓库、断开连接时都会调用；
+ * 关闭（0 分钟）、暂停自动同步或没连接仓库时只清掉定时器并把「下次同步」置空。
+ */
+export function refreshSyncSchedule() {
+  clearScheduledSync();
+  if (autoSyncSuspended) {
+    useFolderSync.getState().setNextSyncAt(null);
+    return;
+  }
+  const root = getRoot();
+  const minutes = useUI.getState().syncIntervalMinutes;
+  if (!isFolderStorageAvailable() || !root || !Number.isFinite(minutes) || minutes <= 0) {
+    useFolderSync.getState().setNextSyncAt(null);
+    return;
+  }
+  armScheduledSync(minutes * 60_000);
+}
+
+/**
+ * 导入 / 清空备份前调用：暂停定时同步与自动检查，并等在途的完整同步结束，
+ * 避免「清空本机 → 自动同步把旧内容又从文件夹拉回来」。
+ */
+export async function suspendAutoSync(): Promise<void> {
+  autoSyncSuspendDepth += 1;
+  autoSyncSuspended = true;
+  clearScheduledSync();
+  if (flushTimer !== null) {
+    window.clearTimeout(flushTimer);
+    flushTimer = null;
+  }
+  useFolderSync.getState().setNextSyncAt(null);
+  if (currentSync) {
+    try {
+      await currentSync;
+    } catch {
+      // 同步自身的错误已经写进 status store，这里只负责等它收尾
+    }
+  }
+}
+
+export function resumeAutoSync() {
+  autoSyncSuspendDepth = Math.max(0, autoSyncSuspendDepth - 1);
+  if (autoSyncSuspendDepth > 0) return;
+  autoSyncSuspended = false;
+  refreshSyncSchedule();
+}
+
+async function runScheduledSync() {
+  if (autoSyncSuspended) {
+    useFolderSync.getState().setNextSyncAt(null);
+    return;
+  }
+  const root = getRoot();
+  const minutes = useUI.getState().syncIntervalMinutes;
+  if (!root || !isFolderStorageAvailable() || !Number.isFinite(minutes) || minutes <= 0) {
+    useFolderSync.getState().setNextSyncAt(null);
+    return;
+  }
+  // 三路同步最多一个在飞：手动 / 切换 / manifest 触发的同步刚跑过，
+  // 这次定时任务就算完成，直接排下一次，避免再补一次全量。
+  if (currentSync || vaultTransition) {
+    refreshSyncSchedule();
+    return;
+  }
+
+  useFolderSync.getState().setNextSyncAt(null);
+  try {
+    await syncFolderNow();
+    refreshSyncSchedule();
+  } catch {
+    // 失败原因已经写进 store；缩短等待后再试，避免一整天都不同步
+    armScheduledSync(Math.min(minutes * 60_000, 5 * 60_000));
+  }
+}
+
 function initializeLifecycle() {
   if (lifecycleBound) return;
   lifecycleBound = true;
@@ -552,6 +668,17 @@ function initializeLifecycle() {
 
   const maybeCheck = () => {
     if (document.visibilityState !== "visible") return;
+    // 系统休眠 / WebView 挂起可能让定时器晚到甚至丢失：醒来后补做一次
+    if (
+      scheduledDueAt !== null &&
+      Date.now() >= scheduledDueAt + 2_000 &&
+      !currentSync &&
+      !vaultTransition &&
+      !autoSyncSuspended
+    ) {
+      clearScheduledSync();
+      void runScheduledSync();
+    }
     const now = Date.now();
     if (now - lastManifestCheck < 12_000) return;
     lastManifestCheck = now;
@@ -568,10 +695,13 @@ function initializeLifecycle() {
 }
 
 async function checkRemoteManifest() {
+  if (autoSyncSuspended || vaultTransition) return;
   const root = getRoot();
   if (!root || !initialized || currentSync) return;
   try {
     const raw = await folderBackend.readManifest(root);
+    // 读文件期间可能开始切换仓库 / 手动同步，读到的内容就过期了
+    if (autoSyncSuspended || vaultTransition || currentSync || getRoot() !== root) return;
     if (!raw) {
       if (lastManifestStamp !== null) await syncFolderNow();
       return;
@@ -599,10 +729,15 @@ export async function initializeFolderSync() {
   }
 
   useFolderSync.setState({ phase: "syncing", error: null });
+  refreshSyncSchedule();
   try {
     await syncFolderNow();
   } catch {
-    // Status store already contains the error; the folder stays configured for retry.
+    // 启动时首次同步失败也要在 5 分钟内重试，而不是等满一个完整间隔
+    const minutes = useUI.getState().syncIntervalMinutes;
+    if (getRoot() && Number.isFinite(minutes) && minutes > 0) {
+      armScheduledSync(Math.min(minutes * 60_000, 5 * 60_000));
+    }
   }
 }
 
@@ -668,43 +803,52 @@ function normalizedRoot(root: string) {
  */
 export async function switchFolderVault(candidate: FolderCandidate): Promise<void> {
   if (currentSync) throw new Error("正在同步，请稍后再切换数据目录");
+  if (vaultTransition) throw new Error("正在切换数据目录，请稍后再试");
   const currentRoot = getRoot();
   if (!currentRoot) {
     throw new Error("请先启用文件夹存储并同步当前数据，再切换数据目录");
   }
   if (normalizedRoot(currentRoot) === normalizedRoot(candidate.root)) return;
 
+  // 从「切走前的最后一次同步」开始就挡住定时同步，直到新仓库载入完成：
+  // 否则定时器可能在这中间插入一次同步，把新仓库的内容写进旧目录。
+  vaultTransition = true;
   try {
-    await syncFolderNow();
-  } catch (error) {
-    throw new Error(`当前仓库同步失败，已取消切换：${errorMessage(error)}`);
-  }
+    try {
+      await syncFolderNow();
+    } catch (error) {
+      throw new Error(`当前仓库同步失败，已取消切换：${errorMessage(error)}`);
+    }
 
-  // 重新读取目标目录，避免使用确认弹窗打开后过期的快照
-  const store = await fetchFolderStore(candidate.root);
-  const counts = { notes: store.notes.length, tasks: store.tasks.length, chats: store.chats.length };
-  const hasRemoteData = counts.notes + counts.tasks + counts.chats > 0;
+    // 重新读取目标目录，避免使用确认弹窗打开后过期的快照
+    const store = await fetchFolderStore(candidate.root);
+    const counts = { notes: store.notes.length, tasks: store.tasks.length, chats: store.chats.length };
+    const hasRemoteData = counts.notes + counts.tasks + counts.chats > 0;
 
-  if (flushTimer) {
-    window.clearTimeout(flushTimer);
-    flushTimer = null;
-  }
-  dirty.clear();
+    if (flushTimer) {
+      window.clearTimeout(flushTimer);
+      flushTimer = null;
+    }
+    dirty.clear();
 
-  try {
-    await replaceLocalFromStore(hasRemoteData ? store : null);
-  } catch (error) {
-    markError(error);
-    throw new Error(`载入目标仓库失败，仍保留当前仓库：${errorMessage(error)}`);
-  }
+    try {
+      await replaceLocalFromStore(hasRemoteData ? store : null);
+    } catch (error) {
+      markError(error);
+      throw new Error(`载入目标仓库失败，仍保留当前仓库：${errorMessage(error)}`);
+    }
 
-  useUI.getState().setFolderRoot(candidate.root);
-  lastManifestStamp = null;
-  if (!initialized) {
-    initialized = true;
-    initializeLifecycle();
+    useUI.getState().setFolderRoot(candidate.root);
+    lastManifestStamp = null;
+    if (!initialized) {
+      initialized = true;
+      initializeLifecycle();
+    }
+    useFolderSync.getState().markSynced("已切换数据目录");
+  } finally {
+    vaultTransition = false;
+    refreshSyncSchedule();
   }
-  useFolderSync.getState().markSynced("已切换数据目录");
 }
 
 export async function enableFolderCandidate(
@@ -712,7 +856,9 @@ export async function enableFolderCandidate(
   mode: "merge" | "folder",
 ): Promise<{ root: string; summary: SyncSummary }> {
   if (currentSync) throw new Error("正在同步，请稍后再试");
+  if (vaultTransition) throw new Error("正在切换数据目录，请稍后再试");
   useFolderSync.getState().setPhase("syncing");
+  vaultTransition = true;
   try {
     if (mode === "folder") {
       await replaceLocalFromStore(candidate.store);
@@ -729,6 +875,9 @@ export async function enableFolderCandidate(
   } catch (error) {
     markError(error);
     throw error;
+  } finally {
+    vaultTransition = false;
+    refreshSyncSchedule();
   }
 }
 
@@ -739,6 +888,7 @@ export function disableFolderStorage() {
   flushTimer = null;
   lastManifestStamp = null;
   useFolderSync.getState().reset();
+  refreshSyncSchedule();
 }
 
 export async function mirrorAllToFolder(): Promise<SyncSummary | null> {

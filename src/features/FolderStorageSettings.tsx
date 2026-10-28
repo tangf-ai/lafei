@@ -9,6 +9,7 @@ import {
   Loader2,
   RefreshCw,
   ShieldCheck,
+  Timer,
   Unplug,
   X,
 } from "lucide-react";
@@ -20,11 +21,16 @@ import {
   enableFolderCandidate,
   isFolderStorageAvailable,
   loadFolderCandidate,
+  refreshSyncSchedule,
   selectFolderCandidate,
   switchFolderVault,
   syncFolderNow,
   type FolderCandidate,
 } from "../lib/folderSync";
+import {
+  SYNC_INTERVAL_OPTIONS,
+  syncIntervalLabel,
+} from "../lib/syncSchedule";
 import {
   forgetVault,
   loadVaults,
@@ -58,8 +64,11 @@ function vaultCountsLabel(entry: VaultEntry) {
 
 export function FolderStorageSettings() {
   const root = useUI((state) => state.folderRoot);
+  const syncIntervalMinutes = useUI((state) => state.syncIntervalMinutes);
+  const setSyncIntervalMinutes = useUI((state) => state.setSyncIntervalMinutes);
   const phase = useFolderSync((state) => state.phase);
   const lastSyncedAt = useFolderSync((state) => state.lastSyncedAt);
+  const nextSyncAt = useFolderSync((state) => state.nextSyncAt);
   const error = useFolderSync((state) => state.error);
   const lastMessage = useFolderSync((state) => state.lastMessage);
   const [busy, setBusy] = useState(false);
@@ -218,6 +227,20 @@ export function FolderStorageSettings() {
     setVaults(forgetVault(entry.root));
   };
 
+  const changeSyncInterval = (minutes: number) => {
+    if (minutes === syncIntervalMinutes) return;
+    setSyncIntervalMinutes(minutes);
+    refreshSyncSchedule();
+  };
+
+  const scheduleHint = !syncIntervalMinutes
+    ? "已关闭定时完整合并。编辑仍会立即落盘；打开应用、远程有变化时也会自动合并。"
+    : phase === "error" && nextSyncAt
+      ? `每 ${syncIntervalLabel(syncIntervalMinutes)}自动双向合并一次；上次失败，将在 ${timeLabel(nextSyncAt)} 重试。`
+      : nextSyncAt
+        ? `每 ${syncIntervalLabel(syncIntervalMinutes)}自动双向合并一次，下次 ${timeLabel(nextSyncAt)}。休眠唤醒后会自动补做。`
+        : `每 ${syncIntervalLabel(syncIntervalMinutes)}自动双向合并一次。`;
+
   return (
     <div className="settings-block folder-storage-block">
       <div className="settings-block-head">
@@ -285,7 +308,11 @@ export function FolderStorageSettings() {
             <div className="folder-sync-line">
               <span className={cn("folder-live-dot", syncing && "is-syncing", phase === "error" && "is-error")} />
               <span>
-                {syncing ? "正在与文件夹同步…" : phase === "error" ? "最近一次同步失败" : lastMessage || "自动同步已开启"}
+                {syncing
+                  ? "正在与文件夹同步…"
+                  : phase === "error"
+                    ? "最近一次同步失败"
+                    : lastMessage || (syncIntervalMinutes ? "自动同步已开启" : "实时写入已开启")}
               </span>
               <span className="folder-sync-time">{timeLabel(lastSyncedAt)}</span>
             </div>
@@ -324,6 +351,32 @@ export function FolderStorageSettings() {
             >
               <Unplug size={13} /> 断开
             </button>
+          </div>
+
+          <div className="folder-schedule">
+            <div className="folder-schedule-copy">
+              <span className="folder-schedule-title">
+                <Timer size={13} />
+                定时同步
+              </span>
+              <p>{scheduleHint}</p>
+            </div>
+            <div className="folder-schedule-options" role="group" aria-label="定时同步间隔">
+              {SYNC_INTERVAL_OPTIONS.map((option) => {
+                const active = option.minutes === syncIntervalMinutes;
+                return (
+                  <button
+                    key={option.minutes}
+                    type="button"
+                    className={cn("folder-schedule-chip", active && "is-active")}
+                    aria-pressed={active}
+                    onClick={() => changeSyncInterval(option.minutes)}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="folder-safety">

@@ -43,7 +43,7 @@ import { FolderStorageSettings } from "../features/FolderStorageSettings";
 import { AgentAccessSettings } from "../features/AgentAccessSettings";
 import { FONT_SCALES } from "../lib/fontScale";
 import { LogseqImport } from "../features/LogseqImport";
-import { mirrorAllToFolder } from "../lib/folderSync";
+import { mirrorAllToFolder, resumeAutoSync, suspendAutoSync } from "../lib/folderSync";
 
 type SettingsTab = "ai" | "appearance" | "data" | "agent" | "about";
 
@@ -255,6 +255,8 @@ export function SettingsView() {
   const runImport = async () => {
     if (!pendingImport) return;
     setImporting(true);
+    // 先停掉定时同步与在途同步，避免清空本机后又被文件夹里的旧内容补回来
+    await suspendAutoSync();
     try {
       await db.transaction("rw", db.notes, db.tasks, db.chats, db.messages, db.tombstones, async () => {
         await db.notes.clear();
@@ -283,29 +285,36 @@ export function SettingsView() {
       toast("导入失败，原有数据未被替换", "error");
     } finally {
       setPendingImport(null);
+      resumeAutoSync();
     }
   };
 
   const clearAll = async () => {
-    await db.transaction("rw", db.notes, db.tasks, db.chats, db.messages, db.tombstones, async () => {
-      await db.notes.clear();
-      await db.tasks.clear();
-      await db.chats.clear();
-      await db.messages.clear();
-      await db.tombstones.clear();
-    });
-    localStorage.setItem("lafei:seeded:v1", "1");
-    if (activeFolderRoot) {
-      try {
-        await mirrorAllToFolder();
-      } catch {
-        toast("本机数据已清空，但文件夹清理失败，请手动检查同步目录", "error");
+    // 清空期间暂停自动同步，否则定时同步 / manifest 检查会把旧内容从文件夹拉回本机
+    await suspendAutoSync();
+    try {
+      await db.transaction("rw", db.notes, db.tasks, db.chats, db.messages, db.tombstones, async () => {
+        await db.notes.clear();
+        await db.tasks.clear();
+        await db.chats.clear();
+        await db.messages.clear();
+        await db.tombstones.clear();
+      });
+      localStorage.setItem("lafei:seeded:v1", "1");
+      if (activeFolderRoot) {
+        try {
+          await mirrorAllToFolder();
+        } catch {
+          toast("本机数据已清空，但文件夹清理失败，请手动检查同步目录", "error");
+        }
       }
+      closeNote();
+      setView("today");
+      setOpen(false);
+      toast("所有数据已清空");
+    } finally {
+      resumeAutoSync();
     }
-    closeNote();
-    setView("today");
-    setOpen(false);
-    toast("所有数据已清空");
   };
 
   return (

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AISettings, AppView, FontScale, NoteMode, TaskFilter, TaskViewMode, ThemeMode } from "../types";
 import { DEFAULT_AI } from "../lib/ai";
+import { SYNC_INTERVAL_DEFAULT, normalizeSyncInterval } from "../lib/syncSchedule";
 
 interface UIState {
   view: AppView;
@@ -35,6 +36,8 @@ interface UIState {
   /** 从任务页「AI 分诊」带进助手输入框的一句话 */
   assistantDraft: string | null;
   folderRoot: string | null;
+  /** 数据仓库定时同步间隔（分钟，0 = 关闭）；默认每 30 分钟完整合并一次 */
+  syncIntervalMinutes: number;
   agentAccessEnabled: boolean;
   setView: (view: AppView) => void;
   openNote: (id: string, options?: { keepTagFilter?: boolean }) => void;
@@ -62,6 +65,7 @@ interface UIState {
   setTaskView: (view: TaskViewMode) => void;
   setAssistantDraft: (draft: string | null) => void;
   setFolderRoot: (root: string | null) => void;
+  setSyncIntervalMinutes: (minutes: number) => void;
   setAgentAccessEnabled: (enabled: boolean) => void;
 }
 
@@ -108,6 +112,7 @@ export const useUI = create<UIState>()(
       taskView: "matrix",
       assistantDraft: null,
       folderRoot: null,
+      syncIntervalMinutes: SYNC_INTERVAL_DEFAULT,
       agentAccessEnabled: false,
       // 切换主视图或打开笔记时收起标签筛选，避免旧标签在另一个视图里悄悄过滤内容
       setView: (view) => set({ view, tagFilter: null }),
@@ -143,6 +148,7 @@ export const useUI = create<UIState>()(
       setTaskView: (taskView) => set({ taskView }),
       setAssistantDraft: (assistantDraft) => set({ assistantDraft }),
       setFolderRoot: (folderRoot) => set({ folderRoot }),
+      setSyncIntervalMinutes: (minutes) => set({ syncIntervalMinutes: normalizeSyncInterval(minutes) }),
       setAgentAccessEnabled: (agentAccessEnabled) => set({ agentAccessEnabled }),
     }),
     {
@@ -163,6 +169,7 @@ export const useUI = create<UIState>()(
         taskView: state.taskView,
         ai: state.ai,
         folderRoot: state.folderRoot,
+        syncIntervalMinutes: state.syncIntervalMinutes,
         agentAccessEnabled: state.agentAccessEnabled,
       }),
       migrate: (persisted, version) => {
@@ -193,6 +200,7 @@ export const useUI = create<UIState>()(
           contentWidth: clampContentWidth(saved.contentWidth ?? current.contentWidth),
           splitRatio: clampSplitRatio(saved.splitRatio ?? current.splitRatio),
           fontScale,
+          syncIntervalMinutes: normalizeSyncInterval(saved.syncIntervalMinutes ?? current.syncIntervalMinutes),
           ai: { ...DEFAULT_AI, ...(saved.ai ?? {}) },
         };
       },

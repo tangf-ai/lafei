@@ -9320,6 +9320,77 @@ select:focus-visible,
   background: var(--danger-soft);
 }
 
+/* 定时同步：一行说明 + 间隔分段选择 */
+.folder-schedule {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--surface-raised) 55%, transparent);
+}
+
+.folder-schedule-copy {
+  flex: 1;
+  min-width: 220px;
+}
+
+.folder-schedule-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-soft);
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.folder-schedule-title svg {
+  color: var(--accent);
+}
+
+.folder-schedule-copy p {
+  margin-top: 3px;
+  color: var(--faint);
+  font-size: 9.2px;
+  line-height: 1.6;
+}
+
+.folder-schedule-options {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.folder-schedule-chip {
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 550;
+  white-space: nowrap;
+  transition: background 0.16s var(--ease), color 0.16s var(--ease), box-shadow 0.16s var(--ease);
+}
+
+.folder-schedule-chip:hover {
+  color: var(--ink);
+}
+
+.folder-schedule-chip.is-active {
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 650;
+  box-shadow: 0 1px 3px rgba(37, 30, 20, 0.1);
+}
+
 .folder-safety {
   display: flex;
   align-items: flex-start;
@@ -9455,6 +9526,21 @@ select:focus-visible,
   .folder-actions .folder-disconnect {
     flex: 0 0 auto;
     margin-left: 0;
+  }
+
+  .folder-schedule {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .folder-schedule-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .folder-schedule-chip {
+    height: 30px;
   }
 }
 

@@ -4549,6 +4549,51 @@ html[data-design="workbench"] .data-action:hover {
   border-color: color-mix(in srgb, var(--wb-green) 28%, var(--wb-line));
 }
 
+/* 数据仓库 · 定时同步（沿用 B 的分段控件语言） */
+html[data-design="workbench"] .folder-schedule {
+  border-color: var(--wb-line);
+  background: var(--wb-card);
+  box-shadow: var(--wb-sh-sm);
+}
+
+html[data-design="workbench"] .folder-schedule-title {
+  font-family: var(--font-ui);
+  color: var(--wb-ink);
+}
+
+html[data-design="workbench"] .folder-schedule-title svg {
+  color: var(--wb-green);
+}
+
+html[data-design="workbench"] .folder-schedule-copy p {
+  color: var(--wb-faint);
+}
+
+html[data-design="workbench"] .folder-schedule-options {
+  background: var(--wb-field);
+  border: 1px solid var(--wb-chip-line);
+}
+
+html[data-design="workbench"] .folder-schedule-chip {
+  color: var(--wb-muted);
+}
+
+html[data-design="workbench"] .folder-schedule-chip:hover {
+  color: var(--wb-ink);
+}
+
+html[data-design="workbench"] .folder-schedule-chip.is-active {
+  background: var(--wb-card);
+  color: var(--wb-ink-2);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(20, 30, 20, 0.07);
+}
+
+/* 深色下卡片比轨道更深，选中项改用更亮的一档灰绿 */
+html[data-design="workbench"][data-theme="dark"] .folder-schedule-chip.is-active {
+  background: var(--wb-active);
+}
+
 @media (max-width: 980px) {
   html[data-design="workbench"] .settings-shell {
     border-radius: 12px;
