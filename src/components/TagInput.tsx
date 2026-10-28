@@ -15,6 +15,8 @@ interface TagInputProps {
   /** 点击已有标签时的动作；传入后标签文字变成按钮 */
   onTagClick?: (tag: string) => void;
   addLabel?: string;
+  /** 提交一个标签后不收起输入框（浮层里连续添加时用） */
+  keepOpen?: boolean;
   className?: string;
 }
 
@@ -32,6 +34,7 @@ export function TagInput({
   autoOpen = false,
   onTagClick,
   addLabel = "标签",
+  keepOpen = false,
   className,
 }: TagInputProps) {
   const [adding, setAdding] = useState(Boolean(autoOpen));
@@ -56,7 +59,8 @@ export function TagInput({
       if (next !== tags) onChange(next);
     }
     setValue("");
-    setAdding(false);
+    if (!keepOpen) setAdding(false);
+    else inputRef.current?.focus();
   };
 
   const cancel = () => {

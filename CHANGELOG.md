@@ -3,6 +3,20 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.17.0] - 2026-10-28
+
+### Changed
+
+- 任务详情弹窗改版：截止日期 / 优先级 / 象限 / 标签 / 关联笔记收成一行 30px 的属性 chip，点开是浮层（浮层里仍是原来的原生控件），属性区 269px → 43px；备注从 86px 撑到 383px
+- 弹窗改为固定高度 `min(calc(100dvh - 96px), 680px)`，切换任务时不再忽高忽低；备注 textarea 用 flex 撑满剩余空间
+- 标题框按内容自适应（单行 31px，最多三行，超出在框内滚动），标题到属性条的间距 35 → 26px，去掉标题下面那条空白带
+
+### Added
+
+- `src/components/Popover.tsx`：锚定浮层原语（贴边 / 上翻 / 点外关闭 / Esc / 焦点归还 / ↑↓ 选项）
+- `src/components/TaskProperties.tsx`：任务属性条与五类浮层（日期预设 + 原生 date input、优先级、象限、标签、笔记搜索）
+- `TagInput` 新增 `keepOpen`：浮层里回车加完标签不收起输入框，可以连续添加
+
 ## [0.16.2] - 2026-10-27
 
 ### Changed

@@ -1,21 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { CalendarDays, Check, Flag, LayoutGrid, Link2, Loader2, SquareArrowOutUpRight, Tag, Trash2 } from "lucide-react";
+import { Check, Loader2, Trash2 } from "lucide-react";
 import { db, deleteTask, updateTask } from "../db";
 import { useUI, toast } from "../store/ui";
-import { cn, dueLabel, noteTitle } from "../lib/util";
+import { cn } from "../lib/util";
 import { collectTagCounts, tagsOf } from "../lib/tags";
-import type { Priority, Quadrant, Task } from "../types";
+import type { Task } from "../types";
 import { Modal } from "./Modal";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { TagInput } from "./TagInput";
-import { QUADRANTS } from "../lib/quadrant";
-
-const PRIORITIES: Array<{ id: Priority; label: string }> = [
-  { id: "high", label: "高" },
-  { id: "medium", label: "中" },
-  { id: "low", label: "低" },
-];
+import { TaskProperties } from "./TaskProperties";
 
 export function TaskDetailModal() {
   const taskId = useUI((state) => state.taskDetailId);
@@ -34,6 +27,7 @@ export function TaskDetailModal() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const dirtyRef = useRef(false);
   const latestDraftRef = useRef<Task | null>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
   latestDraftRef.current = draft;
 
   const persist = async (value: Task) => {
@@ -78,6 +72,17 @@ export function TaskDetailModal() {
     return () => window.clearTimeout(timer);
   }, [draft]);
 
+  // 标题框跟着内容长高：单行时只有一行高（不再留一整行空白），最多三行，再长就在框内滚动
+  useEffect(() => {
+    const element = titleRef.current;
+    if (!element) return;
+    const lineHeight = Number.parseFloat(getComputedStyle(element).lineHeight) || 30;
+    const maxHeight = lineHeight * 3;
+    element.style.height = "auto";
+    element.style.height = `${Math.min(Math.max(element.scrollHeight, lineHeight), maxHeight)}px`;
+    element.style.overflowY = element.scrollHeight > maxHeight + 1 ? "auto" : "hidden";
+  }, [draft?.title, taskId]);
+
   if (!taskId) return null;
 
   const patch = (value: Partial<Task>) => {
@@ -113,130 +118,35 @@ export function TaskDetailModal() {
                 {draft.done && <Check size={14} strokeWidth={3} />}
               </button>
               <span className="eyebrow">{draft.done ? "已完成" : "任务详情"}</span>
-              <button
-                type="button"
-                className="btn btn-sm btn-ghost"
-                onClick={closeDetail}
-              >
+              <button type="button" className="btn btn-sm btn-ghost" onClick={closeDetail}>
                 完成编辑
               </button>
             </div>
 
             <textarea
+              ref={titleRef}
               className="task-detail-title"
               value={draft.title}
-              rows={2}
+              rows={1}
               onChange={(event) => patch({ title: event.target.value })}
               placeholder="任务是什么？"
               aria-label="任务标题"
             />
 
-            <div className="task-detail-fields">
-              <div className="task-field">
-                <span className="task-field-label">
-                  <CalendarDays size={14} /> 截止日期
-                </span>
-                <div className="task-field-control">
-                  <input
-                    type="date"
-                    className="input input-date"
-                    value={draft.dueDate ?? ""}
-                    onChange={(event) => patch({ dueDate: event.target.value || null })}
-                  />
-                  {draft.dueDate && (
-                    <span className={`pill pill-${dueLabel(draft.dueDate).tone}`}>{dueLabel(draft.dueDate).label}</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="task-field">
-                <span className="task-field-label">
-                  <Flag size={14} /> 优先级
-                </span>
-                <div className="segmented segmented-sm">
-                  {PRIORITIES.map((priority) => (
-                    <button
-                      key={priority.id}
-                      type="button"
-                      className={cn("segment", draft.priority === priority.id && "active", `priority-${priority.id}`)}
-                      onClick={() => patch({ priority: priority.id })}
-                    >
-                      {priority.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="task-field">
-                <span className="task-field-label">
-                  <LayoutGrid size={14} /> 象限
-                </span>
-                <div className="task-field-control">
-                  <select
-                    className="select"
-                    value={draft.quadrant ?? ""}
-                    onChange={(event) =>
-                      patch({ quadrant: (event.target.value || null) as Quadrant | null })
-                    }
-                  >
-                    <option value="">自动（按日期与优先级）</option>
-                    {QUADRANTS.map((quadrant) => (
-                      <option key={quadrant.id} value={quadrant.id}>
-                        {quadrant.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="task-field task-field-wide">
-                <span className="task-field-label">
-                  <Tag size={14} /> 标签
-                </span>
-                <TagInput
-                  tags={tagsOf(draft)}
-                  suggestions={tagSuggestions}
-                  onChange={(tags) => patch({ tags })}
-                  onTagClick={(tag) => {
-                    closeDetail();
-                    openTagView(tag);
-                  }}
-                  placeholder="添加标签"
-                />
-              </div>
-
-              <div className="task-field task-field-wide">
-                <span className="task-field-label">
-                  <Link2 size={14} /> 关联笔记
-                </span>
-                <div className="task-field-control">
-                  <select
-                    className="select"
-                    value={draft.noteId ?? ""}
-                    onChange={(event) => patch({ noteId: event.target.value || null })}
-                  >
-                    <option value="">不关联笔记</option>
-                    {notes.map((note) => (
-                      <option key={note.id} value={note.id}>
-                        {noteTitle(note.title)}
-                      </option>
-                    ))}
-                  </select>
-                  {draft.noteId && (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-ghost"
-                      onClick={() => {
-                        setTaskId(null);
-                        openNote(draft.noteId!);
-                      }}
-                    >
-                      打开 <SquareArrowOutUpRight size={13} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+            <TaskProperties
+              task={draft}
+              notes={notes}
+              tagSuggestions={tagSuggestions}
+              patch={patch}
+              onOpenTag={(tag) => {
+                closeDetail();
+                openTagView(tag);
+              }}
+              onOpenNote={(noteId) => {
+                closeDetail();
+                openNote(noteId);
+              }}
+            />
 
             <div className="task-detail-notes">
               <label className="field-label" htmlFor="task-description">
@@ -245,7 +155,6 @@ export function TaskDetailModal() {
               <textarea
                 id="task-description"
                 className="textarea"
-                rows={3}
                 placeholder="补充一些上下文、链接或下一步…"
                 value={draft.description}
                 onChange={(event) => patch({ description: event.target.value })}

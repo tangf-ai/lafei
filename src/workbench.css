@@ -3496,7 +3496,8 @@ html[data-design="workbench"] .task-detail-title {
   font-size: 22px;
   line-height: 1.4;
   letter-spacing: -0.02em;
-  min-height: 62px;
+  /* 单行标题就是一行高（组件里按内容自动长高，最多三行） */
+  min-height: 31px;
 }
 
 /* 日历视图：沿用 B 的卡片与层级 */
