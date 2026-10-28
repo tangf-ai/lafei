@@ -4643,12 +4643,13 @@ html[data-design="workbench"] .preview-sea .theme-preview-main span:first-child 
 
 .wb-tasks .task-quick-layer {
   position: absolute;
-  /* 跟随页面留白，始终贴在矩阵卡片顶部/右侧 */
-  top: calc(var(--wb-gutter) + 54px);
+  /* 跟着矩阵卡片走：左右贴页面留白、顶部贴在板头下沿（整宽输入条，不再写死 600px） */
+  top: calc(var(--wb-gutter) + 47px);
+  left: var(--wb-gutter);
   right: var(--wb-gutter);
   z-index: 40;
-  width: 600px;
-  padding: 10px 12px 12px;
+  /* 左右内边距 14 + 标题行 4 = 板头的 18 留白，标题 / 关闭键与板头内容对齐 */
+  padding: 10px 14px 12px;
   border-radius: 12px;
   border: 1px solid var(--wb-line);
   background: var(--wb-card);
@@ -4728,18 +4729,10 @@ html[data-design="workbench"] .preview-sea .theme-preview-main span:first-child 
   color: var(--wb-ink);
 }
 
-@media (max-width: 1100px) {
-  .wb-tasks .task-quick-layer {
-    width: 520px;
-  }
-}
-
 @media (max-width: 820px) {
-  .wb-tasks .task-quick-layer {
-    top: calc(var(--wb-gutter) + 52px);
-    left: var(--wb-gutter);
-    right: var(--wb-gutter);
-    width: auto;
+  /* 手机端输入条换行成两排，高度交给内容，别再锁 52px */
+  .wb-tasks .task-quick-layer .task-add-bar {
+    height: auto;
   }
 
   .wb-task-view.is-mobile {
