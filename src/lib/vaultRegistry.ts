@@ -85,6 +85,30 @@ export function rememberVault(root: string, counts?: VaultCounts): VaultEntry[] 
   return next;
 }
 
+/**
+ * 同步完成后刷新「最近的数据目录」里的数量。
+ * 之前这些数字只在首次接入 / 切换仓库时写一次，之后一直停在旧值（例如一直显示 0 个任务），
+ * 看起来像任务没有同步过去。
+ */
+export function updateVaultCounts(root: string, counts: VaultCounts): VaultEntry[] {
+  const entries = loadVaults();
+  const existing = entries.find((entry) => entry.root === root);
+  if (!existing) return entries;
+  const { notes, tasks, chats } = counts;
+  if (
+    existing.counts &&
+    existing.counts.notes === notes &&
+    existing.counts.tasks === tasks &&
+    existing.counts.chats === chats
+  ) {
+    return entries;
+  }
+  existing.counts = { notes, tasks, chats };
+  const next = normalize(entries);
+  saveVaults(next);
+  return next;
+}
+
 export function touchVault(root: string, counts?: VaultCounts): VaultEntry[] {
   return rememberVault(root, counts);
 }

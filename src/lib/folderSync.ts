@@ -4,6 +4,7 @@ import { useUI } from "../store/ui";
 import { useFolderSync } from "../store/folderSync";
 import { isTauri, newId } from "./util";
 import { folderBackend } from "./folderBackend";
+import { updateVaultCounts } from "./vaultRegistry";
 import {
   chatFilePath,
   makeManifest,
@@ -133,6 +134,19 @@ function sameJson(a: unknown, b: unknown) {
   return stableJson(a) === stableJson(b);
 }
 
+/**
+ * 任务比较前先把可缺省的 quadrant 归一成 null：种子数据 / 老文件里没有这个字段，
+ * 直接比较会把「undefined vs null」当成变化，导致每次完整同步都把所有任务重写一遍
+ * （iCloud 一直在重新上传同一个任务文件，两台设备之间还会互相触发同步）。
+ */
+function comparableTask(task: Task) {
+  return { ...task, quadrant: task.quadrant ?? null };
+}
+
+function sameTask(a: Task, b: Task) {
+  return sameJson(comparableTask(a), comparableTask(b));
+}
+
 function sortMessages(messages: ChatMessage[]) {
   return [...messages].sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
 }
@@ -216,6 +230,8 @@ async function writeManifest(root: string) {
   const manifest = makeManifest(getDeviceId(), getDeviceName(), notes, tasks, chats);
   await folderBackend.writeFile(root, "manifest.json", serializeManifest(manifest));
   lastManifestStamp = stampOf(manifest);
+  // 「最近的数据目录」里的数量跟着一起更新，避免一直显示接入时的 0 个任务
+  updateVaultCounts(root, { notes, tasks, chats });
 }
 
 async function writeTombstones(root: string) {
@@ -403,11 +419,11 @@ async function performFullSync(root: string): Promise<SyncSummary> {
     if (!local) {
       tasksToPut.push(candidate);
       downloaded += 1;
-    } else if (candidate === remoteTask && !sameJson(local, remoteTask)) {
+    } else if (candidate === remoteTask && !sameTask(local, remoteTask)) {
       tasksToPut.push(candidate);
       downloaded += 1;
     }
-    if (!remoteTask || !sameJson(candidate, remoteTask)) tasksToWrite.set(id, candidate);
+    if (!remoteTask || !sameTask(candidate, remoteTask)) tasksToWrite.set(id, candidate);
   }
 
   const mergedChats: ChatBundle[] = [];
@@ -535,6 +551,8 @@ async function performFullSync(root: string): Promise<SyncSummary> {
   } else {
     lastManifestStamp = stampOf(remoteManifest);
   }
+
+  updateVaultCounts(root, counts);
 
   const summary: SyncSummary = {
     uploaded: notesToWrite.size + tasksToWrite.size + chatsToWrite.size,

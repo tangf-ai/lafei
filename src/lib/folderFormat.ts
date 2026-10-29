@@ -1,4 +1,4 @@
-import type { Chat, ChatMessage, ChatSource, Note, Priority, Task, Tombstone } from "../types";
+import type { Chat, ChatMessage, ChatSource, Note, Priority, Quadrant, Task, Tombstone } from "../types";
 
 export interface StoreFile {
   path: string;
@@ -136,6 +136,17 @@ export function parseNoteFile(file: StoreFile): Note | null {
 }
 
 const PRIORITIES: Priority[] = ["high", "medium", "low"];
+const QUADRANT_IDS: Quadrant[] = ["q1", "q2", "q3", "q4"];
+
+/**
+ * 任务的象限：老文件 / 种子数据可能根本没有这个字段，返回 undefined 表示「文件里没写」，
+ * null 表示「用户没有手动归位」。两种都按自动落位显示，但保留区别可以避免每次同步都误判为已变化。
+ */
+function parseQuadrant(value: unknown): Quadrant | null | undefined {
+  if (value === null) return null;
+  if (typeof value === "string" && QUADRANT_IDS.includes(value as Quadrant)) return value as Quadrant;
+  return undefined;
+}
 
 export function parseTaskFile(file: StoreFile): Task | null {
   try {
@@ -143,6 +154,9 @@ export function parseTaskFile(file: StoreFile): Task | null {
     const id = asString(parsed.id).trim();
     if (!id) return null;
     const createdAt = asNumber(parsed.createdAt, file.modifiedMs || Date.now());
+    // 象限是 Task 里唯一一个「可缺省」的字段：只有文件真的写了才带上，避免把旧文件的
+    // undefined 和 null 混为一谈，导致每次完整同步都把所有任务判定成「已变化」反复重写。
+    const quadrant = parseQuadrant(parsed.quadrant);
     return {
       id,
       title: asString(parsed.title, ""),
@@ -155,6 +169,7 @@ export function parseTaskFile(file: StoreFile): Task | null {
       completedAt: typeof parsed.completedAt === "number" ? parsed.completedAt : null,
       createdAt,
       updatedAt: Math.max(createdAt, asNumber(parsed.updatedAt, file.modifiedMs || createdAt)),
+      ...(quadrant === undefined ? {} : { quadrant }),
     };
   } catch {
     return null;
