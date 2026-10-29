@@ -13,6 +13,7 @@ import { db, createTask } from "../db";
 import { useUI, toast } from "../store/ui";
 import { cn, dayGroupLabel, dayKey, dueLabel, isOverdue, remainingLabel } from "../lib/util";
 import { collectTagCounts, hasTag } from "../lib/tags";
+import { inFloatingLayer } from "../lib/floating";
 import { DUE_PRESETS, dayKeyOffset, duePresetDate, type DuePresetId } from "../lib/date";
 import type { Priority, Quadrant, Task, TaskFilter } from "../types";
 import { TaskRow } from "../components/TaskRow";
@@ -222,6 +223,8 @@ export function TasksView() {
       const target = event.target as HTMLElement | null;
       if (!target) return;
       if (target.closest(".task-quick-layer") || target.closest(".wb-matrix-new")) return;
+      // 标签候选这类挂在 body 上的浮层也算快捷新建的一部分，点它不收起
+      if (inFloatingLayer(target)) return;
       setQuickOpen(false);
       setNewQuadrant(null);
     };

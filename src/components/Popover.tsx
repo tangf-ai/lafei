@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "../lib/util";
+import { inFloatingLayer } from "../lib/floating";
 
 interface PopoverProps {
   /** 触发浮层的元素（chip）；定位、点外关闭、焦点归还都以它为准 */
@@ -76,6 +77,8 @@ export function Popover({ anchor, open, onClose, children, width = 264, label, c
       const target = event.target as Node | null;
       if (!target) return;
       if (panelRef.current?.contains(target) || anchor?.contains(target)) return;
+      // 从浮层里再弹出的候选（例如标签候选）也挂在 body 上，点它不算「点外面」
+      if (inFloatingLayer(target)) return;
       onCloseRef.current();
     };
     const onKeyDown = (event: KeyboardEvent) => {
