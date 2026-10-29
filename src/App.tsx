@@ -7,6 +7,7 @@ import { MobileNav } from "./components/MobileNav";
 import { CommandPalette } from "./components/CommandPalette";
 import { TaskDetailModal } from "./components/TaskDetail";
 import { Toasts } from "./components/Toasts";
+import { QuickAssistant } from "./components/QuickAssistant";
 import { TodayView } from "./views/TodayView";
 import { NotesView } from "./views/NotesView";
 import { TasksView } from "./views/TasksView";
@@ -38,6 +39,7 @@ export default function App() {
   const setCommandOpen = useUI((state) => state.setCommandOpen);
   const setView = useUI((state) => state.setView);
   const setTaskDetailId = useUI((state) => state.setTaskDetailId);
+  const toggleQuickAssistant = useUI((state) => state.toggleQuickAssistant);
   const sidebarCollapsed = useUI((state) => state.sidebarCollapsed);
   const sidebarWidth = useUI((state) => state.sidebarWidth);
   const resolvedTheme = useResolvedTheme(theme);
@@ -79,11 +81,17 @@ export default function App() {
       } else if (key === ",") {
         event.preventDefault();
         setSettingsOpen(true);
+      } else if (key === "j") {
+        event.preventDefault();
+        // 弹窗/命令面板开着时不抢焦点，避免浮窗出现在遮罩后面；完整助手页本身就不需要浮窗
+        const ui = useUI.getState();
+        if (ui.settingsOpen || ui.commandOpen || ui.taskDetailId || ui.view === "assistant") return;
+        toggleQuickAssistant();
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [setCommandOpen, setSettingsOpen, setTaskDetailId, setView]);
+  }, [setCommandOpen, setSettingsOpen, setTaskDetailId, setView, toggleQuickAssistant]);
 
   return (
     <div
@@ -105,6 +113,7 @@ export default function App() {
       <CommandPalette />
       <SettingsView />
       <TaskDetailModal />
+      <QuickAssistant />
       <Toasts />
     </div>
   );

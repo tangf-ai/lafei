@@ -30,9 +30,11 @@ type PaletteItem =
 export function CommandPalette() {
   const open = useUI((state) => state.commandOpen);
   const setOpen = useUI((state) => state.setCommandOpen);
+  const view = useUI((state) => state.view);
   const openNote = useUI((state) => state.openNote);
   const setView = useUI((state) => state.setView);
   const setSettingsOpen = useUI((state) => state.setSettingsOpen);
+  const setQuickAssistantOpen = useUI((state) => state.setQuickAssistantOpen);
   const setTaskDetailId = useUI((state) => state.setTaskDetailId);
   const setTaskFilter = useUI((state) => state.setTaskFilter);
   const openTagView = useUI((state) => state.openTagView);
@@ -110,6 +112,15 @@ export function CommandPalette() {
         },
       },
       {
+        label: "快速对话",
+        hint: "⌘ J",
+        icon: Sparkles,
+        run: () => {
+          setQuickAssistantOpen(true);
+          setOpen(false);
+        },
+      },
+      {
         label: "设置与数据",
         hint: "⌘ ,",
         icon: Settings2,
@@ -128,7 +139,13 @@ export function CommandPalette() {
         },
       },
     ],
-    [openNote, setOpen, setSettingsOpen, setTaskDetailId, setTaskFilter, setTheme, setView, theme],
+    [openNote, setOpen, setQuickAssistantOpen, setSettingsOpen, setTaskDetailId, setTaskFilter, setTheme, setView, theme],
+  );
+
+  // 已经在完整 AI 助手页时，「快速对话」没有意义（浮窗在该页会自动收起），直接不展示
+  const paletteActions = useMemo(
+    () => (view === "assistant" ? actions.filter((action) => action.label !== "快速对话") : actions),
+    [actions, view],
   );
 
   const items = useMemo<PaletteItem[]>(() => {
@@ -140,7 +157,7 @@ export function CommandPalette() {
         .slice(0, 4)
         .map((note): PaletteItem => ({ kind: "note", note, key: `note-${note.id}` }));
       return [
-        ...actions.map((action): PaletteItem => ({ kind: "action", ...action, key: `action-${action.label}` })),
+        ...paletteActions.map((action): PaletteItem => ({ kind: "action", ...action, key: `action-${action.label}` })),
         ...recent,
       ];
     }
@@ -155,13 +172,13 @@ export function CommandPalette() {
       .filter((item) => tagQuery.length > 0 && item.tag.toLowerCase().includes(tagQuery))
       .slice(0, 4)
       .map((tag): PaletteItem => ({ kind: "tag", tag, key: `tag-${tag.tag}` }));
-    const actionHits = actions
+    const actionHits = paletteActions
       .filter((action) => action.label.includes(trimmed) || trimmed.includes(action.label.slice(0, 2)))
       .map((action): PaletteItem => ({ kind: "action", ...action, key: `action-${action.label}` }));
     return trimmed.startsWith("#")
       ? [...tagHits, ...noteHits, ...taskHits, ...actionHits]
       : [...noteHits, ...tagHits, ...taskHits, ...actionHits];
-  }, [actions, notes, query, tagIndex, tasks]);
+  }, [notes, paletteActions, query, tagIndex, tasks]);
 
   useEffect(() => {
     setActiveIndex(0);

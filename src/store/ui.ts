@@ -29,6 +29,8 @@ interface UIState {
   settingsOpen: boolean;
   commandOpen: boolean;
   aiPanelOpen: boolean;
+  /** 右下角的快速对话浮窗是否展开 */
+  quickAssistantOpen: boolean;
   taskDetailId: string | null;
   taskFilter: TaskFilter;
   /** 任务页视图：列表 / 矩阵 / 日历 */
@@ -60,6 +62,8 @@ interface UIState {
   setSettingsOpen: (open: boolean) => void;
   setCommandOpen: (open: boolean) => void;
   setAIPanelOpen: (open: boolean) => void;
+  setQuickAssistantOpen: (open: boolean) => void;
+  toggleQuickAssistant: () => void;
   setTaskDetailId: (id: string | null) => void;
   setTaskFilter: (filter: TaskFilter) => void;
   setTaskView: (view: TaskViewMode) => void;
@@ -107,6 +111,7 @@ export const useUI = create<UIState>()(
       settingsOpen: false,
       commandOpen: false,
       aiPanelOpen: false,
+      quickAssistantOpen: false,
       taskDetailId: null,
       taskFilter: "all",
       taskView: "matrix",
@@ -143,6 +148,8 @@ export const useUI = create<UIState>()(
       setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
       setCommandOpen: (commandOpen) => set({ commandOpen }),
       setAIPanelOpen: (aiPanelOpen) => set({ aiPanelOpen }),
+      setQuickAssistantOpen: (quickAssistantOpen) => set({ quickAssistantOpen }),
+      toggleQuickAssistant: () => set((state) => ({ quickAssistantOpen: !state.quickAssistantOpen })),
       setTaskDetailId: (taskDetailId) => set({ taskDetailId }),
       setTaskFilter: (taskFilter) => set({ taskFilter }),
       setTaskView: (taskView) => set({ taskView }),

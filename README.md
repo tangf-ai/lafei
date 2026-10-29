@@ -35,7 +35,7 @@
 
 | 平台 | 版本 | 说明 |
 | --- | --- | --- |
-| macOS（Apple Silicon） | [v0.18.1](https://github.com/tangf-ai/lafei/releases/latest) | `Lafei-0.18.1-macOS-arm64.dmg`，ad-hoc 签名、未公证；首次打开如被拦截，右键应用选「打开」 |
+| macOS（Apple Silicon） | [v0.19.0](https://github.com/tangf-ai/lafei/releases/latest) | `Lafei-0.19.0-macOS-arm64.dmg`，ad-hoc 签名、未公证；首次打开如被拦截，右键应用选「打开」 |
 | Web / PWA | 源码构建 | `pnpm build` 后把 `dist/` 部署到任意静态托管 |
 | Windows / Linux | 源码构建 | Tauri 2 支持，暂未提供预编译包 |
 
@@ -108,6 +108,7 @@
 
 - **笔记 AI**：总结当前笔记、提取可执行待办、接着写、起标题、针对选中段落提问
 - **AI 助手**：对话会自动检索相关笔记，并把结果标注为可点击的来源；同时了解你当前的未完成任务
+- **快速对话浮窗**：不用离开当前页面就能追问——点右下角的绿色悬浮按钮、按 `⌘ J`，或在命令面板搜「快速对话」；浮窗和完整助手页共享同一个对话与同一段流式输出，收起浮窗后生成继续，手机端是从底部弹出的面板
 - 提取出的待办可以直接勾选后批量加入任务清单，保留来源笔记
 - 回答可以一键存为笔记、复制、追加回原文
 - 流式输出、可中止；对话与消息保存在本地
@@ -199,9 +200,9 @@ pnpm desktop:build   # 生成 .app / .dmg（macOS）或对应平台安装包
 macOS 构建产物：
 
 ```text
-Lafei-0.14.0-macOS-arm64.dmg                                      # 可直接分发的安装包
+Lafei-0.19.0-macOS-arm64.dmg                                      # 可直接分发的安装包
 src-tauri/target/release/bundle/macos/Lafei.app                  # 未打包的应用
-src-tauri/target/release/bundle/dmg/Lafei_0.14.0_aarch64.dmg      # Tauri 原始产物
+src-tauri/target/release/bundle/dmg/Lafei_0.19.0_aarch64.dmg      # Tauri 原始产物
 ```
 
 > 构建产物（`.app` / `.dmg`）不进入 Git，正式版本请通过 GitHub Releases 分发。当前本地产物是 Apple Silicon（arm64）版本，使用 ad-hoc 签名，未做 Apple 公证；若系统提示无法验证，右键应用选择「打开」，或在终端执行：
@@ -381,6 +382,7 @@ scripts/mock-ai.mjs 本地 AI 演示服务
 | 命令面板 / 搜索 | `⌘ K` |
 | 新建笔记 | `⌘ N` |
 | 新建任务 | `⇧ ⌘ N` |
+| 快速对话（右下角浮窗） | `⌘ J` |
 | 保存笔记 | `⌘ S` |
 | 笔记内搜索 | `⌘ F` |
 | 加粗 / 斜体 | `⌘ B` / `⌘ I` |
@@ -392,7 +394,7 @@ scripts/mock-ai.mjs 本地 AI 演示服务
 
 ## 已知限制
 
-这是 `0.14.0`，一个可以真实日用的本地 MVP，但不是完成品：
+这是 `0.19.0`，一个可以真实日用的本地 MVP，但不是完成品：
 
 - 文件夹同步是文件级的、最终一致的，不是实时协作；冲突采用更新时间优先，没有逐行合并
 - 手机 PWA 不能直接读取 iCloud Drive；目前需要备份迁移，原生 iOS 版尚未生成

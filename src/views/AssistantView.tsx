@@ -19,26 +19,14 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { db, createNote, deleteChatCascade } from "../db";
-import { useUI, toast } from "../store/ui";
-import {
-  AIError,
-  buildChatMessages,
-  isAIConfigured,
-  retrieveNoteContext,
-  streamChat,
-} from "../lib/ai";
-import type { Chat, ChatMessage, ChatSource } from "../types";
+import { db } from "../db";
+import { useUI } from "../store/ui";
+import { useAssistantChat, useAssistantMessages } from "../store/assistant";
+import { isAIConfigured } from "../lib/ai";
+import type { ChatMessage } from "../types";
 import { Markdown } from "../lib/markdown";
-import { tagsOf } from "../lib/tags";
-import { cn, dueLabel, newId, updatedLabel } from "../lib/util";
+import { cn, updatedLabel } from "../lib/util";
 import { Modal } from "../components/Modal";
-
-interface StreamingReply {
-  chatId: string;
-  content: string;
-  sources: ChatSource[];
-}
 
 const SUGGESTIONS = [
   {
@@ -70,7 +58,6 @@ const SUGGESTIONS = [
 export function AssistantView() {
   const chats = useLiveQuery(() => db.chats.orderBy("updatedAt").reverse().toArray(), [], []);
   const notes = useLiveQuery(() => db.notes.toArray(), [], []);
-  const tasks = useLiveQuery(() => db.tasks.toArray(), [], []);
   const ai = useUI((state) => state.ai);
   const setSettingsOpen = useUI((state) => state.setSettingsOpen);
   const openNote = useUI((state) => state.openNote);
@@ -78,37 +65,29 @@ export function AssistantView() {
   const assistantDraft = useUI((state) => state.assistantDraft);
   const setAssistantDraft = useUI((state) => state.setAssistantDraft);
 
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [input, setInput] = useState("");
+  // 会话与流式输出都来自共享引擎：和右下角的快速对话浮窗是同一份对话、同一段生成
+  const activeChatId = useAssistantChat((state) => state.activeChatId);
+  const busy = useAssistantChat((state) => state.busy);
+  const streaming = useAssistantChat((state) => state.streaming);
+  const pendingUser = useAssistantChat((state) => state.pendingUser);
+  const error = useAssistantChat((state) => state.error);
+  const useNotes = useAssistantChat((state) => state.useNotes);
+  const initChat = useAssistantChat((state) => state.initChat);
+  const selectChat = useAssistantChat((state) => state.selectChat);
+  const startNewChat = useAssistantChat((state) => state.startNewChat);
+  const deleteChat = useAssistantChat((state) => state.deleteChat);
+  const toggleUseNotes = useAssistantChat((state) => state.toggleUseNotes);
+  const send = useAssistantChat((state) => state.send);
+  const stop = useAssistantChat((state) => state.stop);
+  const saveAsNote = useAssistantChat((state) => state.saveAsNote);
+  const messages = useAssistantMessages(activeChatId);
 
-  useEffect(() => {
-    if (!assistantDraft) return;
-    setInput(assistantDraft);
-    setAssistantDraft(null);
-  }, [assistantDraft, setAssistantDraft]);
-  const [useNotes, setUseNotes] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [streaming, setStreaming] = useState<StreamingReply | null>(null);
-  const [error, setError] = useState("");
-  const [pendingUser, setPendingUser] = useState<ChatMessage | null>(null);
+  const [input, setInput] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const abortRef = useRef<AbortController | null>(null);
-  const busyRef = useRef(false);
   const messagesRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const initializedRef = useRef(false);
-
-  const activeChat = chats.find((chat) => chat.id === activeChatId) ?? null;
-  const messages = useLiveQuery(
-    () =>
-      activeChatId
-        ? db.messages.where("chatId").equals(activeChatId).toArray().then((items) => items.sort((a, b) => a.createdAt - b.createdAt))
-        : Promise.resolve([] as ChatMessage[]),
-    [activeChatId],
-    [],
-  );
 
   const displayMessages = useMemo(() => {
     const base = [...messages];
@@ -116,22 +95,16 @@ export function AssistantView() {
     return base.sort((a, b) => a.createdAt - b.createdAt);
   }, [messages, pendingUser]);
 
+  // 首次挂载选中最近的对话；initChat 内部只生效一次，不会覆盖用户后来选的对话
   useEffect(() => {
-    if (!initializedRef.current && chats.length > 0) {
-      initializedRef.current = true;
-      setActiveChatId(chats[0].id);
-    }
-  }, [chats]);
+    initChat(chats[0]?.id ?? null);
+  }, [chats, initChat]);
 
   useEffect(() => {
-    if (pendingUser && messages.some((message) => message.id === pendingUser.id)) {
-      setPendingUser(null);
-    }
-  }, [messages, pendingUser]);
-
-  useEffect(() => {
-    return () => abortRef.current?.abort();
-  }, []);
+    if (!assistantDraft) return;
+    setInput(assistantDraft);
+    setAssistantDraft(null);
+  }, [assistantDraft, setAssistantDraft]);
 
   useEffect(() => {
     const el = messagesRef.current;
@@ -148,189 +121,32 @@ export function AssistantView() {
     el.style.height = `${Math.max(minHeight, Math.min(150, el.scrollHeight))}px`;
   }, [input]);
 
-  const chatTitle = (prompt: string) => {
-    const cleaned = prompt.replace(/\s+/g, " ").trim();
-    return cleaned.length > 24 ? `${cleaned.slice(0, 24)}…` : cleaned;
-  };
-
-  const saveAssistantMessage = async (chatId: string, content: string, sources: ChatSource[]) => {
-    const message: ChatMessage = {
-      id: newId(),
-      chatId,
-      role: "assistant",
-      content,
-      sources,
-      createdAt: Date.now(),
-    };
-    await db.messages.add(message);
-    await db.chats.update(chatId, { updatedAt: Date.now() });
-  };
-
-  const stop = (silent = false) => {
-    abortRef.current?.abort();
-    abortRef.current = null;
-    busyRef.current = false;
-    setBusy(false);
-    if (!silent) toast("已停止生成");
-  };
-
-  const send = async (override?: string) => {
-    const question = (override ?? input).trim();
-    if (!question || busyRef.current) return;
-    if (!configured) {
-      setSettingsOpen(true);
-      return;
-    }
-
-    busyRef.current = true;
-    setInput("");
-    setError("");
-    setBusy(true);
-
-    let chatId = activeChatId;
-    let chat = activeChat;
-    if (!chatId || !chat) {
-      const now = Date.now();
-      chat = {
-        id: newId(),
-        title: chatTitle(question),
-        createdAt: now,
-        updatedAt: now,
-      };
-      await db.chats.add(chat);
-      chatId = chat.id;
-      setActiveChatId(chat.id);
-    } else {
-      await db.chats.update(chat.id, { updatedAt: Date.now() });
-    }
-    initializedRef.current = true;
-
-    const retrieved = useNotes ? retrieveNoteContext(notes, question) : null;
-    const sources = retrieved?.sources ?? [];
-    const context = retrieved;
-    const history = messages
-      .filter((message) => message.role === "user" || message.role === "assistant")
-      .slice(-14)
-      .map((message) => ({ role: message.role, content: message.content }) as const);
-
-    const openTasks = tasks.filter((task) => !task.done).slice(0, 12);
-    const taskBlock = openTasks.length
-      ? `\n\n用户当前的未完成任务：\n${openTasks
-          .map((task) => {
-            const tags = tagsOf(task);
-            return `- [ ] ${task.title}${tags.length ? ` #${tags.join(" #")}` : ""}${task.dueDate ? `（${dueLabel(task.dueDate).label}）` : ""}${task.priority === "high" ? "（高优先级）" : ""}`;
-          })
-          .join("\n")}`
-      : "";
-    const built = buildChatMessages(history, question, context);
-    built[0] = { ...built[0], content: `${built[0].content}${taskBlock}` };
-
-    const userMessage: ChatMessage = {
-      id: newId(),
-      chatId,
-      role: "user",
-      content: question,
-      sources: [],
-      createdAt: Date.now(),
-    };
-    setPendingUser(userMessage);
-    await db.messages.add(userMessage);
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-    let full = "";
-    setStreaming({ chatId, content: "", sources });
-
-    try {
-      full = await streamChat({
-        settings: ai,
-        messages: built,
-        signal: controller.signal,
-        maxTokens: 1600,
-        onDelta: (delta) => {
-          full += delta;
-          setStreaming((current) =>
-            current && current.chatId === chatId ? { ...current, content: current.content + delta } : current,
-          );
-        },
-      });
-      await saveAssistantMessage(chatId, full, sources);
-      setStreaming(null);
-      setError("");
-    } catch (reason) {
-      if ((reason as Error).name === "AbortError") {
-        if (full.trim()) {
-          await saveAssistantMessage(chatId, full, sources);
-        }
-        setStreaming(null);
-      } else {
-        const message = reason instanceof AIError ? reason.message : "出了点问题，请稍后再试。";
-        setError(message);
-        setStreaming(null);
-      }
-    } finally {
-      if (abortRef.current === controller) {
-        abortRef.current = null;
-        busyRef.current = false;
-        setBusy(false);
-      }
-    }
-  };
-
   const newChat = () => {
-    stop(true);
-    setActiveChatId(null);
-    setStreaming(null);
-    setPendingUser(null);
-    setError("");
+    startNewChat();
     setHistoryOpen(false);
     window.setTimeout(() => textareaRef.current?.focus(), 80);
   };
 
-  const selectChat = (id: string) => {
-    if (id === activeChatId) {
-      setHistoryOpen(false);
-      return;
-    }
-    stop(true);
-    setActiveChatId(id);
-    setStreaming(null);
-    setPendingUser(null);
-    setError("");
+  const openChat = (id: string) => {
+    selectChat(id);
     setHistoryOpen(false);
   };
 
-  const deleteChat = async (chat: Chat) => {
-    if (chat.id === activeChatId) {
-      stop(true);
-      setActiveChatId(null);
-      setStreaming(null);
-      setPendingUser(null);
+  const submit = (override?: string) => {
+    const question = (override ?? input).trim();
+    if (!question || busy) return;
+    if (!configured) {
+      setSettingsOpen(true);
+      return;
     }
-    await deleteChatCascade(chat.id);
-    toast("对话已删除");
+    setInput("");
+    void send(question);
   };
 
   const copyMessage = async (message: ChatMessage) => {
     await navigator.clipboard.writeText(message.content);
     setCopiedId(message.id);
     window.setTimeout(() => setCopiedId(null), 1600);
-  };
-
-  const saveAsNote = async (message: ChatMessage) => {
-    const firstLine = message.content.split("\n").find((line) => line.trim()) ?? "AI 对话";
-    const cleaned = firstLine.replace(/[#*`>]/g, "").trim().slice(0, 40) || "AI 对话";
-    const chatMessages = displayMessages.slice(-4);
-    const context = chatMessages.some((item) => item.role === "user")
-      ? `\n\n---\n\n> 对话来源：${activeChat?.title ?? "AI 助手"}`
-      : "";
-    const note = await createNote({
-      title: cleaned,
-      content: message.content + context,
-      tags: ["AI"],
-    });
-    openNote(note.id);
-    toast("已保存为笔记", "success");
   };
 
   const historyList = (
@@ -348,9 +164,9 @@ export function AssistantView() {
             className={cn("chat-history-item", activeChatId === chat.id && "is-active")}
             role="button"
             tabIndex={0}
-            onClick={() => selectChat(chat.id)}
+            onClick={() => openChat(chat.id)}
             onKeyDown={(event) => {
-              if (event.key === "Enter") selectChat(chat.id);
+              if (event.key === "Enter") openChat(chat.id);
             }}
           >
             <MessageSquare size={14} />
@@ -441,13 +257,7 @@ export function AssistantView() {
                         key={suggestion.title}
                         type="button"
                         className="assistant-suggestion"
-                        onClick={() => {
-                          if (!configured) {
-                            setSettingsOpen(true);
-                            return;
-                          }
-                          void send(suggestion.prompt);
-                        }}
+                        onClick={() => submit(suggestion.prompt)}
                       >
                         <span className="assistant-suggestion-icon">
                           <Icon size={16} />
@@ -595,7 +405,7 @@ export function AssistantView() {
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();
-                    void send();
+                    submit();
                   }
                 }}
                 aria-label="向 AI 提问"
@@ -604,7 +414,7 @@ export function AssistantView() {
                 <button
                   type="button"
                   className={cn("context-toggle", useNotes && "is-on")}
-                  onClick={() => setUseNotes((value) => !value)}
+                  onClick={() => toggleUseNotes()}
                   title={useNotes ? "已开启笔记检索，点击关闭" : "开启笔记检索"}
                 >
                   <BookOpen size={13} />
@@ -621,7 +431,7 @@ export function AssistantView() {
                     type="button"
                     className="assistant-send"
                     disabled={!input.trim()}
-                    onClick={() => void send()}
+                    onClick={() => submit()}
                     aria-label="发送"
                   >
                     <Send size={16} />
