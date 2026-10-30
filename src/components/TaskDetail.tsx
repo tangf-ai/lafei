@@ -60,6 +60,14 @@ export function TaskDetailModal() {
   }, [task?.id]);
 
   useEffect(() => {
+    // 文件夹同步可能在这个弹窗开着时把别的设备改过的任务写进本地库：没有未保存的
+    // 草稿时跟着刷新，否则之后随便改一个字，persist 就会拿打开弹窗时的手动象限 /
+    // 旧内容整份覆盖回去（看起来就是象限同步不过来）。
+    if (!task || dirtyRef.current) return;
+    setDraft(task);
+  }, [task]);
+
+  useEffect(() => {
     if (!draft || !dirtyRef.current) return;
     setSaved(false);
     const timer = window.setTimeout(async () => {

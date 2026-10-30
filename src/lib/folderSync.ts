@@ -115,6 +115,42 @@ function newer<T extends { updatedAt: number }>(local: T | undefined, remote: T 
 }
 
 /**
+ * 任务的「较新者」：在通用规则上补一条平局时的补救。
+ *
+ * 0.19.1 之前的版本读回任务时会丢掉手动象限（连属性都不写），但保留 updatedAt：
+ * 本地因此留下「和文件夹里的任务同一时间戳、quadrant 却缺失 / 为 null」的旧行。
+ * 平局按本地赢的话，同步会把文件夹里的手动象限改回自动落位（看起来就是象限永远
+ * 同步不过来，两台设备之间还会来回覆盖）。平局时以「带着手动象限」的那份为准：
+ * 本地旧行会拿回象限，本地有象限则补写回文件；两边都有或都没有时仍以文件夹为准，
+ * 保证内容没变就不重写。
+ */
+function newerTask(local: Task | undefined, remote: Task | undefined): Task | undefined {
+  if (!local) return remote;
+  if (!remote) return local;
+  if (local.updatedAt === remote.updatedAt) {
+    const localManual = local.quadrant != null;
+    const remoteManual = remote.quadrant != null;
+    if (localManual !== remoteManual) return localManual ? local : remote;
+    return remote;
+  }
+  return local.updatedAt > remote.updatedAt ? local : remote;
+}
+
+/**
+ * 更老版本（任务还没有象限这个概念的版本）写出来的任务文件里根本没有 quadrant 字段，
+ * 读回后本地行也是「属性缺失」，它无法表达「用户主动选了自动」——主动改回自动写的是
+ * null，createTask / 数据库迁移也都会留下 null。所以属性缺失的一方可以直接把另一份里的
+ * 手动象限继承过来，不用比较 updatedAt（老版本做过任何无关编辑都会用缺失字段的整行
+ * 覆盖文件，光靠时间戳救不回来），也不改 updatedAt，避免两台设备互相刷新时间戳。
+ */
+function inheritQuadrant(task: Task, other: Task | undefined): Task {
+  if (!other) return task;
+  if (task.quadrant !== undefined) return task;
+  if (other.quadrant == null) return task;
+  return { ...task, quadrant: other.quadrant };
+}
+
+/**
  * 结构化比较时忽略对象键顺序。
  * 迁移或旧备份补出来的 tags 可能排在对象末尾，而文件夹解析会按固定顺序重建对象；
  * 直接用 JSON.stringify 比较会让同一份数据每次同步都被判定为“已变化”。
@@ -404,8 +440,11 @@ async function performFullSync(root: string): Promise<SyncSummary> {
   for (const id of taskIds) {
     const local = localTaskMap.get(id);
     const remoteTask = remoteTaskMap.get(id);
-    const candidate = newer(local, remoteTask);
-    if (!candidate) continue;
+    const base = newerTask(local, remoteTask);
+    if (!base) continue;
+    // 老版本的整行覆盖会连 quadrant 属性一起带走：先把另一边的手动象限继承回来，
+    // 再照常按内容比较决定落库 / 写回文件。
+    const candidate = inheritQuadrant(base, base === local ? remoteTask : local);
     const tombstone = tombstoneMap.get(`task:${id}`);
     if (tombstone && tombstone.deletedAt >= candidate.updatedAt) {
       if (local) tasksToDelete.push(id);
@@ -419,7 +458,7 @@ async function performFullSync(root: string): Promise<SyncSummary> {
     if (!local) {
       tasksToPut.push(candidate);
       downloaded += 1;
-    } else if (candidate === remoteTask && !sameTask(local, remoteTask)) {
+    } else if (!sameTask(local, candidate)) {
       tasksToPut.push(candidate);
       downloaded += 1;
     }
