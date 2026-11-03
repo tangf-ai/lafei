@@ -116,7 +116,15 @@ export function TaskDetailModal() {
       <Modal open={Boolean(taskId)} onClose={closeDetail} size="md" headless className="task-modal">
         {draft && (
           <div className="task-detail">
+            {/* 顶部只留「完成编辑」：状态由标题前的勾选本身表达，不再单独写「任务详情 / 已完成」 */}
             <div className="task-detail-top">
+              <button type="button" className="btn btn-sm btn-ghost" onClick={closeDetail}>
+                完成编辑
+              </button>
+            </div>
+
+            {/* 勾选完成放在标题前面：和任务行一样「先勾选，再读标题」，标题仍然按内容自动长高 */}
+            <div className="task-detail-head">
               <button
                 type="button"
                 className={cn("task-check task-check-lg", draft.done && "is-done")}
@@ -125,21 +133,16 @@ export function TaskDetailModal() {
               >
                 {draft.done && <Check size={14} strokeWidth={3} />}
               </button>
-              <span className="eyebrow">{draft.done ? "已完成" : "任务详情"}</span>
-              <button type="button" className="btn btn-sm btn-ghost" onClick={closeDetail}>
-                完成编辑
-              </button>
+              <textarea
+                ref={titleRef}
+                className="task-detail-title"
+                value={draft.title}
+                rows={1}
+                onChange={(event) => patch({ title: event.target.value })}
+                placeholder="任务是什么？"
+                aria-label="任务标题"
+              />
             </div>
-
-            <textarea
-              ref={titleRef}
-              className="task-detail-title"
-              value={draft.title}
-              rows={1}
-              onChange={(event) => patch({ title: event.target.value })}
-              placeholder="任务是什么？"
-              aria-label="任务标题"
-            />
 
             <TaskProperties
               task={draft}
