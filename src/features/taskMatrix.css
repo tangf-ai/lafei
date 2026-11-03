@@ -419,6 +419,64 @@
   opacity: 0.45;
 }
 
+/* 行首勾选：点一下就直接完成任务。矩阵里只铺未完成的任务，
+   勾完这一行会从格子里收走，所以勾选框本身就是「完成」的唯一反馈 */
+.wb-check {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  margin-right: -2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.2px solid color-mix(in srgb, var(--wb-muted) 52%, var(--wb-line));
+  border-radius: 50%;
+  background: transparent;
+  color: transparent;
+  transition:
+    border-color 0.14s ease,
+    background 0.14s ease,
+    color 0.14s ease,
+    transform 0.12s ease;
+}
+
+.wb-check svg {
+  width: 9px;
+  height: 9px;
+}
+
+.wb-item:hover .wb-check {
+  border-color: color-mix(in srgb, var(--wb-green) 46%, var(--wb-line));
+}
+
+.wb-check:hover {
+  border-color: var(--wb-green);
+  background: var(--wb-green-soft);
+  color: var(--wb-green);
+}
+
+.wb-check:focus-visible {
+  outline: none;
+  border-color: var(--wb-green);
+  box-shadow: 0 0 0 2px var(--wb-focus-ring);
+}
+
+.wb-check.is-done {
+  border-color: var(--wb-green-solid);
+  background: var(--wb-green-solid);
+  color: #f8fbf7;
+}
+
+.wb-check:active {
+  transform: scale(0.86);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-check {
+    transition: none;
+  }
+}
+
 .wb-pdot {
   width: 5px;
   height: 5px;

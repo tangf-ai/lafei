@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Check, Plus } from "lucide-react";
 import type { Quadrant, Task } from "../types";
 import { TaskRow } from "../components/TaskRow";
-import { updateTask } from "../db";
+import { toggleTask, updateTask } from "../db";
 import { cn, dueLabel, isOverdue, remainingLabel } from "../lib/util";
 import { tagsOf } from "../lib/tags";
 import { useUI } from "../store/ui";
@@ -91,6 +91,8 @@ export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProp
   // pointer 事件在 Chrome / WKWebView 行为一致，也方便自己做 ghost 和落点判断
   const dragRef = useRef<{ taskId: string; startX: number; startY: number; active: boolean } | null>(null);
   const dragEndAtRef = useRef(0);
+  // 完成的这一行会立刻收走，下一行会顶上来；双击时第二下别再顺带完成下一件
+  const lastCompleteAtRef = useRef(0);
   const tasksRef = useRef(tasks);
 
   useEffect(() => {
@@ -229,6 +231,23 @@ export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProp
         onFocus={(event) => handleRowEnter(task, event.currentTarget)}
         onBlur={() => setHover(null)}
       >
+        <button
+          type="button"
+          className={cn("wb-check", task.done && "is-done")}
+          aria-label={task.done ? "标记为未完成" : "标记为完成"}
+          onMouseDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            const now = Date.now();
+            if (now - dragEndAtRef.current < 200 || now - lastCompleteAtRef.current < 300) return;
+            lastCompleteAtRef.current = now;
+            // 勾完这一行会立刻从象限里收走，先把悬停浮层关掉，别让它留在原地
+            setHover(null);
+            void toggleTask(task);
+          }}
+        >
+          <Check size={9} strokeWidth={3.4} />
+        </button>
         <i className={cn("wb-pdot", `is-${task.priority}`)} />
         <span className="wb-item-title">{task.title || "未命名任务"}</span>
         <span className="wb-item-meta">
