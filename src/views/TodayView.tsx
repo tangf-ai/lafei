@@ -22,6 +22,7 @@ import {
   isOverdue,
   longDate,
   noteTitle,
+  remainingLabel,
   shortDate,
   updatedLabel,
 } from "../lib/util";
@@ -29,6 +30,7 @@ import { isAIConfigured, streamChat, AIError } from "../lib/ai";
 import { tagsOf } from "../lib/tags";
 import type { Note } from "../types";
 import { TaskRow } from "../components/TaskRow";
+import { RemainingBadge } from "../components/RemainingBadge";
 
 export function TodayView() {
   const notes = useLiveQuery(() => db.notes.toArray(), [], []);
@@ -425,19 +427,27 @@ export function TodayView() {
                 <span className="wb-backlog-count">{upcomingAll.length}</span>
               </div>
               <div className="wb-today-next-list">
-                {upcoming.map((task) => (
-                  <button
-                    key={task.id}
-                    type="button"
-                    className="wb-today-next-row"
-                    onClick={() => useUI.getState().setTaskDetailId(task.id)}
-                  >
-                    <span className="wb-today-next-title">{task.title}</span>
-                    <span className="wb-today-next-date">
-                      {task.dueDate ? dueLabel(task.dueDate).label : "待安排"}
-                    </span>
-                  </button>
-                ))}
+                {upcoming.map((task) => {
+                  const remaining = remainingLabel(task.dueDate);
+                  return (
+                    <button
+                      key={task.id}
+                      type="button"
+                      className="wb-today-next-row"
+                      onClick={() => useUI.getState().setTaskDetailId(task.id)}
+                    >
+                      <span className="wb-today-next-title">{task.title}</span>
+                      <span className="wb-today-next-meta">
+                        <span className="wb-today-next-date">
+                          {task.dueDate ? dueLabel(task.dueDate).label : "待安排"}
+                        </span>
+                        {task.dueDate && remaining.days !== null && remaining.days > 0 && (
+                          <RemainingBadge days={remaining.days} tone={remaining.tone} compact />
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
               {upcomingAll.length > upcoming.length && (
                 <button

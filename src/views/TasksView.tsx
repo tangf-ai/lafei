@@ -17,6 +17,7 @@ import { inFloatingLayer } from "../lib/floating";
 import { DUE_PRESETS, dayKeyOffset, duePresetDate, type DuePresetId } from "../lib/date";
 import type { Priority, Quadrant, Task, TaskFilter } from "../types";
 import { TaskRow } from "../components/TaskRow";
+import { RemainingBadge } from "../components/RemainingBadge";
 import { TaskCalendar } from "../features/TaskCalendar";
 import { TasksRail } from "../features/TasksRail";
 import { TagInput } from "../components/TagInput";
@@ -571,8 +572,11 @@ export function TasksView() {
               )}
             </div>
           ) : (
-            groups.map((group) =>
-              group.tasks.length > 0 ? (
+            groups.map((group) => {
+              const groupRemaining = group.key.startsWith("date-")
+                ? remainingLabel(group.key.slice(5))
+                : null;
+              return group.tasks.length > 0 ? (
                 <section className="task-group" key={group.key}>
                   <div className={cn("task-group-head", `tone-${group.tone}`)}>
                     <h2>{group.label}</h2>
@@ -580,10 +584,8 @@ export function TasksView() {
                     <span className="task-group-line" />
                     {group.key === "overdue" && <span className="task-group-note">先处理这些</span>}
                     {group.key === "today" && <span className="task-group-note tone-today">今天截止</span>}
-                    {group.key.startsWith("date-") && (
-                      <span className={cn("task-group-note", `tone-${remainingLabel(group.key.slice(5)).tone}`)}>
-                        {remainingLabel(group.key.slice(5)).label}
-                      </span>
+                    {groupRemaining && groupRemaining.days !== null && groupRemaining.days > 0 && (
+                      <RemainingBadge days={groupRemaining.days} tone={groupRemaining.tone} />
                     )}
                     {group.key === "nodate" && <span className="task-group-note">还没排期</span>}
                   </div>
@@ -599,8 +601,8 @@ export function TasksView() {
                     ))}
                   </div>
                 </section>
-              ) : null,
-            )
+              ) : null;
+            })
           )}
         </div>
         ) : viewMode === "calendar" ? (

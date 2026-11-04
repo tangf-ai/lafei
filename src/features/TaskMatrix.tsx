@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { ArrowLeft, Check, Plus } from "lucide-react";
 import type { Quadrant, Task } from "../types";
 import { TaskRow } from "../components/TaskRow";
+import { RemainingBadge } from "../components/RemainingBadge";
 import { toggleTask, updateTask } from "../db";
 import { cn, dueLabel, isOverdue, remainingLabel } from "../lib/util";
 import { tagsOf } from "../lib/tags";
@@ -253,7 +254,7 @@ export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProp
         <span className="wb-item-meta">
           <span className="wb-item-when">{task.dueDate ? due.label : "待安排"}</span>
           {task.dueDate && remaining.days !== null && remaining.days > 0 && (
-            <span>{remaining.label}</span>
+            <RemainingBadge days={remaining.days} tone={remaining.tone} compact />
           )}
           {firstTag && <span className="wb-item-tag">#{firstTag}</span>}
         </span>

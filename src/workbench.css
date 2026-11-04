@@ -1413,26 +1413,34 @@ html[data-design="workbench"] .sidebar.wb-sidebar.is-collapsed {
 }
 
 .wb-tasks .task-group-note {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
   margin-left: auto;
-  padding: 3px 7px;
-  background: var(--wb-gold-bg);
-  border-radius: 5px;
-  font-size: 9.5px;
-  font-weight: 500;
-  color: var(--wb-gold-ink);
-  letter-spacing: 0.015em;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--wb-gold) 42%, var(--wb-line));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--wb-gold) 16%, var(--wb-card));
+  color: color-mix(in srgb, var(--wb-gold-ink) 88%, var(--wb-ink));
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
   white-space: nowrap;
 }
 
 .wb-tasks .task-group-note.tone-today {
+  border-color: color-mix(in srgb, var(--wb-green) 30%, var(--wb-line));
   background: var(--wb-green-soft);
   color: var(--wb-green);
 }
 
 .wb-tasks .task-group-note.tone-later,
 .wb-tasks .task-group-note.tone-none {
+  border-color: var(--wb-line);
   background: var(--wb-chip);
-  color: var(--wb-muted);
+  color: var(--wb-ink-2);
 }
 
 .wb-tasks .task-group-list {
@@ -1570,26 +1578,77 @@ html[data-design="workbench"] .sidebar.wb-sidebar.is-collapsed {
   color: var(--wb-muted);
 }
 
-.wb-tasks .task-remaining {
-  height: auto;
-  padding: 4px 7px;
-  border-radius: 5px;
-  background: var(--wb-gold-bg);
-  color: var(--wb-gold-ink);
-  font-size: 9.5px;
-  font-weight: 500;
+/* ---------- 剩余时间倒计时（列表行 / 分组头 / 四象限 / 今日共用） ----------
+   用户反馈「任务里的剩余时间不明显」：原来 9.5px/500、底色几乎和卡片同色。
+   现在数字放大一档、加一圈同色描边，≤3 天用金底，更远处用中性底。 */
+
+html[data-design="workbench"] .task-remaining {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--wb-gold) 42%, var(--wb-line));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--wb-gold) 16%, var(--wb-card));
+  color: color-mix(in srgb, var(--wb-gold-ink) 88%, var(--wb-ink));
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
   line-height: 1;
+  white-space: nowrap;
+}
+
+html[data-design="workbench"] .task-remaining-label {
+  font-size: 9.5px;
+  font-weight: 600;
   letter-spacing: 0.02em;
 }
 
-.wb-tasks .task-remaining.tone-later {
-  background: var(--wb-chip);
-  color: var(--wb-muted);
+html[data-design="workbench"] .task-remaining-num {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
-.wb-tasks .task-remaining.tone-soon {
-  background: var(--wb-gold-bg);
+html[data-design="workbench"] .task-remaining.tone-later,
+html[data-design="workbench"] .task-remaining.tone-none {
+  border-color: var(--wb-line);
+  background: var(--wb-chip);
+  color: var(--wb-ink-2);
+}
+
+html[data-design="workbench"] .task-remaining.is-compact {
+  height: 18px;
+  padding: 0 6px;
+  gap: 2px;
+  border-radius: 5px;
+}
+
+html[data-design="workbench"] .task-remaining.is-compact .task-remaining-label {
+  font-size: 9px;
+}
+
+html[data-design="workbench"] .task-remaining.is-compact .task-remaining-num {
+  font-size: 11px;
+}
+
+/* 任务详情：日期 chip 里的「今天 / 明天 / 剩余 N 天」也提亮一档 */
+html[data-design="workbench"] .task-prop-rel {
+  font-weight: 600;
+}
+
+html[data-design="workbench"] .task-prop-rel.is-soon {
   color: var(--wb-gold-ink);
+}
+
+html[data-design="workbench"] .task-prop-rel.is-today {
+  color: var(--wb-green);
+}
+
+html[data-design="workbench"] .task-prop-rel.is-overdue {
+  color: var(--wb-red-ink);
 }
 
 .wb-tasks .task-priority {
@@ -2404,14 +2463,6 @@ html[data-design="workbench"] .wb-today .task-due {
   font-size: 10.5px;
 }
 
-html[data-design="workbench"] .wb-today .task-remaining {
-  background: var(--wb-gold-bg);
-  color: var(--wb-gold-ink);
-  border-radius: 5px;
-  padding: 4px 7px;
-  height: auto;
-}
-
 html[data-design="workbench"] .wb-today .task-tag {
   background: var(--wb-chip);
   color: var(--wb-muted);
@@ -3187,10 +3238,17 @@ html[data-design="workbench"] .split-divider[data-dragging="true"] .split-divide
   text-overflow: ellipsis;
 }
 
+.wb-today-next-meta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .wb-today-next-date {
   flex: none;
   font-size: 9.5px;
-  color: var(--wb-faint);
+  color: var(--wb-muted);
   font-variant-numeric: tabular-nums;
 }
 

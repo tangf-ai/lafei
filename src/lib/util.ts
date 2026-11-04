@@ -81,7 +81,8 @@ export function remainingLabel(key: string | null): {
     };
   }
   if (days === 0) return { label: "今天截止", tone: "today", days };
-  return { label: `剩余 ${days} 天`, tone: days === 1 ? "soon" : "later", days };
+  // 三天内算「快到了」：金色倒计时，和更远处的「还早」区分开
+  return { label: `剩余 ${days} 天`, tone: days <= 3 ? "soon" : "later", days };
 }
 
 export function isOverdue(key: string | null) {

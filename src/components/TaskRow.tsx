@@ -5,6 +5,7 @@ import { cn, dueLabel, isOverdue, noteTitle, remainingLabel } from "../lib/util"
 import { tagsOf } from "../lib/tags";
 import { toggleTask } from "../db";
 import { useUI } from "../store/ui";
+import { RemainingBadge } from "./RemainingBadge";
 
 export function TaskRow({
   task,
@@ -82,7 +83,7 @@ export function TaskRow({
               )}
               {!task.dueDate && <span className="task-due tone-none">待安排</span>}
               {task.dueDate && remaining.days !== null && remaining.days > 0 && (
-                <span className={cn("task-remaining", `tone-${remaining.tone}`)}>{remaining.label}</span>
+                <RemainingBadge days={remaining.days} tone={remaining.tone} />
               )}
             </>
           )}
