@@ -3,14 +3,25 @@ import { collectTagCounts, tagsOf } from "./tags";
 import { excerpt } from "./util";
 
 /**
- * 给外部智能体的只读快照格式。
+ * 给外部智能体的快照格式。
  * 这个契约与 Lafei 内部 Dexie / 文件夹存储格式解耦，版本号独立演进。
+ * v2：manifest 增加 writer 写入能力声明，AGENTS.md 补充写入工具与 inbox 队列契约。
  */
-export const AGENT_SCHEMA_VERSION = 1;
+export const AGENT_SCHEMA_VERSION = 2;
 
 export interface AgentFile {
   path: string;
   contents: string;
+}
+
+/** 写入能力声明：智能体据此判断能否通过 MCP 新建笔记/任务 */
+export interface AgentWriterManifest {
+  enabled: boolean;
+  inbox: string;
+  processed: string;
+  failed: string;
+  ops: string[];
+  maxPending: number;
 }
 
 export interface AgentManifest {
@@ -31,6 +42,7 @@ export interface AgentManifest {
     tags: string;
     agents: string;
   };
+  writer: AgentWriterManifest;
 }
 
 interface AgentNoteIndexItem {
@@ -125,20 +137,40 @@ function agentTaskOrder(a: Task, b: Task) {
   );
 }
 
-function agentsMarkdown(appVersion: string, generatedAt: string) {
+function agentsMarkdown(appVersion: string, generatedAt: string, writeEnabled: boolean) {
+  const writeIntro = writeEnabled
+    ? "Write access is **enabled**. The MCP server offers `notes_create` and `tasks_create`."
+    : "Write access is **disabled**. The MCP server only offers read tools until the user enables\nagent writes in Lafei settings.";
   return `# Lafei agent snapshot
 
-This directory is a **read-only** export from Lafei ${appVersion}, generated at ${generatedAt}.
+This directory is an export from Lafei ${appVersion}, generated at ${generatedAt}.
 It contains the user's notes and tasks. Do not edit these files; changes here are not written
 back to Lafei.
 
 ## Start here
 
-1. Read \`manifest.json\` for the schema version, revision and counts.
+1. Read \`manifest.json\` for the schema version, revision, counts and write access.
 2. Use \`notes.index.json\` to find notes without reading every file.
 3. Use \`tasks.jsonl\` for one JSON task per line.
 4. Use \`tags.json\` to map tags to notes and tasks.
 5. Read the \`file\` path from \`notes.index.json\` for a note's full Markdown.
+
+## Writing back
+
+${writeIntro}
+It is controlled by the user in Lafei and can change at any time, so check
+\`manifest.json\` -> \`writer.enabled\` before attempting a write.
+
+When writing is enabled, the MCP server exposes:
+
+- \`notes_create\` — create a note (\`title\`, \`content\`, \`tags\`, \`pinned\`)
+- \`tasks_create\` — create a task (\`title\`, \`description\`, \`dueDate\`, \`priority\`, \`tags\`, \`noteId\`)
+
+The MCP server queues each request as \`inbox/<requestId>.json\` and waits for Lafei to process
+it. Lafei validates the request, creates the note or task, then moves the request file to
+\`inbox/done/\` (with a \`result\` field) or \`inbox/failed/\` (with \`result.error\`). At most 200
+requests may wait in the queue. Do not write to \`inbox/\` or edit the generated files yourself;
+use the MCP tools instead.
 
 ## Conventions
 
@@ -158,23 +190,31 @@ If the user configured \`lafei-mcp\`, use its tools instead of parsing files:
 - \`notes_get\` — read a note by id
 - \`tasks_list\` — list tasks filtered by status/tag/due date
 - \`tasks_get\` — read a task by id
-- \`tags_list\` — list tags with note/task counts
+- \`tags_list\` — list tags with note/task counts${writeEnabled ? "\n- `notes_create` — create a note\n- `tasks_create` — create a task" : ""}
 
-The MCP server is read-only. Never invent note ids or task states; quote the source content
-when the user asks about their notes.
+The MCP server is the supported way to read and write. Never invent note ids or task states;
+quote the source content when the user asks about their notes.
 `;
 }
 
+export interface AgentSnapshotOptions {
+  now?: number;
+  /** 读取与写入都开启时才为 true；关闭时也保留 writer 字段，只是 enabled=false */
+  writeEnabled?: boolean;
+}
+
 /**
- * 从当前笔记和任务构建完整的只读快照文件列表。
+ * 从当前笔记和任务构建完整的智能体快照文件列表。
  * 纯函数，方便单测和在不启动 Tauri 的情况下复用。
  */
 export function buildAgentSnapshot(
   notes: Note[],
   tasks: Task[],
   appVersion: string,
-  now = Date.now(),
+  options: AgentSnapshotOptions = {},
 ): AgentFile[] {
+  const now = options.now ?? Date.now();
+  const writeEnabled = options.writeEnabled ?? false;
   const generatedAt = new Date(now).toISOString();
   const sortedNotes = [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
   const sortedTasks = [...tasks].sort(agentTaskOrder);
@@ -210,11 +250,19 @@ export function buildAgentSnapshot(
       tags: "tags.json",
       agents: "AGENTS.md",
     },
+    writer: {
+      enabled: writeEnabled,
+      inbox: "inbox",
+      processed: "inbox/done",
+      failed: "inbox/failed",
+      ops: ["notes.create", "tasks.create"],
+      maxPending: 200,
+    },
   };
 
   return [
     { path: "manifest.json", contents: `${JSON.stringify(manifest, null, 2)}\n` },
-    { path: "AGENTS.md", contents: agentsMarkdown(appVersion, generatedAt) },
+    { path: "AGENTS.md", contents: agentsMarkdown(appVersion, generatedAt, writeEnabled) },
     { path: "notes.index.json", contents: `${JSON.stringify(notesIndex, null, 2)}\n` },
     {
       path: "tasks.jsonl",

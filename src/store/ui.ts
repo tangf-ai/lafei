@@ -41,6 +41,8 @@ interface UIState {
   /** 数据仓库定时同步间隔（分钟，0 = 关闭）；默认每 30 分钟完整合并一次 */
   syncIntervalMinutes: number;
   agentAccessEnabled: boolean;
+  /** 是否允许外部智能体通过 MCP 新建笔记/任务（依赖读取开关，读取关闭时视为关闭） */
+  agentWriteEnabled: boolean;
   setView: (view: AppView) => void;
   openNote: (id: string, options?: { keepTagFilter?: boolean }) => void;
   closeNote: () => void;
@@ -71,6 +73,7 @@ interface UIState {
   setFolderRoot: (root: string | null) => void;
   setSyncIntervalMinutes: (minutes: number) => void;
   setAgentAccessEnabled: (enabled: boolean) => void;
+  setAgentWriteEnabled: (enabled: boolean) => void;
 }
 
 export const CONTENT_WIDTH_MIN = 560;
@@ -119,6 +122,7 @@ export const useUI = create<UIState>()(
       folderRoot: null,
       syncIntervalMinutes: SYNC_INTERVAL_DEFAULT,
       agentAccessEnabled: false,
+      agentWriteEnabled: false,
       // 切换主视图或打开笔记时收起标签筛选，避免旧标签在另一个视图里悄悄过滤内容
       setView: (view) => set({ view, tagFilter: null }),
       openNote: (id, options) =>
@@ -157,6 +161,7 @@ export const useUI = create<UIState>()(
       setFolderRoot: (folderRoot) => set({ folderRoot }),
       setSyncIntervalMinutes: (minutes) => set({ syncIntervalMinutes: normalizeSyncInterval(minutes) }),
       setAgentAccessEnabled: (agentAccessEnabled) => set({ agentAccessEnabled }),
+      setAgentWriteEnabled: (agentWriteEnabled) => set({ agentWriteEnabled }),
     }),
     {
       name: "lafei:ui",
@@ -178,6 +183,7 @@ export const useUI = create<UIState>()(
         folderRoot: state.folderRoot,
         syncIntervalMinutes: state.syncIntervalMinutes,
         agentAccessEnabled: state.agentAccessEnabled,
+        agentWriteEnabled: state.agentWriteEnabled,
       }),
       migrate: (persisted, version) => {
         const saved = { ...(persisted as Record<string, unknown>) };
@@ -200,6 +206,9 @@ export const useUI = create<UIState>()(
           saved.noteMode === "read"
             ? saved.noteMode
             : current.noteMode;
+        // 写入依赖读取：读取没开时，旧的写入标记一律视为关闭，避免重新打开读取时意外放开写入
+        const agentAccessEnabled = saved.agentAccessEnabled === true;
+        const agentWriteEnabled = agentAccessEnabled && saved.agentWriteEnabled === true;
         return {
           ...current,
           ...saved,
@@ -209,32 +218,53 @@ export const useUI = create<UIState>()(
           fontScale,
           syncIntervalMinutes: normalizeSyncInterval(saved.syncIntervalMinutes ?? current.syncIntervalMinutes),
           ai: { ...DEFAULT_AI, ...(saved.ai ?? {}) },
+          agentAccessEnabled,
+          agentWriteEnabled,
         };
       },
     },
   ),
 );
 
+export type ToastTone = "default" | "success" | "error";
+
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
+export interface ToastItem {
+  id: number;
+  message: string;
+  tone: ToastTone;
+  /** 可选操作按钮，例如「撤销」；带操作的提示停留更久 */
+  action?: ToastAction;
+}
+
 interface ToastState {
-  toasts: Array<{ id: number; message: string; tone: "default" | "success" | "error" }>;
-  push: (message: string, tone?: "default" | "success" | "error") => void;
+  toasts: ToastItem[];
+  push: (message: string, tone?: ToastTone, action?: ToastAction) => void;
   dismiss: (id: number) => void;
 }
+
+/** 普通提示停留 3.6 秒；带操作按钮的提示留出 8 秒给用户点「撤销」 */
+const TOAST_DURATION = 3600;
+const TOAST_ACTION_DURATION = 8000;
 
 let toastId = 0;
 
 export const useToasts = create<ToastState>((set) => ({
   toasts: [],
-  push: (message, tone = "default") => {
+  push: (message, tone = "default", action) => {
     const id = ++toastId;
-    set((state) => ({ toasts: [...state.toasts, { id, message, tone }].slice(-4) }));
+    set((state) => ({ toasts: [...state.toasts, { id, message, tone, action }].slice(-4) }));
     window.setTimeout(() => {
       set((state) => ({ toasts: state.toasts.filter((toast) => toast.id !== id) }));
-    }, 3600);
+    }, action ? TOAST_ACTION_DURATION : TOAST_DURATION);
   },
   dismiss: (id) => set((state) => ({ toasts: state.toasts.filter((toast) => toast.id !== id) })),
 }));
 
-export function toast(message: string, tone: "default" | "success" | "error" = "default") {
-  useToasts.getState().push(message, tone);
+export function toast(message: string, tone: ToastTone = "default", action?: ToastAction) {
+  useToasts.getState().push(message, tone, action);
 }

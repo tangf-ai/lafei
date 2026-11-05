@@ -282,6 +282,7 @@ struct AgentSnapshotStatus {
     file_count: usize,
     notes: u64,
     tasks: u64,
+    pending_requests: u64,
     mcp_path: String,
     mcp_exists: bool,
 }
@@ -350,6 +351,276 @@ fn allowed_agent_path(relative: &str) -> Result<PathBuf, String> {
     Ok(path.to_path_buf())
 }
 
+const AGENT_INBOX_MAX_LIST: usize = 100;
+const AGENT_INBOX_REQUEST_TTL_MS: u64 = 30 * 24 * 60 * 60 * 1000;
+const AGENT_INBOX_PROCESSED_TTL_MS: u64 = 7 * 24 * 60 * 60 * 1000;
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AgentInboxEntry {
+    file: String,
+    request_id: String,
+    op: String,
+    client: Option<String>,
+    created_at: u64,
+    payload: Value,
+}
+
+struct AgentInboxRequest {
+    op: String,
+    client: Option<String>,
+    created_at: u64,
+    payload: Value,
+}
+
+fn now_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis() as u64)
+        .unwrap_or(0)
+}
+
+/// requestId 规则：^[A-Za-z0-9][A-Za-z0-9._-]{7,95}$，且不能包含 `..`、不能以 `.` 开头。
+fn valid_agent_request_id(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    if !(8..=96).contains(&bytes.len()) {
+        return false;
+    }
+    if !bytes[0].is_ascii_alphanumeric() || value.contains("..") {
+        return false;
+    }
+    bytes
+        .iter()
+        .all(|byte| byte.is_ascii_alphanumeric() || matches!(*byte, b'.' | b'_' | b'-'))
+}
+
+/// 校验 inbox 文件名并返回去掉 `.json` 的 requestId。只接受单层文件名，禁止路径分隔符。
+fn agent_inbox_request_id_from_file(file: &str) -> Result<&str, String> {
+    if file.is_empty() || file.len() > 160 {
+        return Err("智能体请求文件名为空或过长".into());
+    }
+    let mut components = Path::new(file).components();
+    if !matches!(components.next(), Some(Component::Normal(_))) || components.next().is_some() {
+        return Err("智能体请求文件名不允许包含路径".into());
+    }
+    if file.starts_with('.') || file.contains('/') || file.contains('\\') || file.contains("..") {
+        return Err("智能体请求文件名无效：只允许单层文件名".into());
+    }
+    let request_id = file
+        .strip_suffix(".json")
+        .ok_or_else(|| "智能体请求文件名必须以 .json 结尾".to_string())?;
+    if !valid_agent_request_id(request_id) {
+        return Err("智能体请求文件名不符合 requestId 规则".into());
+    }
+    Ok(request_id)
+}
+
+fn parse_agent_inbox_request(text: &str) -> Option<AgentInboxRequest> {
+    let value: Value = serde_json::from_str(text).ok()?;
+    let object = value.as_object()?;
+    let op = object.get("op").and_then(Value::as_str)?.trim().to_string();
+    if op.is_empty() {
+        return None;
+    }
+    let created_at = object.get("createdAt").and_then(Value::as_u64)?;
+    let client = object
+        .get("client")
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    let payload = object.get("payload").cloned().unwrap_or(Value::Null);
+    Some(AgentInboxRequest {
+        op,
+        client,
+        created_at,
+        payload,
+    })
+}
+
+/// 扫描 inbox 目录（不递归），跳过文件名非法、内容无法解析的文件，按 createdAt 升序返回。
+fn scan_agent_inbox_entries(inbox: &Path) -> std::io::Result<Vec<AgentInboxEntry>> {
+    let mut entries = Vec::new();
+    for entry in fs::read_dir(inbox)? {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(_) => continue,
+        };
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let file = entry.file_name().to_string_lossy().to_string();
+        let request_id = match agent_inbox_request_id_from_file(&file) {
+            Ok(request_id) => request_id.to_string(),
+            Err(_) => continue,
+        };
+        let text = match fs::read_to_string(&path) {
+            Ok(text) => text,
+            Err(_) => continue,
+        };
+        let request = match parse_agent_inbox_request(&text) {
+            Some(request) => request,
+            None => continue,
+        };
+        entries.push(AgentInboxEntry {
+            file,
+            request_id,
+            op: request.op,
+            client: request.client,
+            created_at: request.created_at,
+            payload: request.payload,
+        });
+    }
+    entries.sort_by(|left, right| {
+        left.created_at
+            .cmp(&right.created_at)
+            .then_with(|| left.file.cmp(&right.file))
+    });
+    Ok(entries)
+}
+
+fn agent_inbox_entry_expired(path: &Path, now: u64, ttl_ms: u64) -> bool {
+    let modified = modified_ms(path);
+    modified > 0 && now.saturating_sub(modified) > ttl_ms
+}
+
+/// 顺手清理：inbox 里超过 30 天的请求，done/failed 里超过 7 天的结果。失败忽略，不影响列表。
+fn cleanup_agent_inbox(dir: &Path, now: u64) {
+    let inbox = dir.join("inbox");
+    if let Ok(entries) = fs::read_dir(&inbox) {
+        for entry in entries.filter_map(Result::ok) {
+            let path = entry.path();
+            if !path.is_file() {
+                continue;
+            }
+            let file = entry.file_name().to_string_lossy().to_string();
+            if agent_inbox_request_id_from_file(&file).is_err() {
+                continue;
+            }
+            if agent_inbox_entry_expired(&path, now, AGENT_INBOX_REQUEST_TTL_MS) {
+                let _ = fs::remove_file(&path);
+            }
+        }
+    }
+    for name in ["done", "failed"] {
+        if let Ok(entries) = fs::read_dir(inbox.join(name)) {
+            for entry in entries.filter_map(Result::ok) {
+                let path = entry.path();
+                if path.is_file()
+                    && agent_inbox_entry_expired(&path, now, AGENT_INBOX_PROCESSED_TTL_MS)
+                {
+                    let _ = fs::remove_file(&path);
+                }
+            }
+        }
+    }
+}
+
+fn agent_inbox_list_impl(dir: &Path, now: u64) -> Result<Vec<AgentInboxEntry>, String> {
+    cleanup_agent_inbox(dir, now);
+    let inbox = dir.join("inbox");
+    if !inbox.is_dir() {
+        return Ok(Vec::new());
+    }
+    let mut entries = scan_agent_inbox_entries(&inbox)
+        .map_err(|error| format!("读取智能体请求队列失败：{error}"))?;
+    entries.truncate(AGENT_INBOX_MAX_LIST);
+    Ok(entries)
+}
+
+fn count_agent_inbox_requests(dir: &Path) -> u64 {
+    scan_agent_inbox_entries(&dir.join("inbox"))
+        .map(|entries| entries.len() as u64)
+        .unwrap_or(0)
+}
+
+fn agent_inbox_processed_file(done_dir: &Path, failed_dir: &Path, file: &str) -> bool {
+    done_dir.join(file).is_file() || failed_dir.join(file).is_file()
+}
+
+/// 把请求文件移动到 inbox/done 或 inbox/failed，并把 result 合并进原请求 JSON。
+/// 已经结算过的同名请求直接返回 Ok（先结算者生效），保证重复调用幂等。
+fn agent_inbox_resolve_impl(
+    dir: &Path,
+    file: &str,
+    status: &str,
+    entity_kind: Option<&str>,
+    entity_id: Option<&str>,
+    title: Option<&str>,
+    error: Option<&str>,
+    now: u64,
+) -> Result<(), String> {
+    agent_inbox_request_id_from_file(file)?;
+    if !matches!(status, "applied" | "rejected") {
+        return Err("智能体请求处理状态只能是 applied 或 rejected".into());
+    }
+    if let Some(kind) = entity_kind {
+        if !matches!(kind, "note" | "task") {
+            return Err("智能体请求的实体类型只能是 note 或 task".into());
+        }
+    }
+
+    let inbox = dir.join("inbox");
+    let done_dir = inbox.join("done");
+    let failed_dir = inbox.join("failed");
+    let source = inbox.join(file);
+    let target_dir = if status == "applied" {
+        &done_dir
+    } else {
+        &failed_dir
+    };
+
+    // 已经结算过（done 或 failed 有同名文件）就直接返回，并顺手清掉遗留的原始请求文件。
+    if agent_inbox_processed_file(&done_dir, &failed_dir, file) {
+        let _ = fs::remove_file(&source);
+        return Ok(());
+    }
+
+    let text = match fs::read_to_string(&source) {
+        Ok(text) => text,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            if agent_inbox_processed_file(&done_dir, &failed_dir, file) {
+                return Ok(());
+            }
+            return Err(format!("找不到待处理的智能体请求文件：{file}"));
+        }
+        Err(error) => return Err(format!("读取智能体请求文件失败：{error}")),
+    };
+
+    let mut value: Value = serde_json::from_str(&text)
+        .map_err(|_| format!("智能体请求文件不是合法的 JSON：{file}"))?;
+    let object = value
+        .as_object_mut()
+        .ok_or_else(|| format!("智能体请求文件不是 JSON 对象：{file}"))?;
+
+    let mut result = serde_json::Map::new();
+    result.insert("status".to_string(), Value::String(status.to_string()));
+    result.insert("appliedAt".to_string(), json!(now));
+    if status == "applied" {
+        if let Some(kind) = entity_kind {
+            result.insert("entityKind".to_string(), Value::String(kind.to_string()));
+        }
+        if let Some(id) = entity_id {
+            result.insert("entityId".to_string(), Value::String(id.to_string()));
+        }
+        if let Some(title) = title {
+            result.insert("title".to_string(), Value::String(title.to_string()));
+        }
+    } else if let Some(message) = error {
+        result.insert("error".to_string(), Value::String(message.to_string()));
+    }
+    object.insert("result".to_string(), Value::Object(result));
+
+    let contents = serde_json::to_string_pretty(&value)
+        .map_err(|error| format!("生成智能体请求结果失败：{error}"))?;
+    write_agent_file_atomic(&target_dir.join(file), contents.as_bytes())?;
+
+    match fs::remove_file(&source) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(format!("删除已处理的智能体请求文件失败：{error}")),
+    }
+}
+
 fn read_agent_manifest(root: &Path) -> Option<Value> {
     let text = fs::read_to_string(root.join("manifest.json")).ok()?;
     serde_json::from_str::<Value>(&text).ok()
@@ -398,6 +669,7 @@ fn agent_snapshot_status_impl(app: &tauri::AppHandle) -> Result<AgentSnapshotSta
         .unwrap_or(0);
     let mcp_path = agent_mcp_binary_path();
     let mcp_exists = Path::new(&mcp_path).is_file();
+    let pending_requests = count_agent_inbox_requests(&dir);
 
     Ok(AgentSnapshotStatus {
         dir: dir.to_string_lossy().to_string(),
@@ -407,6 +679,7 @@ fn agent_snapshot_status_impl(app: &tauri::AppHandle) -> Result<AgentSnapshotSta
         file_count: count_agent_files(&dir),
         notes,
         tasks,
+        pending_requests,
         mcp_path,
         mcp_exists,
     })
@@ -499,6 +772,43 @@ async fn clear_agent_snapshot(app: tauri::AppHandle) -> Result<(), String> {
             fs::remove_dir_all(&dir).map_err(|error| format!("清除智能体快照失败：{error}"))?;
         }
         Ok::<(), String>(())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn agent_inbox_list(app: tauri::AppHandle) -> Result<Vec<AgentInboxEntry>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let dir = agent_snapshot_root(&app)?;
+        agent_inbox_list_impl(&dir, now_ms())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn agent_inbox_resolve(
+    app: tauri::AppHandle,
+    file: String,
+    status: String,
+    entity_kind: Option<String>,
+    entity_id: Option<String>,
+    title: Option<String>,
+    error: Option<String>,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let dir = agent_snapshot_root(&app)?;
+        agent_inbox_resolve_impl(
+            &dir,
+            &file,
+            &status,
+            entity_kind.as_deref(),
+            entity_id.as_deref(),
+            title.as_deref(),
+            error.as_deref(),
+            now_ms(),
+        )
     })
     .await
     .map_err(|error| error.to_string())?
@@ -755,6 +1065,426 @@ mod tests {
         assert!(files.is_empty());
 
         let _ = fs::remove_dir_all(&root);
+    }
+
+    fn unique_agent_inbox_dir(tag: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "lafei-agent-inbox-{tag}-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ))
+    }
+
+    fn write_agent_inbox_request(
+        dir: &Path,
+        request_id: &str,
+        created_at: u64,
+        payload: Value,
+    ) -> PathBuf {
+        let inbox = dir.join("inbox");
+        fs::create_dir_all(&inbox).unwrap();
+        let path = inbox.join(format!("{request_id}.json"));
+        let body = serde_json::json!({
+            "schemaVersion": 1,
+            "requestId": request_id,
+            "op": "notes.create",
+            "client": "codex",
+            "createdAt": created_at,
+            "payload": payload,
+        });
+        fs::write(&path, serde_json::to_string(&body).unwrap()).unwrap();
+        path
+    }
+
+    #[test]
+    fn agent_inbox_accepts_valid_request_file_names() {
+        for file in [
+            "req-1762345678901-3f9a1c2e.json",
+            "abcdefgh.json",
+            "a.b_c-1234.json",
+            "A1_-._b9.json",
+        ] {
+            let request_id = agent_inbox_request_id_from_file(file)
+                .unwrap_or_else(|error| panic!("{file} 应该合法：{error}"));
+            assert_eq!(format!("{request_id}.json"), file);
+        }
+
+        let longest = format!("a{}.json", "b".repeat(95));
+        assert!(agent_inbox_request_id_from_file(&longest).is_ok());
+        let too_long = format!("a{}.json", "b".repeat(96));
+        assert!(agent_inbox_request_id_from_file(&too_long).is_err());
+    }
+
+    #[test]
+    fn agent_inbox_rejects_unsafe_request_file_names() {
+        for file in [
+            "",
+            ".hidden123.json",
+            ".json",
+            "short.json",
+            "notes.json",
+            "req/12345678.json",
+            "req\\12345678.json",
+            "../req12345678.json",
+            "..",
+            "req..12345678.json",
+            "req 12345678.json",
+            "req12345678.JSON",
+            "req12345678",
+            "req12345678.txt",
+            "中文请求12345678.json",
+        ] {
+            assert!(
+                agent_inbox_request_id_from_file(file).is_err(),
+                "{file:?} 应该被拒绝"
+            );
+        }
+    }
+
+    #[test]
+    fn agent_inbox_list_sorts_and_skips_bad_files() {
+        let root = unique_agent_inbox_dir("list");
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("inbox")).unwrap();
+        write_agent_inbox_request(
+            &root,
+            "req-1762345670000-aaaaaaaa",
+            300,
+            serde_json::json!({ "title": "later" }),
+        );
+        write_agent_inbox_request(
+            &root,
+            "req-1762345670001-bbbbbbbb",
+            100,
+            serde_json::json!({ "title": "first" }),
+        );
+        write_agent_inbox_request(
+            &root,
+            "req-1762345670002-cccccccc",
+            200,
+            serde_json::json!({ "title": "middle" }),
+        );
+        fs::write(root.join("inbox/bad-json-0001.json"), "{not json").unwrap();
+        fs::write(root.join("inbox/short.json"), "{}").unwrap();
+        fs::create_dir_all(root.join("inbox/nested")).unwrap();
+
+        let entries = agent_inbox_list_impl(&root, now_ms()).unwrap();
+        assert_eq!(entries.len(), 3);
+        assert_eq!(entries[0].request_id, "req-1762345670001-bbbbbbbb");
+        assert_eq!(entries[1].request_id, "req-1762345670002-cccccccc");
+        assert_eq!(entries[2].request_id, "req-1762345670000-aaaaaaaa");
+        assert_eq!(entries[0].file, "req-1762345670001-bbbbbbbb.json");
+        assert_eq!(entries[0].op, "notes.create");
+        assert_eq!(entries[0].client.as_deref(), Some("codex"));
+        assert_eq!(entries[0].created_at, 100);
+        assert_eq!(entries[0].payload["title"], "first");
+        assert!(root.join("inbox/bad-json-0001.json").is_file());
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn agent_inbox_list_caps_at_100_entries() {
+        let root = unique_agent_inbox_dir("cap");
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("inbox")).unwrap();
+        for index in 0..105u64 {
+            let request_id = format!("req-1762345678{index:03}-{index:08x}");
+            write_agent_inbox_request(&root, &request_id, index, Value::Null);
+        }
+
+        let entries = agent_inbox_list_impl(&root, now_ms()).unwrap();
+        assert_eq!(entries.len(), 100);
+        assert_eq!(entries[0].created_at, 0);
+        assert_eq!(entries[99].created_at, 99);
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn agent_inbox_list_missing_dir_is_empty() {
+        let root = unique_agent_inbox_dir("missing");
+        let _ = fs::remove_dir_all(&root);
+        assert!(agent_inbox_list_impl(&root, now_ms()).unwrap().is_empty());
+        assert_eq!(count_agent_inbox_requests(&root), 0);
+    }
+
+    #[test]
+    fn agent_inbox_cleanup_removes_expired_files() {
+        let root = unique_agent_inbox_dir("cleanup");
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("inbox/done")).unwrap();
+        fs::create_dir_all(root.join("inbox/failed")).unwrap();
+        write_agent_inbox_request(
+            &root,
+            "req-1762345670000-aaaaaaaa",
+            1,
+            serde_json::json!({}),
+        );
+        write_agent_inbox_request(
+            &root,
+            "req-1762345670001-bbbbbbbb",
+            2,
+            serde_json::json!({}),
+        );
+        fs::write(
+            root.join("inbox/done/req-1762345670002-cccccccc.json"),
+            "{}",
+        )
+        .unwrap();
+        fs::write(
+            root.join("inbox/failed/req-1762345670003-dddddddd.json"),
+            "{}",
+        )
+        .unwrap();
+
+        let now = now_ms();
+        let ten_days = 10 * 24 * 60 * 60 * 1000;
+        assert_eq!(
+            agent_inbox_list_impl(&root, now + ten_days).unwrap().len(),
+            2
+        );
+        // inbox 里 30 天内的请求保留；done/failed 里超过 7 天的结果被清理。
+        assert!(root.join("inbox/req-1762345670000-aaaaaaaa.json").is_file());
+        assert!(!root
+            .join("inbox/done/req-1762345670002-cccccccc.json")
+            .exists());
+        assert!(!root
+            .join("inbox/failed/req-1762345670003-dddddddd.json")
+            .exists());
+
+        let month = 31 * 24 * 60 * 60 * 1000;
+        assert!(agent_inbox_list_impl(&root, now + month)
+            .unwrap()
+            .is_empty());
+        assert!(!root.join("inbox/req-1762345670000-aaaaaaaa.json").exists());
+        assert!(!root.join("inbox/req-1762345670001-bbbbbbbb.json").exists());
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn agent_inbox_resolve_moves_and_merges_result() {
+        let root = unique_agent_inbox_dir("resolve");
+        let _ = fs::remove_dir_all(&root);
+        write_agent_inbox_request(
+            &root,
+            "req-1762345670000-aaaaaaaa",
+            42,
+            serde_json::json!({ "title": "外部笔记", "content": "正文" }),
+        );
+        let file = "req-1762345670000-aaaaaaaa.json";
+
+        agent_inbox_resolve_impl(
+            &root,
+            file,
+            "applied",
+            Some("note"),
+            Some("note-1"),
+            Some("外部笔记"),
+            None,
+            999,
+        )
+        .unwrap();
+
+        assert!(!root.join("inbox").join(file).exists());
+        let done = root.join("inbox/done").join(file);
+        assert!(done.is_file());
+        let value: Value = serde_json::from_str(&fs::read_to_string(&done).unwrap()).unwrap();
+        assert_eq!(value["requestId"], "req-1762345670000-aaaaaaaa");
+        assert_eq!(value["op"], "notes.create");
+        assert_eq!(value["client"], "codex");
+        assert_eq!(value["createdAt"], 42);
+        assert_eq!(value["payload"]["title"], "外部笔记");
+        assert_eq!(value["result"]["status"], "applied");
+        assert_eq!(value["result"]["appliedAt"], 999);
+        assert_eq!(value["result"]["entityKind"], "note");
+        assert_eq!(value["result"]["entityId"], "note-1");
+        assert_eq!(value["result"]["title"], "外部笔记");
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn agent_inbox_resolve_writes_failed_result() {
+        let root = unique_agent_inbox_dir("failed");
+        let _ = fs::remove_dir_all(&root);
+        write_agent_inbox_request(
+            &root,
+            "req-1762345670000-aaaaaaaa",
+            5,
+            serde_json::json!({ "title": "" }),
+        );
+        let file = "req-1762345670000-aaaaaaaa.json";
+
+        agent_inbox_resolve_impl(
+            &root,
+            file,
+            "rejected",
+            None,
+            None,
+            None,
+            Some("任务标题不能为空"),
+            7,
+        )
+        .unwrap();
+
+        let failed = root.join("inbox/failed").join(file);
+        assert!(failed.is_file());
+        let value: Value = serde_json::from_str(&fs::read_to_string(&failed).unwrap()).unwrap();
+        assert_eq!(value["result"]["status"], "rejected");
+        assert_eq!(value["result"]["appliedAt"], 7);
+        assert_eq!(value["result"]["error"], "任务标题不能为空");
+        assert!(value["result"].get("entityKind").is_none());
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn agent_inbox_resolve_is_idempotent() {
+        let root = unique_agent_inbox_dir("idempotent");
+        let _ = fs::remove_dir_all(&root);
+        write_agent_inbox_request(
+            &root,
+            "req-1762345670000-aaaaaaaa",
+            1,
+            serde_json::json!({ "title": "任务", "priority": "high" }),
+        );
+        let file = "req-1762345670000-aaaaaaaa.json";
+
+        agent_inbox_resolve_impl(
+            &root,
+            file,
+            "applied",
+            Some("task"),
+            Some("task-1"),
+            Some("任务"),
+            None,
+            100,
+        )
+        .unwrap();
+        let done = root.join("inbox/done").join(file);
+        let first = fs::read_to_string(&done).unwrap();
+
+        agent_inbox_resolve_impl(
+            &root,
+            file,
+            "applied",
+            Some("task"),
+            Some("task-1"),
+            Some("任务"),
+            None,
+            200,
+        )
+        .unwrap();
+        assert_eq!(fs::read_to_string(&done).unwrap(), first);
+
+        // 已结算后原始请求又被放回 inbox：重复结算只清理原文件，不会改写已完成的结果。
+        fs::write(
+            root.join("inbox").join(file),
+            r#"{"op":"notes.create","createdAt":1,"payload":{}}"#,
+        )
+        .unwrap();
+        agent_inbox_resolve_impl(&root, file, "rejected", None, None, None, Some("失败"), 300)
+            .unwrap();
+        assert!(!root.join("inbox").join(file).exists());
+        assert!(!root.join("inbox/failed").join(file).exists());
+        assert_eq!(fs::read_to_string(&done).unwrap(), first);
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn agent_inbox_resolve_rejects_bad_inputs() {
+        let root = unique_agent_inbox_dir("reject");
+        let _ = fs::remove_dir_all(&root);
+        write_agent_inbox_request(
+            &root,
+            "req-1762345670000-aaaaaaaa",
+            1,
+            serde_json::json!({}),
+        );
+        let file = "req-1762345670000-aaaaaaaa.json";
+
+        for bad_file in [
+            "../req-1762345670000-aaaaaaaa.json",
+            "/tmp/req-1762345670000-aaaaaaaa.json",
+            "req..12345678.json",
+            ".hidden123.json",
+            "req12345678.txt",
+        ] {
+            assert!(
+                agent_inbox_resolve_impl(&root, bad_file, "applied", None, None, None, None, 1)
+                    .is_err(),
+                "{bad_file:?} 应该被拒绝"
+            );
+        }
+        assert!(agent_inbox_resolve_impl(&root, file, "done", None, None, None, None, 1).is_err());
+        assert!(agent_inbox_resolve_impl(
+            &root,
+            file,
+            "applied",
+            Some("chat"),
+            None,
+            None,
+            None,
+            1
+        )
+        .is_err());
+        assert!(agent_inbox_resolve_impl(
+            &root,
+            "req-1762345670009-zzzzzzzz.json",
+            "applied",
+            None,
+            None,
+            None,
+            None,
+            1
+        )
+        .is_err());
+        // 非法参数不应动到原请求文件。
+        assert!(root.join("inbox").join(file).is_file());
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn agent_inbox_pending_requests_count() {
+        let root = unique_agent_inbox_dir("pending");
+        let _ = fs::remove_dir_all(&root);
+        write_agent_inbox_request(
+            &root,
+            "req-1762345670000-aaaaaaaa",
+            1,
+            serde_json::json!({}),
+        );
+        write_agent_inbox_request(
+            &root,
+            "req-1762345670001-bbbbbbbb",
+            2,
+            serde_json::json!({}),
+        );
+        fs::write(root.join("inbox/bad-json-0001.json"), "oops").unwrap();
+        fs::write(root.join("inbox/short.json"), "{}").unwrap();
+        assert_eq!(count_agent_inbox_requests(&root), 2);
+
+        agent_inbox_resolve_impl(
+            &root,
+            "req-1762345670000-aaaaaaaa.json",
+            "applied",
+            Some("note"),
+            Some("note-1"),
+            Some("标题"),
+            None,
+            1,
+        )
+        .unwrap();
+        assert_eq!(count_agent_inbox_requests(&root), 1);
+
+        fs::remove_dir_all(&root).unwrap();
     }
 }
 
@@ -1076,6 +1806,8 @@ pub fn run() {
             agent_snapshot_status,
             write_agent_snapshot,
             clear_agent_snapshot,
+            agent_inbox_list,
+            agent_inbox_resolve,
             ai_stream,
             ai_complete,
             ai_cancel,

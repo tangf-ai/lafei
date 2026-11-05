@@ -3,7 +3,7 @@ name = "lafei-mcp"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
-description = "Read-only MCP server for Lafei notes and tasks"
+description = "MCP server for Lafei notes and tasks (snapshot reads + queued writes)"
 license = "MIT"
 
 [dependencies]

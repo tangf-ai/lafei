@@ -35,7 +35,7 @@
 
 | 平台 | 版本 | 说明 |
 | --- | --- | --- |
-| macOS（Apple Silicon） | [v0.19.5](https://github.com/tangf-ai/lafei/releases/latest) | `Lafei-0.19.5-macOS-arm64.dmg`，ad-hoc 签名、未公证；首次打开如被拦截，右键应用选「打开」 |
+| macOS（Apple Silicon） | [v0.20.0](https://github.com/tangf-ai/lafei/releases/latest) | `Lafei-0.20.0-macOS-arm64.dmg`，ad-hoc 签名、未公证；首次打开如被拦截，右键应用选「打开」 |
 | Web / PWA | 源码构建 | `pnpm build` 后把 `dist/` 部署到任意静态托管 |
 | Windows / Linux | 源码构建 | Tauri 2 支持，暂未提供预编译包 |
 
@@ -115,11 +115,12 @@
 
 ### 智能体访问（MCP）
 
-- 在设置 → 智能体访问中开启后，Lafei 会把笔记和任务导出成一份只读快照
+- 在设置 → 智能体访问中开启后，Lafei 会把笔记和任务导出成一份快照
 - 快照包含笔记 Markdown、任务 JSONL、标签索引和给智能体的 `AGENTS.md`，不包含 AI 对话和 API Key
 - 桌面版随应用打包 `lafei-mcp`（stdio），Codex、Pi 等支持 MCP 的智能体可以直接读取
-- 提供 `notes_search`、`notes_get`、`tasks_list`、`tasks_get`、`tags_list` 五个只读工具
-- 详细配置与数据契约见 [docs/agent-access.md](docs/agent-access.md)
+- 读取工具：`notes_search`、`notes_get`、`tasks_list`、`tasks_get`、`tags_list`
+- 打开「允许外部智能体新建笔记和任务」后，智能体还能用 `notes_create`、`tasks_create` 新建：请求经本机 `agent/inbox` 队列交给应用落库，应用内会提示并支持一键撤销；只支持新建，不支持修改或删除
+- 详细配置、写入流程与数据契约见 [docs/agent-access.md](docs/agent-access.md)
 
 ### 数据仓库 / 文件夹存储
 
@@ -200,9 +201,9 @@ pnpm desktop:build   # 生成 .app / .dmg（macOS）或对应平台安装包
 macOS 构建产物：
 
 ```text
-Lafei-0.19.5-macOS-arm64.dmg                                      # 可直接分发的安装包
+Lafei-0.20.0-macOS-arm64.dmg                                      # 可直接分发的安装包
 src-tauri/target/release/bundle/macos/Lafei.app                  # 未打包的应用
-src-tauri/target/release/bundle/dmg/Lafei_0.19.5_aarch64.dmg      # Tauri 原始产物
+src-tauri/target/release/bundle/dmg/Lafei_0.20.0_aarch64.dmg      # Tauri 原始产物
 ```
 
 > 构建产物（`.app` / `.dmg`）不进入 Git，正式版本请通过 GitHub Releases 分发。当前本地产物是 Apple Silicon（arm64）版本，使用 ad-hoc 签名，未做 Apple 公证；若系统提示无法验证，右键应用选择「打开」，或在终端执行：
@@ -359,8 +360,10 @@ src/
     folderFormat.ts 目录文件格式、Markdown frontmatter 解析
     folderSync.ts  双向合并、tombstone、变更监听、自动同步
     folderBackend.ts Tauri 文件夹命令封装
+    agentSnapshot.ts 智能体快照格式（v2：writer 能力 + inbox 队列契约）
+    agentWrite.ts   外部智能体写入队列（轮询、落库、撤销、活动记录）
   store/ui.ts       导航、设置、Toast（Zustand）
-mcp/                lafei-mcp 只读 stdio MCP server
+mcp/                lafei-mcp stdio MCP server（读取快照 + inbox 写入队列）
 src-tauri/          Tauri 2 外壳、文件夹选择/原子写入命令、智能体快照、原生保存、图标与权限
 public/             PWA 图标与 favicon
 docs/screenshots/   产品截图
@@ -394,7 +397,7 @@ scripts/mock-ai.mjs 本地 AI 演示服务
 
 ## 已知限制
 
-这是 `0.19.5`，一个可以真实日用的本地 MVP，但不是完成品：
+这是 `0.20.0`，一个可以真实日用的本地 MVP，但不是完成品：
 
 - 文件夹同步是文件级的、最终一致的，不是实时协作；冲突采用更新时间优先，没有逐行合并
 - 手机 PWA 不能直接读取 iCloud Drive；目前需要备份迁移，原生 iOS 版尚未生成

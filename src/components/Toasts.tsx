@@ -14,6 +14,18 @@ export function Toasts() {
             {toast.tone === "success" ? <Check size={14} /> : toast.tone === "error" ? <AlertCircle size={14} /> : null}
           </span>
           <span>{toast.message}</span>
+          {toast.action && (
+            <button
+              type="button"
+              className="toast-action"
+              onClick={() => {
+                toast.action?.onClick();
+                dismiss(toast.id);
+              }}
+            >
+              {toast.action.label}
+            </button>
+          )}
           <button type="button" className="toast-close" aria-label="关闭" onClick={() => dismiss(toast.id)}>
             <X size={13} />
           </button>

@@ -3,6 +3,21 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.20.0] - 2026-11-05
+
+### Added
+
+- MCP 写入：`lafei-mcp` 新增 `notes_create`、`tasks_create` 两个工具，智能体可以新建笔记和任务；写入走本机 `agent/inbox/` 文件队列，应用开启写入后约 0.8 秒内落库，结果写入 `inbox/done/`（失败进 `inbox/failed/`），智能体按 `requestId` 幂等
+- 设置 → 智能体访问新增「允许外部智能体新建笔记和任务」开关（默认关闭、首次开启二次确认）、队列待处理数量与「立即检查」，以及「由智能体创建」活动列表（保留最近 20 条、列表展示最近 5 条，点击可打开对应笔记/任务）
+- 新建成功会弹一条可撤销提示：一批创建的笔记/任务可以一键删除；关闭写入后队列停止处理，积压请求在下次开启后继续处理
+- 快照 `manifest.json` 增加 `writer` 能力块（`enabled`、`inbox`、`ops`、`maxPending`），`schemaVersion` 升到 `2`；`AGENTS.md` 补充写入工具与队列说明
+- `scripts/test-mcp.mjs` 新增 `--fixture` 模式：自动建临时快照，离线验证握手、工具列表和写入排队，不依赖打开 Lafei
+
+### Changed
+
+- `lafei-mcp` 不再是只读服务；未开启写入时 `notes_create` / `tasks_create` 会直接报错且不写队列，读取工具不受影响
+- 写入队列只处理新建，暂不支持修改、删除或完成任务；请求上限 200 条，超过后 MCP 拒绝新请求，待处理请求 30 天、`done` / `failed` 结果 7 天后清理
+
 ## [0.19.5] - 2026-11-04
 
 ### Added

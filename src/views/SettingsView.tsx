@@ -70,7 +70,7 @@ const TABS: Array<{ id: SettingsTab; label: string; icon: typeof Cpu; caption: s
   { id: "ai", label: "AI 模型", icon: Cpu, caption: "接入你的模型" },
   { id: "appearance", label: "外观与写作", icon: Palette, caption: "调整阅读与编辑" },
   { id: "data", label: "数据与备份", icon: Database, caption: "随时带走你的内容" },
-  { id: "agent", label: "智能体访问", icon: Bot, caption: "让 Codex / Pi 读取" },
+  { id: "agent", label: "智能体访问", icon: Bot, caption: "让 Codex / Pi 读写" },
   { id: "about", label: "关于 Lafei", icon: Info, caption: "版本与快捷键" },
 ];
 

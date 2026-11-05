@@ -7,6 +7,7 @@ import { bootstrapDatabase } from "./db";
 import { isTauri } from "./lib/util";
 import { initializeFolderSync } from "./lib/folderSync";
 import { initializeAgentExport } from "./lib/agentExport";
+import { initializeAgentWriteQueue } from "./lib/agentWrite";
 
 document.documentElement.dataset.shell = isTauri ? "tauri" : "web";
 document.documentElement.dataset.design = "workbench";
@@ -32,6 +33,7 @@ async function start() {
 
   window.setTimeout(() => {
     initializeAgentExport();
+    initializeAgentWriteQueue();
     void initializeFolderSync();
   }, 300);
 }

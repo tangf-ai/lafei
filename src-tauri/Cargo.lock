@@ -1995,7 +1995,7 @@ dependencies = [
 
 [[package]]
 name = "lafei"
-version = "0.19.5"
+version = "0.20.0"
 dependencies = [
  "futures-util",
  "regex",
