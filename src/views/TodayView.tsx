@@ -19,6 +19,7 @@ import {
   dueLabel,
   excerpt,
   greeting,
+  isDueToday,
   isOverdue,
   longDate,
   noteTitle,
@@ -31,6 +32,7 @@ import { tagsOf } from "../lib/tags";
 import type { Note } from "../types";
 import { TaskRow } from "../components/TaskRow";
 import { RemainingBadge } from "../components/RemainingBadge";
+import { DueTodayBadge } from "../components/DueTodayBadge";
 
 export function TodayView() {
   const notes = useLiveQuery(() => db.notes.toArray(), [], []);
@@ -230,9 +232,20 @@ export function TodayView() {
             </span>
             <strong>{focusCardTask ? focusCardTask.title : "给今天留一件重要的事"}</strong>
             <span className="wb-focus-meta">
-              {focusCardTask
-                ? `${focusCardTask.dueDate ? dueLabel(focusCardTask.dueDate).label : "待安排"}${focusCardTask.priority === "high" ? " · 高优先级" : ""}`
-                : "从下面快速添加，或先看看接下来要做的事。"}
+              {focusCardTask ? (
+                <>
+                  {isDueToday(focusCardTask.dueDate) ? (
+                    <DueTodayBadge compact />
+                  ) : focusCardTask.dueDate ? (
+                    dueLabel(focusCardTask.dueDate).label
+                  ) : (
+                    "待安排"
+                  )}
+                  {focusCardTask.priority === "high" && " · 高优先级"}
+                </>
+              ) : (
+                "从下面快速添加，或先看看接下来要做的事。"
+              )}
             </span>
           </button>
 

@@ -5,8 +5,9 @@ import { ArrowLeft, Check, Plus } from "lucide-react";
 import type { Quadrant, Task } from "../types";
 import { TaskRow } from "../components/TaskRow";
 import { RemainingBadge } from "../components/RemainingBadge";
+import { DueTodayBadge } from "../components/DueTodayBadge";
 import { toggleTask, updateTask } from "../db";
-import { cn, dueLabel, isOverdue, remainingLabel } from "../lib/util";
+import { cn, dueLabel, isDueToday, isOverdue, remainingLabel } from "../lib/util";
 import { tagsOf } from "../lib/tags";
 import { useUI } from "../store/ui";
 import { dayKeyOffset } from "../lib/date";
@@ -205,13 +206,19 @@ export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProp
     const due = dueLabel(task.dueDate);
     const remaining = remainingLabel(task.dueDate);
     const overdue = isOverdue(task.dueDate);
+    const dueToday = !task.done && isDueToday(task.dueDate);
     const tags = tagsOf(task);
     const firstTag = tags[0];
 
     return (
       <div
         key={task.id}
-        className={cn("wb-item", overdue && "is-overdue", draggingId === task.id && "is-dragging")}
+        className={cn(
+          "wb-item",
+          overdue && "is-overdue",
+          dueToday && "is-due-today",
+          draggingId === task.id && "is-dragging",
+        )}
         role="button"
         tabIndex={0}
         onClick={(event) => {
@@ -252,7 +259,11 @@ export function TaskMatrix({ tasks, onAddToQuadrant, onNewTask }: TaskMatrixProp
         <i className={cn("wb-pdot", `is-${task.priority}`)} />
         <span className="wb-item-title">{task.title || "未命名任务"}</span>
         <span className="wb-item-meta">
-          <span className="wb-item-when">{task.dueDate ? due.label : "待安排"}</span>
+          {dueToday ? (
+            <DueTodayBadge compact />
+          ) : (
+            <span className="wb-item-when">{task.dueDate ? due.label : "待安排"}</span>
+          )}
           {task.dueDate && remaining.days !== null && remaining.days > 0 && (
             <RemainingBadge days={remaining.days} tone={remaining.tone} compact />
           )}

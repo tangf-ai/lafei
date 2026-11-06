@@ -525,6 +525,20 @@
   color: var(--wb-red-ink);
 }
 
+/* 今天截止：行底铺一层浅红，和行内「今天截止」徽标一起把当天到期拎出来 */
+.wb-item.is-due-today {
+  background: color-mix(in srgb, var(--wb-red-bg) 56%, transparent);
+}
+
+.wb-item.is-due-today:hover,
+.wb-item.is-due-today:focus-visible {
+  background: color-mix(in srgb, var(--wb-red-bg) 78%, transparent);
+}
+
+.wb-item.is-due-today .wb-item-title {
+  font-weight: 550;
+}
+
 .wb-item-tag {
   color: var(--wb-faint);
 }

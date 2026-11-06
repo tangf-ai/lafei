@@ -202,6 +202,17 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 到期汇总里「今天」这一行用红调提亮，和任务行里的今天截止徽标呼应 */
+.wb-band-due-row.is-today .wb-band-due-label,
+.wb-band-due-row.is-today .wb-band-due-count {
+  color: var(--wb-red-ink);
+  font-weight: 600;
+}
+
+.wb-band-due-row.is-today .wb-band-due-dots i {
+  background: var(--wb-red);
+}
+
 /* 2 · 进度 --------------------------------------------------------------- */
 
 .wb-band-prog {

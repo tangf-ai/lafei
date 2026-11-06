@@ -55,14 +55,15 @@ interface ChipProps {
   empty: boolean;
   open: boolean;
   ariaLabel: string;
+  className?: string;
   onClick: (element: HTMLButtonElement) => void;
 }
 
-function PropertyChip({ icon, label, empty, open, ariaLabel, onClick }: ChipProps) {
+function PropertyChip({ icon, label, empty, open, ariaLabel, className, onClick }: ChipProps) {
   return (
     <button
       type="button"
-      className={cn("task-prop", empty && "is-empty", open && "is-open")}
+      className={cn("task-prop", empty && "is-empty", open && "is-open", className)}
       aria-haspopup="dialog"
       aria-expanded={open}
       aria-label={ariaLabel}
@@ -128,6 +129,7 @@ export function TaskProperties({
         <PropertyChip
           open={field === "due"}
           empty={!task.dueDate}
+          className={due?.tone === "today" ? "is-due-today" : undefined}
           icon={<CalendarDays size={13} strokeWidth={1.7} />}
           ariaLabel={due ? `截止日期：${due.base}${due.rel ? `，${due.rel}` : ""}` : "设置截止日期"}
           onClick={(element) => open("due", element)}

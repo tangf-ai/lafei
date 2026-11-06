@@ -104,7 +104,7 @@ export function TaskOverviewBand({ tasks, notes, onShowDone, onOpenAssistant }: 
         {dueRows.length > 0 && (
           <div className="wb-band-due">
             {dueRows.map((row) => (
-              <div className="wb-band-due-row" key={row.key}>
+              <div className={cn("wb-band-due-row", row.key === today && "is-today")} key={row.key}>
                 <span className="wb-band-due-label">{row.label}</span>
                 <span className="wb-band-due-dots" aria-hidden="true">
                   {Array.from({ length: Math.min(row.count, MAX_DUE_DOTS) }, (_, index) => (

@@ -1,11 +1,12 @@
 import { Check, FileText } from "lucide-react";
 import { format } from "date-fns";
 import type { Note, Task } from "../types";
-import { cn, dueLabel, isOverdue, noteTitle, remainingLabel } from "../lib/util";
+import { cn, dueLabel, isDueToday, isOverdue, noteTitle, remainingLabel } from "../lib/util";
 import { tagsOf } from "../lib/tags";
 import { toggleTask } from "../db";
 import { useUI } from "../store/ui";
 import { RemainingBadge } from "./RemainingBadge";
+import { DueTodayBadge } from "./DueTodayBadge";
 
 export function TaskRow({
   task,
@@ -31,6 +32,7 @@ export function TaskRow({
   const due = dueLabel(task.dueDate);
   const remaining = remainingLabel(task.dueDate);
   const overdue = !task.done && isOverdue(task.dueDate);
+  const dueToday = !task.done && isDueToday(task.dueDate);
   const tags = tagsOf(task);
 
   return (
@@ -38,6 +40,7 @@ export function TaskRow({
       className={cn(
         "task-row",
         task.done && "is-done",
+        dueToday && "is-due-today",
         overdue && "is-overdue",
         compact && "is-compact",
         inline && "is-inline",
@@ -75,13 +78,18 @@ export function TaskRow({
             </span>
           ) : (
             <>
-              {task.dueDate && (
-                <span className={cn("task-due", `tone-${due.tone}`)}>
-                  {overdue && <span className="overdue-dot" />}
-                  {due.label}
-                </span>
+              {task.dueDate ? (
+                dueToday ? (
+                  <DueTodayBadge />
+                ) : (
+                  <span className={cn("task-due", `tone-${due.tone}`)}>
+                    {overdue && <span className="overdue-dot" />}
+                    {due.label}
+                  </span>
+                )
+              ) : (
+                <span className="task-due tone-none">待安排</span>
               )}
-              {!task.dueDate && <span className="task-due tone-none">待安排</span>}
               {task.dueDate && remaining.days !== null && remaining.days > 0 && (
                 <RemainingBadge days={remaining.days} tone={remaining.tone} />
               )}
