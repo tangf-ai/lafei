@@ -3,6 +3,12 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.21.2] - 2026-11-09
+
+### Changed
+
+- 「工作区」侧栏菜单顺序调整为「任务 → 今日 → 笔记 → 标签 → AI 助手」：任务排在最前，打开应用先看到待办和计数；视图分组、标签分组、计数徽标与高亮逻辑都不变
+
 ## [0.21.1] - 2026-11-09
 
 ### Changed

@@ -31,9 +31,9 @@ function clampSidebarWidth(value: number) {
 }
 
 const NAV = [
+  { id: "tasks", label: "任务", icon: CheckSquare },
   { id: "today", label: "今日", icon: Sunrise },
   { id: "notes", label: "笔记", icon: NotebookPen },
-  { id: "tasks", label: "任务", icon: CheckSquare },
   { id: "tags", label: "标签", icon: Tag },
   { id: "assistant", label: "AI 助手", icon: Sparkles },
 ] as const;
