@@ -211,6 +211,8 @@
 /* 四个格子 */
 .wb-quad {
   position: relative;
+  /* 以格子自身宽度做容器查询：侧栏拖宽 / 窗口变窄时，格头比窗口宽度更早察觉 */
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -266,13 +268,13 @@
   background: color-mix(in srgb, var(--wb-green-soft) 78%, var(--wb-card));
 }
 
-/* 格头 */
+/* 格头：编号 / 标题 / 提示 / 件数 / 查看全部，全部收在一行，省出竖排空间 */
 .wb-quad-head {
   flex: none;
-  height: 46px;
+  height: 32px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   padding: 0 14px 0 16px;
   border-bottom: 1px solid color-mix(in srgb, var(--wb-muted) 11%, transparent);
 }
@@ -327,8 +329,9 @@
 .wb-quad-head-text {
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
   line-height: 1;
 }
 
@@ -345,6 +348,25 @@
   color: var(--wb-muted);
   letter-spacing: 0.06em;
   white-space: nowrap;
+}
+
+/* 标题和提示之间一根发丝竖线，一行里也能看出从属关系 */
+.wb-quad-hint::before {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 8px;
+  margin-right: 7px;
+  vertical-align: -1px;
+  background: color-mix(in srgb, var(--wb-muted) 26%, transparent);
+}
+
+/* 格子窄到放不下「标题 + 提示」时先把提示收起来，别让提示压到右侧的件数上；
+   用容器查询而不是窗口宽度断点，侧栏拖宽时也能及时让位 */
+@container (max-width: 300px) {
+  .wb-quad-hint {
+    display: none;
+  }
 }
 
 /* 格头右侧：查看全部 / 添加 */
@@ -1000,7 +1022,6 @@
   }
 
   .wb-quad-head {
-    height: 48px;
     padding: 0 10px 0 12px;
   }
 
@@ -1050,7 +1071,7 @@
   }
 
   .wb-quad-head {
-    height: 44px;
+    height: 30px;
     gap: 7px;
     padding: 0 8px 0 10px;
   }

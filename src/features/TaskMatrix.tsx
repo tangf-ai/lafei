@@ -39,8 +39,8 @@ const ROW_HEIGHT = 32;
 const MAX_VISIBLE_ROWS = 8;
 /** 板的固定高度：板头 46 + 轴 24 + 底部留白 14 */
 const BOARD_CHROME = 84;
-/** 每格固定高度：格头 46 + 任务区的上下内边距 12 */
-const CELL_CHROME = 58;
+/** 每格固定高度：格头 32 + 任务区的上下内边距 12 */
+const CELL_CHROME = 44;
 
 interface RowHover {
   task: Task;
