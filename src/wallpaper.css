@@ -161,14 +161,34 @@ html[data-wallpaper="on"] .editor-main {
    任务 / 笔记：让背景真的透进来
    -------------------------------------------------------------------------- */
 
-/* 矩阵板本身不再叠一层玻璃：板 + 四个格子各叠一次，会把背景压成纯白。
-   让格子做唯一的玻璃层，空象限和任务行下面都能看到背景。 */
+/* 矩阵板不再有底板：不要「板 + 格子」两层叠加，矩阵直接坐在背景上 */
 html[data-wallpaper="on"] .wb-matrix {
   background: transparent;
 }
 
+/* 四象限在背景开启时不再铺纸：矩阵是画布，不是卡片。
+   任务行、格头和空状态直接坐在背景上，只留发丝线和一层淡淡的颜色提示；
+   字靠同色柔光压住，看不清时把设置里的「遮罩」调高一点。 */
 html[data-wallpaper="on"] .wb-quad {
-  background: rgb(var(--wall-glass-rgb) / calc(var(--wp-card-a, 0.8) + var(--wp-alpha-bonus, 0)));
+  /* 只留 14% 的同色薄雾：肉眼看就是透的，但空状态和小字更容易压住 */
+  background: rgb(var(--wall-glass-rgb) / calc(0.14 + var(--wp-alpha-bonus, 0)));
+  text-shadow: 0 0 16px color-mix(in srgb, var(--wall-tint) 72%, transparent);
+}
+
+html[data-wallpaper="on"] .wb-quad-q1 .wb-quad-head {
+  background: color-mix(in srgb, var(--wb-red-bg) 24%, transparent);
+}
+
+html[data-wallpaper="on"] .wb-quad-q2 .wb-quad-head {
+  background: color-mix(in srgb, var(--wb-green-soft) 26%, transparent);
+}
+
+html[data-wallpaper="on"] .wb-quad-q3 .wb-quad-head {
+  background: color-mix(in srgb, var(--wb-gold-bg) 24%, transparent);
+}
+
+html[data-wallpaper="on"] .wb-quad-q4 .wb-quad-head {
+  background: color-mix(in srgb, var(--wb-chip) 30%, transparent);
 }
 
 /* 笔记改成「桌上的纸」：四周留出一圈背景，两块面板各自成卡 */
