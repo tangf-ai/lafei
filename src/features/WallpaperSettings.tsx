@@ -270,24 +270,6 @@ export function WallpaperSettings() {
               </div>
             </div>
 
-            <div className="wp-option wp-option-frame">
-              <span className="wp-option-label">
-                四周留白
-                <em>{wallpaper.frame === "float" ? "浮窗" : "铺满"}</em>
-              </span>
-              <button
-                type="button"
-                role="switch"
-                aria-label="四周留白"
-                aria-checked={wallpaper.frame === "float"}
-                className={cn("wp-switch", wallpaper.frame === "float" && "is-on")}
-                onClick={() =>
-                  setWallpaper({ frame: wallpaper.frame === "float" ? "edge" : "float" })
-                }
-              >
-                <span />
-              </button>
-            </div>
           </div>
 
           <div className="wp-foot">

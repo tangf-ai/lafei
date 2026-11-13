@@ -22,24 +22,21 @@ export function WallpaperLayer() {
     if (!active) {
       root.dataset.wallpaper = "off";
       delete root.dataset.wallpaperGlass;
-      delete root.dataset.wallpaperFrame;
       root.style.removeProperty("--wp-blur");
       root.style.removeProperty("--wp-scrim");
       return;
     }
     root.dataset.wallpaper = "on";
     root.dataset.wallpaperGlass = wallpaper.glass;
-    root.dataset.wallpaperFrame = wallpaper.frame;
     root.style.setProperty("--wp-blur", `${wallpaper.blur}px`);
     root.style.setProperty("--wp-scrim", String(wallpaper.scrim));
-  }, [active, wallpaper.glass, wallpaper.frame, wallpaper.blur, wallpaper.scrim]);
+  }, [active, wallpaper.glass, wallpaper.blur, wallpaper.scrim]);
 
   useEffect(
     () => () => {
       const root = document.documentElement;
       root.dataset.wallpaper = "off";
       delete root.dataset.wallpaperGlass;
-      delete root.dataset.wallpaperFrame;
     },
     [],
   );

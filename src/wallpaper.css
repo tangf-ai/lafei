@@ -1,7 +1,7 @@
 /* ==========================================================================
    Lafei · 桌面背景（大背景）
    壁纸层铺在壳层后面，壳层切到磨砂玻璃；
-   由 html[data-wallpaper] / [data-wallpaper-glass] / [data-wallpaper-frame] 控制。
+   由 html[data-wallpaper] / [data-wallpaper-glass] 控制。
    ========================================================================== */
 
 :root {
@@ -11,7 +11,6 @@
   --wall-line-rgb: 225 229 219;
   --wp-blur: 14px;
   --wp-scrim: 0.32;
-  --wp-frame: 10px;
 }
 
 html[data-theme="dark"] {
@@ -244,28 +243,6 @@ html[data-wallpaper="on"] .wb-storage {
 
   html[data-wallpaper="on"] .mobile-nav {
     background: rgb(var(--wall-glass-rgb) / 0.86);
-  }
-}
-
-/* --------------------------------------------------------------------------
-   浮窗布局：四周留一圈背景，像把工作台放在桌面上
-   -------------------------------------------------------------------------- */
-
-@media (min-width: 821px) {
-  html[data-wallpaper="on"][data-wallpaper-frame="float"] .app-shell {
-    width: calc(100% - var(--wp-frame) * 2);
-    height: calc(100dvh - var(--wp-frame) * 2);
-    margin: var(--wp-frame);
-    border-radius: 18px;
-    box-shadow:
-      0 2px 8px rgba(16, 22, 16, 0.14),
-      0 30px 80px rgba(16, 22, 16, 0.24);
-  }
-
-  html[data-theme="dark"][data-wallpaper="on"][data-wallpaper-frame="float"] .app-shell {
-    box-shadow:
-      0 2px 8px rgba(0, 0, 0, 0.5),
-      0 30px 90px rgba(0, 0, 0, 0.55);
   }
 }
 
@@ -641,9 +618,3 @@ html[data-theme="dark"] .wp-tile-preview {
 
 }
 
-/* 手机上壳层始终铺满，留白开关没有意义，直接收起 */
-@media (max-width: 820px) {
-  .wp-option-frame {
-    display: none;
-  }
-}

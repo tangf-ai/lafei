@@ -96,7 +96,6 @@ export const WALLPAPER_DEFAULT: WallpaperSettings = {
   blur: 12,
   scrim: 0.24,
   glass: "clear",
-  frame: "float",
 };
 
 const KINDS: WallpaperKind[] = ["none", "preset", "custom"];
@@ -135,7 +134,6 @@ export function normalizeWallpaper(input?: Partial<WallpaperSettings> | null): W
     glass: GLASS.includes(saved.glass as WallpaperGlass)
       ? (saved.glass as WallpaperGlass)
       : WALLPAPER_DEFAULT.glass,
-    frame: saved.frame === "edge" ? "edge" : "float",
   };
 }
 

@@ -113,9 +113,6 @@ export type WallpaperKind = "none" | "preset" | "custom";
 export type WallpaperPreset = "dawn" | "moss" | "dune" | "coast" | "ember" | "slate";
 /** 面板通透度：通透 / 平衡 / 沉稳 */
 export type WallpaperGlass = "clear" | "balanced" | "solid";
-/** 壳层留白：浮窗（四周露出背景）或铺满窗口 */
-export type WallpaperFrame = "float" | "edge";
-
 export interface WallpaperSettings {
   kind: WallpaperKind;
   preset: WallpaperPreset;
@@ -126,7 +123,6 @@ export interface WallpaperSettings {
   /** 背景遮罩浓度，0 - 1 */
   scrim: number;
   glass: WallpaperGlass;
-  frame: WallpaperFrame;
 }
 
 export interface WallpaperAsset {

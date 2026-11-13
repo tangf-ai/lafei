@@ -3,6 +3,13 @@
 所有值得记录的变更都会写在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [0.22.2] - 2026-11-13
+
+### Changed
+
+- 去掉工作台四周 10px 的留白与外圈圆角投影：应用重新铺满整个窗口，背景只在面板里透出；设置里的「四周留白」开关一并移除，少一个用不到的选项
+- 背景截图与文档同步更新为铺满窗口的样子
+
 ## [0.22.1] - 2026-11-13
 
 ### Fixed
