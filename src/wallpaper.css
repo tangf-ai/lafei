@@ -136,6 +136,7 @@ html[data-wallpaper="on"][data-wallpaper-glass="clear"] {
   --wp-side-a: 0.48;
   --wp-top-a: 0.54;
   --wp-read-a: 0.62;
+  --wp-note-a: 0.12;
 }
 
 html[data-wallpaper="on"][data-wallpaper-glass="balanced"] {
@@ -143,6 +144,7 @@ html[data-wallpaper="on"][data-wallpaper-glass="balanced"] {
   --wp-side-a: 0.66;
   --wp-top-a: 0.72;
   --wp-read-a: 0.82;
+  --wp-note-a: 0.4;
 }
 
 html[data-wallpaper="on"][data-wallpaper-glass="solid"] {
@@ -150,11 +152,36 @@ html[data-wallpaper="on"][data-wallpaper-glass="solid"] {
   --wp-side-a: 0.9;
   --wp-top-a: 0.92;
   --wp-read-a: 0.95;
+  --wp-note-a: 0.7;
 }
 
-/* 长文阅读面再多一点底，正文不受背景干扰 */
+/* 笔记正文：把所有纸面层拍平，只留一层薄雾，正文直接坐在背景上 */
+html[data-wallpaper="on"] .editor-shell,
+html[data-wallpaper="on"] .editor-body,
+html[data-wallpaper="on"] .editor-live,
+html[data-wallpaper="on"] .editor-read,
+html[data-wallpaper="on"] .editor-write,
+html[data-wallpaper="on"] .editor-preview {
+  background: transparent;
+}
+
 html[data-wallpaper="on"] .editor-main {
-  background: rgb(var(--wall-glass-rgb) / calc(var(--wp-read-a, 0.92) + var(--wp-alpha-bonus, 0)));
+  background: rgb(var(--wall-glass-rgb) / calc(var(--wp-note-a, 0.12) + var(--wp-alpha-bonus, 0)));
+  text-shadow: 0 0 18px color-mix(in srgb, var(--wall-tint) 75%, transparent);
+}
+
+html[data-wallpaper="on"] .editor-title-input,
+html[data-wallpaper="on"] .editor-statusbar,
+html[data-wallpaper="on"] .editor-topbar {
+  text-shadow: 0 0 18px color-mix(in srgb, var(--wall-tint) 75%, transparent);
+}
+
+/* 编辑器顶栏 / 状态栏留一条玻璃，按钮和行列信息不至于糊在照片上 */
+html[data-wallpaper="on"] .editor-topbar,
+html[data-wallpaper="on"] .editor-statusbar {
+  background: rgb(var(--wall-glass-rgb) / calc(var(--wp-card-a, 0.36) + 0.14 + var(--wp-alpha-bonus, 0)));
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
 }
 
 /* --------------------------------------------------------------------------
