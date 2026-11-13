@@ -25,60 +25,60 @@ export const WALLPAPER_PRESETS: WallpaperPresetItem[] = [
     label: "晨雾",
     caption: "米白 · 苔绿",
     background:
-      "radial-gradient(120% 90% at 6% 0%, #f6ecd9 0%, rgba(246,236,217,0) 52%)," +
-      "radial-gradient(85% 70% at 96% 10%, #e3b89b 0%, rgba(227,184,155,0) 58%)," +
-      "radial-gradient(95% 85% at 62% 104%, #b3c9a6 0%, rgba(179,201,166,0) 64%)," +
-      "linear-gradient(150deg, #ecdfc9 0%, #e4ddc5 48%, #d5e0c6 100%)"
+      "radial-gradient(120% 90% at 6% 0%, #f2e5cf 0%, rgba(242,229,207,0) 52%)," +
+      "radial-gradient(85% 70% at 96% 10%, #dfae90 0%, rgba(223,174,144,0) 58%)," +
+      "radial-gradient(95% 85% at 62% 104%, #a9c39b 0%, rgba(169,195,155,0) 64%)," +
+      "linear-gradient(150deg, #e7d8be 0%, #dccfb4 48%, #c8d9b6 100%)"
   },
   {
     id: "moss",
     label: "苔原",
     caption: "浅绿 · 林间",
     background:
-      "radial-gradient(115% 90% at 10% -6%, #e9f0dd 0%, rgba(233,240,221,0) 52%)," +
-      "radial-gradient(75% 65% at 94% 8%, #9fbd92 0%, rgba(159,189,146,0) 60%)," +
-      "radial-gradient(105% 85% at 42% 106%, #6f9567 0%, rgba(111,149,103,0) 66%)," +
-      "linear-gradient(155deg, #d3e3c7 0%, #bdd3ae 52%, #a6c096 100%)"
+      "radial-gradient(115% 90% at 10% -6%, #e2ecd4 0%, rgba(226,236,212,0) 52%)," +
+      "radial-gradient(75% 65% at 94% 8%, #93b385 0%, rgba(147,179,133,0) 60%)," +
+      "radial-gradient(105% 85% at 42% 106%, #628a5c 0%, rgba(98,138,92,0) 66%)," +
+      "linear-gradient(155deg, #c8dbb9 0%, #aec8a0 52%, #96b487 100%)"
   },
   {
     id: "dune",
     label: "沙丘",
     caption: "暖沙 · 纸感",
     background:
-      "radial-gradient(115% 85% at 8% -2%, #f7e9cf 0%, rgba(247,233,207,0) 52%)," +
-      "radial-gradient(80% 70% at 92% 12%, #d9b883 0%, rgba(217,184,131,0) 60%)," +
-      "radial-gradient(100% 85% at 55% 104%, #bd9557 0%, rgba(189,149,87,0) 64%)," +
-      "linear-gradient(155deg, #eddbb9 0%, #e0c69a 52%, #d2b280 100%)"
+      "radial-gradient(115% 85% at 8% -2%, #f2dfc2 0%, rgba(242,223,194,0) 52%)," +
+      "radial-gradient(80% 70% at 92% 12%, #d2ae78 0%, rgba(210,174,120,0) 60%)," +
+      "radial-gradient(100% 85% at 55% 104%, #b58a4d 0%, rgba(181,138,77,0) 64%)," +
+      "linear-gradient(155deg, #e8d3ab 0%, #d8bc8c 52%, #caa772 100%)"
   },
   {
     id: "coast",
     label: "海岸",
     caption: "雾蓝 · 清透",
     background:
-      "radial-gradient(120% 90% at 12% 0%, #e7f2f3 0%, rgba(231,242,243,0) 52%)," +
-      "radial-gradient(85% 70% at 92% 8%, #a6c9d0 0%, rgba(166,201,208,0) 60%)," +
-      "radial-gradient(95% 85% at 52% 106%, #7aa4ae 0%, rgba(122,164,174,0) 64%)," +
-      "linear-gradient(150deg, #d6e9eb 0%, #c2dce0 52%, #aacbd2 100%)"
+      "radial-gradient(120% 90% at 12% 0%, #ddedee 0%, rgba(221,237,238,0) 52%)," +
+      "radial-gradient(85% 70% at 92% 8%, #99c0c8 0%, rgba(153,192,200,0) 60%)," +
+      "radial-gradient(95% 85% at 52% 106%, #6d99a5 0%, rgba(109,153,165,0) 64%)," +
+      "linear-gradient(150deg, #cbe2e6 0%, #b3d2d8 52%, #9cc0c9 100%)"
   },
   {
     id: "ember",
     label: "暮橘",
     caption: "陶土 · 黄昏",
     background:
-      "radial-gradient(110% 85% at 8% 0%, #f7e3cf 0%, rgba(247,227,207,0) 52%)," +
-      "radial-gradient(85% 70% at 94% 12%, #e0aa82 0%, rgba(224,170,130,0) 60%)," +
-      "radial-gradient(100% 85% at 48% 104%, #c47f58 0%, rgba(196,127,88,0) 62%)," +
-      "linear-gradient(150deg, #f0d5bd 0%, #e4bb9b 52%, #d5a179 100%)"
+      "radial-gradient(110% 85% at 8% 0%, #f2d8c0 0%, rgba(242,216,192,0) 52%)," +
+      "radial-gradient(85% 70% at 94% 12%, #d99f75 0%, rgba(217,159,117,0) 60%)," +
+      "radial-gradient(100% 85% at 48% 104%, #ba7350 0%, rgba(186,115,80,0) 62%)," +
+      "linear-gradient(150deg, #ecd0b6 0%, #dfae8b 52%, #d0956d 100%)"
   },
   {
     id: "slate",
     label: "砚青",
     caption: "冷灰 · 安静",
     background:
-      "radial-gradient(120% 90% at 6% 0%, #eaf0ec 0%, rgba(234,240,236,0) 52%)," +
-      "radial-gradient(85% 70% at 92% 8%, #aec1bb 0%, rgba(174,193,187,0) 60%)," +
-      "radial-gradient(95% 85% at 52% 106%, #849b95 0%, rgba(132,155,149,0) 62%)," +
-      "linear-gradient(155deg, #dbe5e0 0%, #c8d6d0 52%, #b4c6bf 100%)"
+      "radial-gradient(120% 90% at 6% 0%, #e3ebe6 0%, rgba(227,235,230,0) 52%)," +
+      "radial-gradient(85% 70% at 92% 8%, #a2b8b1 0%, rgba(162,184,177,0) 60%)," +
+      "radial-gradient(95% 85% at 52% 106%, #7a938c 0%, rgba(122,147,140,0) 62%)," +
+      "linear-gradient(155deg, #d3dfd9 0%, #bfd0c9 52%, #a9bfb7 100%)"
   },
 ];
 

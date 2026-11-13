@@ -136,7 +136,7 @@ html[data-wallpaper="on"][data-wallpaper-glass="clear"] {
   --wp-card-a: 0.64;
   --wp-side-a: 0.6;
   --wp-top-a: 0.66;
-  --wp-read-a: 0.82;
+  --wp-read-a: 0.8;
 }
 
 html[data-wallpaper="on"][data-wallpaper-glass="balanced"] {
@@ -156,6 +156,44 @@ html[data-wallpaper="on"][data-wallpaper-glass="solid"] {
 /* 长文阅读面再多一点底，正文不受背景干扰 */
 html[data-wallpaper="on"] .editor-main {
   background: rgb(var(--wall-glass-rgb) / calc(var(--wp-read-a, 0.92) + var(--wp-alpha-bonus, 0)));
+}
+
+/* --------------------------------------------------------------------------
+   任务 / 笔记：让背景真的透进来
+   -------------------------------------------------------------------------- */
+
+/* 矩阵板本身不再叠一层玻璃：板 + 四个格子各叠一次，会把背景压成纯白。
+   让格子做唯一的玻璃层，空象限和任务行下面都能看到背景。 */
+html[data-wallpaper="on"] .wb-matrix {
+  background: transparent;
+}
+
+html[data-wallpaper="on"] .wb-quad {
+  background: rgb(var(--wall-glass-rgb) / calc(var(--wp-card-a, 0.8) + var(--wp-alpha-bonus, 0)));
+}
+
+/* 笔记改成「桌上的纸」：四周留出一圈背景，两块面板各自成卡 */
+@media (min-width: 821px) {
+  html[data-wallpaper="on"] .notes-layout {
+    padding: 12px;
+    gap: 12px;
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+
+  html[data-wallpaper="on"] .notes-layout.is-list-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html[data-wallpaper="on"] .notes-list-pane,
+  html[data-wallpaper="on"] .editor-shell {
+    border: 1px solid rgb(var(--wall-line-rgb) / 0.55);
+    border-radius: 16px;
+    box-shadow: var(--wb-sh);
+  }
+
+  html[data-wallpaper="on"] .notes-list-pane {
+    overflow: hidden;
+  }
 }
 
 /* 右下角快速对话是浮在壳层上的独立面板，读起来比卡片更要紧，底板单独加厚 */
