@@ -39,7 +39,7 @@
 
 | 平台 | 版本 | 说明 |
 | --- | --- | --- |
-| macOS（Apple Silicon） | [v0.22.3](https://github.com/tangf-ai/lafei/releases/latest) | `Lafei-0.22.3-macOS-arm64.dmg`，ad-hoc 签名、未公证；首次打开如被拦截，右键应用选「打开」 |
+| macOS（Apple Silicon） | [v0.22.4](https://github.com/tangf-ai/lafei/releases/latest) | `Lafei-0.22.4-macOS-arm64.dmg`，ad-hoc 签名、未公证；首次打开如被拦截，右键应用选「打开」 |
 | Web / PWA | 源码构建 | `pnpm build` 后把 `dist/` 部署到任意静态托管 |
 | Windows / Linux | 源码构建 | Tauri 2 支持，暂未提供预编译包 |
 
@@ -175,7 +175,7 @@
 
 - 设置 → 外观与写作 → 背景，可以给整个工作台铺一张**大背景**
 - 六套内置的「光雾」预设（晨雾 / 苔原 / 沙丘 / 海岸 / 暮橘 / 砚青）全部用 CSS 渐变画出来，离线可用、不占安装包；也可以选自己的照片（JPG / PNG / WebP），直接拖进设置页
-- 背景开启后，侧栏、顶栏和卡片会变成磨砂玻璃，背景从纸缝里透出来；「通透 / 平衡 / 沉稳」三档调节面板透出程度
+- 背景开启后，今日、任务、笔记、标签、AI 助手五个页面共用一套玻璃：侧栏、顶栏和卡片只剩一层薄雾，背景从内容下面直接透出来；「通透 / 平衡 / 沉稳」三档调节面板厚度
 - 背景模糊与遮罩浓度可以单独调：照片再花，正文和标题也读得清
 - 应用铺满整个窗口，外圈不留空隙
 - 背景跟随主题：玻璃底色、遮罩和页脚柔光会切换成对应主题的纸色或墨色
@@ -194,6 +194,10 @@
 | 任务 · 四象限 | 笔记 · 桌面上的纸 |
 | --- | --- |
 | ![任务页背景](docs/screenshots/v4/wallpaper-tasks.webp) | ![笔记页背景](docs/screenshots/v4/wallpaper-notes.webp) |
+
+| 标签 · 一屏标签卡 | AI 助手 · 对话空状态 |
+| --- | --- |
+| ![标签页背景](docs/screenshots/v4/wallpaper-tags.webp) | ![助手页背景](docs/screenshots/v4/wallpaper-assistant.webp) |
 
 ### 可读性
 
@@ -229,9 +233,9 @@ pnpm desktop:build   # 生成 .app / .dmg（macOS）或对应平台安装包
 macOS 构建产物：
 
 ```text
-Lafei-0.22.3-macOS-arm64.dmg                                      # 可直接分发的安装包
+Lafei-0.22.4-macOS-arm64.dmg                                      # 可直接分发的安装包
 src-tauri/target/release/bundle/macos/Lafei.app                  # 未打包的应用
-src-tauri/target/release/bundle/dmg/Lafei_0.22.3_aarch64.dmg      # Tauri 原始产物
+src-tauri/target/release/bundle/dmg/Lafei_0.22.4_aarch64.dmg      # Tauri 原始产物
 ```
 
 > 构建产物（`.app` / `.dmg`）不进入 Git，正式版本请通过 GitHub Releases 分发。当前本地产物是 Apple Silicon（arm64）版本，使用 ad-hoc 签名，未做 Apple 公证；若系统提示无法验证，右键应用选择「打开」，或在终端执行：
@@ -427,7 +431,7 @@ scripts/mock-ai.mjs 本地 AI 演示服务
 
 ## 已知限制
 
-这是 `0.22.3`，一个可以真实日用的本地 MVP，但不是完成品：
+这是 `0.22.4`，一个可以真实日用的本地 MVP，但不是完成品：
 
 - 文件夹同步是文件级的、最终一致的，不是实时协作；冲突采用更新时间优先，没有逐行合并
 - 手机 PWA 不能直接读取 iCloud Drive；目前需要备份迁移，原生 iOS 版尚未生成

@@ -132,24 +132,24 @@ html[data-wallpaper="on"] .app-main {
 
 /* 三档面板通透度：通透 / 平衡 / 沉稳 */
 html[data-wallpaper="on"][data-wallpaper-glass="clear"] {
-  --wp-card-a: 0.64;
-  --wp-side-a: 0.6;
-  --wp-top-a: 0.66;
-  --wp-read-a: 0.8;
+  --wp-card-a: 0.36;
+  --wp-side-a: 0.48;
+  --wp-top-a: 0.54;
+  --wp-read-a: 0.62;
 }
 
 html[data-wallpaper="on"][data-wallpaper-glass="balanced"] {
-  --wp-card-a: 0.8;
-  --wp-side-a: 0.76;
-  --wp-top-a: 0.83;
-  --wp-read-a: 0.92;
+  --wp-card-a: 0.62;
+  --wp-side-a: 0.66;
+  --wp-top-a: 0.72;
+  --wp-read-a: 0.82;
 }
 
 html[data-wallpaper="on"][data-wallpaper-glass="solid"] {
-  --wp-card-a: 0.92;
+  --wp-card-a: 0.88;
   --wp-side-a: 0.9;
-  --wp-top-a: 0.94;
-  --wp-read-a: 0.97;
+  --wp-top-a: 0.92;
+  --wp-read-a: 0.95;
 }
 
 /* 长文阅读面再多一点底，正文不受背景干扰 */
@@ -212,12 +212,22 @@ html[data-wallpaper="on"] .wb-quad-q4 .wb-quad-head {
 
   html[data-wallpaper="on"] .notes-list-pane {
     overflow: hidden;
+    background: rgb(var(--wall-glass-rgb) / calc(var(--wp-card-a, 0.36) + 0.08 + var(--wp-alpha-bonus, 0)));
   }
+}
+
+html[data-wallpaper="on"] .wb-tasks .task-row .task-check.is-done {
+  color: #f8fbf7;
+}
+
+/* 输入框、对话输入区这类要落字的地方保持实底，不跟着卡片一起透 */
+html[data-wallpaper="on"] .assistant-composer {
+  background: var(--wb-field);
 }
 
 /* 右下角快速对话是浮在壳层上的独立面板，读起来比卡片更要紧，底板单独加厚 */
 html[data-wallpaper="on"] .quick-ai-panel {
-  background: rgb(var(--wall-glass-rgb) / var(--wp-read-a, 0.92));
+  background: rgb(var(--wall-glass-rgb) / calc(var(--wp-read-a, 0.62) + 0.22));
   backdrop-filter: blur(20px) saturate(1.1);
   -webkit-backdrop-filter: blur(20px) saturate(1.1);
 }
