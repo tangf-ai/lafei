@@ -29,13 +29,17 @@
 | --- | --- |
 | ![手机今日](docs/screenshots/v2/mobile-today.webp) | ![手机笔记](docs/screenshots/v2/mobile-notes.webp) |
 
+| 桌面背景 · 自己的照片 | 桌面背景 · 深色 |
+| --- | --- |
+| ![桌面背景](docs/screenshots/v4/wallpaper.webp) | ![深色桌面背景](docs/screenshots/v4/wallpaper-dark.webp) |
+
 > **Lafei（拉斐）** 是当前的工作名，品牌名、图标和产品文案都集中在少量文件里，改名不需要动业务逻辑。
 
 ## 下载
 
 | 平台 | 版本 | 说明 |
 | --- | --- | --- |
-| macOS（Apple Silicon） | [v0.21.2](https://github.com/tangf-ai/lafei/releases/latest) | `Lafei-0.21.2-macOS-arm64.dmg`，ad-hoc 签名、未公证；首次打开如被拦截，右键应用选「打开」 |
+| macOS（Apple Silicon） | [v0.22.0](https://github.com/tangf-ai/lafei/releases/latest) | `Lafei-0.22.0-macOS-arm64.dmg`，ad-hoc 签名、未公证；首次打开如被拦截，右键应用选「打开」 |
 | Web / PWA | 源码构建 | `pnpm build` 后把 `dist/` 部署到任意静态托管 |
 | Windows / Linux | 源码构建 | Tauri 2 支持，暂未提供预编译包 |
 
@@ -167,6 +171,25 @@
 
 ![主题选择](docs/screenshots/v2/settings.webp)
 
+### 桌面背景
+
+- 设置 → 外观与写作 → 背景，可以给整个工作台铺一张**大背景**
+- 六套内置的「光雾」预设（晨雾 / 苔原 / 沙丘 / 海岸 / 暮橘 / 砚青）全部用 CSS 渐变画出来，离线可用、不占安装包；也可以选自己的照片（JPG / PNG / WebP），直接拖进设置页
+- 背景开启后，侧栏、顶栏和卡片会变成磨砂玻璃，背景从纸缝里透出来；「通透 / 平衡 / 沉稳」三档调节面板透出程度
+- 背景模糊与遮罩浓度可以单独调：照片再花，正文和标题也读得清
+- 「四周留白」打开时，整个工作台像一张浮在背景上的卡片；关掉则铺满窗口
+- 背景跟随主题：玻璃底色、遮罩和页脚柔光会切换成对应主题的纸色或墨色
+- 图片保存在本机 IndexedDB 的 `assets` 表（最长边自动压到 3200px），不上传、不进备份，也不随数据仓库同步；换图时会自动删掉上一张
+- 手机端自动铺满窗口、隐藏留白开关，并只在顶栏和底栏做玻璃
+
+| 自己的照片 | 深色主题 |
+| --- | --- |
+| ![桌面背景](docs/screenshots/v4/wallpaper.webp) | ![深色桌面背景](docs/screenshots/v4/wallpaper-dark.webp) |
+
+| 内置光雾预设 | 设置 · 背景 |
+| --- | --- |
+| ![内置背景](docs/screenshots/v4/wallpaper-preset.webp) | ![背景设置](docs/screenshots/v4/wallpaper-settings.webp) |
+
 ### 可读性
 
 - 设置 → 外观与写作 → 界面字号，提供「小 / 标准 / 大 / 特大」四档（90%–120%）
@@ -201,9 +224,9 @@ pnpm desktop:build   # 生成 .app / .dmg（macOS）或对应平台安装包
 macOS 构建产物：
 
 ```text
-Lafei-0.21.2-macOS-arm64.dmg                                      # 可直接分发的安装包
+Lafei-0.22.0-macOS-arm64.dmg                                      # 可直接分发的安装包
 src-tauri/target/release/bundle/macos/Lafei.app                  # 未打包的应用
-src-tauri/target/release/bundle/dmg/Lafei_0.21.2_aarch64.dmg      # Tauri 原始产物
+src-tauri/target/release/bundle/dmg/Lafei_0.22.0_aarch64.dmg      # Tauri 原始产物
 ```
 
 > 构建产物（`.app` / `.dmg`）不进入 Git，正式版本请通过 GitHub Releases 分发。当前本地产物是 Apple Silicon（arm64）版本，使用 ad-hoc 签名，未做 Apple 公证；若系统提示无法验证，右键应用选择「打开」，或在终端执行：
@@ -307,7 +330,7 @@ Lafei/
 - 默认情况下，笔记、任务、对话保存在本机 **IndexedDB**（数据库名 `lafei`），不需要注册。
 - 启用桌面版「数据仓库」后，数据还会实时写入你选择的目录。Lafei 不运营中转服务器；如果你把目录放在 iCloud Drive，内容会由 Apple 的 iCloud 按你的设置同步。
 - 不采集埋点。网络请求只有：你自己的 AI 请求、你主动打开的外部链接，以及（可选）iCloud 自身的文件同步。
-- 设置项（主题、编辑模式、AI 配置、文件夹路径）保存在 `localStorage`。
+- 设置项（主题、桌面背景、编辑模式、AI 配置、文件夹路径）保存在 `localStorage`；自定义背景的原图存在 IndexedDB 的 `assets` 表，只留在当前设备。
 - 文件夹中的数据格式见[文件格式](#文件格式)，删除记录会写在 `tombstones.json`。
 - 备份：
   - 「设置 → 数据与备份 → 导出完整备份」：笔记、任务、对话与删除记录的 JSON
@@ -349,6 +372,7 @@ src/
     markdownEditor/ 即时预览编辑器（CodeMirror 6：行级装饰、格式命令、表格预览）
     NoteOutline.tsx 大纲面板；MarkdownReader.tsx 阅读模式渲染
   workbench.css     工作台视觉系统（token、壳层、各页面 B 版式、主题变体）
+  wallpaper.css     桌面背景层、壳层玻璃材质、留白布局与背景设置面板
   components/       编辑器外壳、任务行、命令面板、弹窗
   lib/
     ai.ts           OpenAI 兼容流式客户端、提示词、笔记检索
@@ -362,6 +386,7 @@ src/
     folderBackend.ts Tauri 文件夹命令封装
     agentSnapshot.ts 智能体快照格式（v2：writer 能力 + inbox 队列契约）
     agentWrite.ts   外部智能体写入队列（轮询、落库、撤销、活动记录）
+    wallpaper.ts    背景预设、图片压缩入库与 object URL 缓存
   store/ui.ts       导航、设置、Toast（Zustand）
 mcp/                lafei-mcp stdio MCP server（读取快照 + inbox 写入队列）
 src-tauri/          Tauri 2 外壳、文件夹选择/原子写入命令、智能体快照、原生保存、图标与权限
@@ -397,7 +422,7 @@ scripts/mock-ai.mjs 本地 AI 演示服务
 
 ## 已知限制
 
-这是 `0.21.2`，一个可以真实日用的本地 MVP，但不是完成品：
+这是 `0.22.0`，一个可以真实日用的本地 MVP，但不是完成品：
 
 - 文件夹同步是文件级的、最终一致的，不是实时协作；冲突采用更新时间优先，没有逐行合并
 - 手机 PWA 不能直接读取 iCloud Drive；目前需要备份迁移，原生 iOS 版尚未生成

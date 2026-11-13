@@ -1,0 +1,611 @@
+/* ==========================================================================
+   Lafei · 桌面背景（大背景）
+   壁纸层铺在壳层后面，壳层切到磨砂玻璃；
+   由 html[data-wallpaper] / [data-wallpaper-glass] / [data-wallpaper-frame] 控制。
+   ========================================================================== */
+
+:root {
+  /* 遮罩与玻璃的底色：跟随主题，保证「背景再花，字也读得清」 */
+  --wall-tint: #f3f4f0;
+  --wall-glass-rgb: 252 253 249;
+  --wall-line-rgb: 225 229 219;
+  --wp-blur: 14px;
+  --wp-scrim: 0.32;
+  --wp-frame: 10px;
+}
+
+html[data-theme="dark"] {
+  --wp-alpha-bonus: 0.06;
+  --wall-tint: #11140f;
+  --wall-glass-rgb: 28 32 25;
+  --wall-line-rgb: 48 54 44;
+}
+
+html[data-theme="sunny"] {
+  --wall-tint: #fbf2df;
+  --wall-glass-rgb: 255 250 240;
+  --wall-line-rgb: 233 219 194;
+}
+
+html[data-theme="mint"] {
+  --wall-tint: #eaf3e5;
+  --wall-glass-rgb: 250 253 246;
+  --wall-line-rgb: 213 225 206;
+}
+
+html[data-theme="sea"] {
+  --wall-tint: #edf4f6;
+  --wall-glass-rgb: 250 253 254;
+  --wall-line-rgb: 212 226 230;
+}
+
+/* --------------------------------------------------------------------------
+   壁纸层
+   -------------------------------------------------------------------------- */
+
+.app-wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--wall-tint);
+  animation: wallpaper-in 0.6s var(--ease) both;
+}
+
+@keyframes wallpaper-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.app-wallpaper-media {
+  position: absolute;
+  inset: calc(var(--wp-blur) * -2 - 8px);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: blur(var(--wp-blur)) saturate(1.04);
+  transform: translateZ(0);
+}
+
+.app-wallpaper-tint {
+  position: absolute;
+  inset: 0;
+  background: var(--wall-tint);
+  opacity: var(--wp-scrim);
+}
+
+/* 顶部与底部各压一层同色雾：标题、页脚和手机底栏压得住，中间留给背景透气 */
+.app-wallpaper-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--wall-tint) 50%, transparent) 0%,
+      transparent 28%
+    ),
+    linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--wall-tint) 44%, transparent) 0%,
+      transparent 18%
+    );
+}
+
+/* --------------------------------------------------------------------------
+   壳层：换成玻璃
+   -------------------------------------------------------------------------- */
+
+html[data-wallpaper="on"] body {
+  overflow: hidden;
+}
+
+html[data-wallpaper="on"] .app-shell {
+  z-index: 1;
+  background: transparent;
+  --wb-bg: transparent;
+  --wb-topbar: rgb(var(--wall-glass-rgb) / calc(var(--wp-top-a, 0.83) + var(--wp-alpha-bonus, 0)));
+  --wb-side: rgb(var(--wall-glass-rgb) / calc(var(--wp-side-a, 0.76) + var(--wp-alpha-bonus, 0)));
+  --wb-card: rgb(var(--wall-glass-rgb) / calc(var(--wp-card-a, 0.8) + var(--wp-alpha-bonus, 0)));
+  --wb-hover: rgb(var(--wall-glass-rgb) / calc(var(--wp-card-a, 0.8) + var(--wp-alpha-bonus, 0) + 0.06));
+  --wb-line: rgb(var(--wall-line-rgb) / 0.62);
+  --wb-line-soft: rgb(var(--wall-line-rgb) / 0.4);
+  --wb-sh:
+    0 1px 2px rgba(20, 30, 20, 0.06),
+    0 12px 32px rgba(20, 30, 20, 0.1);
+  --wb-sh-sm: 0 1px 2px rgba(20, 30, 20, 0.07);
+}
+
+html[data-theme="dark"][data-wallpaper="on"] .app-shell {
+  --wb-sh:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 14px 34px rgba(0, 0, 0, 0.3);
+  --wb-sh-sm: 0 1px 2px rgba(0, 0, 0, 0.36);
+}
+
+html[data-wallpaper="on"] .app-main {
+  background: transparent;
+}
+
+/* 三档面板通透度：通透 / 平衡 / 沉稳 */
+html[data-wallpaper="on"][data-wallpaper-glass="clear"] {
+  --wp-card-a: 0.64;
+  --wp-side-a: 0.6;
+  --wp-top-a: 0.66;
+  --wp-read-a: 0.82;
+}
+
+html[data-wallpaper="on"][data-wallpaper-glass="balanced"] {
+  --wp-card-a: 0.8;
+  --wp-side-a: 0.76;
+  --wp-top-a: 0.83;
+  --wp-read-a: 0.92;
+}
+
+html[data-wallpaper="on"][data-wallpaper-glass="solid"] {
+  --wp-card-a: 0.92;
+  --wp-side-a: 0.9;
+  --wp-top-a: 0.94;
+  --wp-read-a: 0.97;
+}
+
+/* 长文阅读面再多一点底，正文不受背景干扰 */
+html[data-wallpaper="on"] .editor-main {
+  background: rgb(var(--wall-glass-rgb) / calc(var(--wp-read-a, 0.92) + var(--wp-alpha-bonus, 0)));
+}
+
+/* 右下角快速对话是浮在壳层上的独立面板，读起来比卡片更要紧，底板单独加厚 */
+html[data-wallpaper="on"] .quick-ai-panel {
+  background: rgb(var(--wall-glass-rgb) / var(--wp-read-a, 0.92));
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+}
+
+/* 页脚、侧栏落款这类直接坐在背景上的小字：加一圈同色柔光，别被照片吃掉 */
+html[data-wallpaper="on"] .today-footer,
+html[data-wallpaper="on"] .wb-storage {
+  text-shadow: 0 0 14px color-mix(in srgb, var(--wall-tint) 88%, transparent);
+}
+
+/* 真正需要磨砂的关键面板；数量控制住，避免一屏几十层 backdrop-filter。
+   手机端只给顶栏和底栏做玻璃，其余交给背景自身的模糊，省电。 */
+@media (min-width: 821px) {
+  html[data-wallpaper="on"] .wb-sidebar,
+  html[data-wallpaper="on"] .wb-topbar,
+  html[data-wallpaper="on"] .wb-card,
+  html[data-wallpaper="on"] .today-card,
+  html[data-wallpaper="on"] .today-focus-card,
+  html[data-wallpaper="on"] .recent-note,
+  html[data-wallpaper="on"] .wb-overview,
+  html[data-wallpaper="on"] .task-group,
+  html[data-wallpaper="on"] .task-add-bar,
+  html[data-wallpaper="on"] .task-add-tag-row,
+  html[data-wallpaper="on"] .notes-list-pane,
+  html[data-wallpaper="on"] .editor-main,
+  html[data-wallpaper="on"] .assistant-sidebar,
+  html[data-wallpaper="on"] .assistant-main,
+  html[data-wallpaper="on"] .tag-index-card,
+  html[data-wallpaper="on"] .tag-note-card,
+  html[data-wallpaper="on"] .wb-ai-card {
+    backdrop-filter: blur(18px) saturate(1.12);
+    -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  }
+}
+
+/* 手机只在顶栏和底栏做玻璃，滚动区域尽量省电 */
+@media (max-width: 820px) {
+  html[data-wallpaper="on"] .mobile-topbar,
+  html[data-wallpaper="on"] .mobile-nav {
+    backdrop-filter: blur(16px) saturate(1.1);
+    -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  }
+
+  html[data-wallpaper="on"] .mobile-nav {
+    background: rgb(var(--wall-glass-rgb) / 0.86);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   浮窗布局：四周留一圈背景，像把工作台放在桌面上
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 821px) {
+  html[data-wallpaper="on"][data-wallpaper-frame="float"] .app-shell {
+    width: calc(100% - var(--wp-frame) * 2);
+    height: calc(100dvh - var(--wp-frame) * 2);
+    margin: var(--wp-frame);
+    border-radius: 18px;
+    box-shadow:
+      0 2px 8px rgba(16, 22, 16, 0.14),
+      0 30px 80px rgba(16, 22, 16, 0.24);
+  }
+
+  html[data-theme="dark"][data-wallpaper="on"][data-wallpaper-frame="float"] .app-shell {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.5),
+      0 30px 90px rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   设置页 · 背景
+   -------------------------------------------------------------------------- */
+
+.wallpaper-block {
+  position: relative;
+}
+
+.wallpaper-block.is-dragging {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-raised));
+}
+
+.wp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.wp-tile {
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-raised);
+  text-align: left;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s var(--ease);
+}
+
+.wp-tile:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+}
+
+.wp-tile.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.wp-tile-preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  height: 46px;
+  border-radius: 7px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  background-size: cover;
+  background-position: center;
+  color: var(--muted);
+  font-size: 8.5px;
+  overflow: hidden;
+}
+
+html[data-theme="dark"] .wp-tile-preview {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.wp-tile-preview em {
+  font-style: normal;
+  letter-spacing: 0.04em;
+}
+
+.wp-tile-preview.is-empty {
+  background: var(--surface-muted);
+  border: 1px dashed var(--line-strong);
+}
+
+.wp-tile-custom:hover .wp-tile-preview.is-empty {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line-strong));
+}
+
+.wp-tile-none .wp-tile-preview {
+  background:
+    linear-gradient(135deg, transparent 48%, var(--line-strong) 49%, var(--line-strong) 51%, transparent 52%),
+    var(--surface);
+  align-items: center;
+}
+
+.wp-none-slash {
+  display: none;
+}
+
+.wp-tile-foot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 4px 1px;
+}
+
+.wp-tile-name {
+  font-size: 9.5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.wp-tile.active .wp-tile-name {
+  color: var(--ink);
+  font-weight: 620;
+}
+
+.wp-tile-check {
+  margin-left: auto;
+  color: var(--accent);
+  flex: none;
+}
+
+.wp-custom-tag {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(20, 28, 22, 0.5);
+  color: #fff;
+  font-size: 7.5px;
+  letter-spacing: 0.06em;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.wp-warning {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  color: var(--gold);
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.wp-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.wp-sliders {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.wp-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.wp-slider-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wp-slider-head b {
+  font-size: 9.5px;
+  font-weight: 620;
+  color: var(--ink-soft);
+}
+
+.wp-slider-head em {
+  font-style: normal;
+  font-size: 8.5px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.wp-slider input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.wp-slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0 var(--wp-fill, 50%),
+    var(--surface-muted) var(--wp-fill, 50%) 100%
+  );
+}
+
+.wp-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  margin-top: -4.5px;
+  border-radius: 50%;
+  background: var(--surface-raised);
+  border: 1.5px solid var(--accent);
+  box-shadow: 0 1px 3px rgba(35, 28, 17, 0.2);
+}
+
+.wp-slider input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.wp-slider input[type="range"]::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.wp-slider input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--surface-raised);
+  border: 1.5px solid var(--accent);
+}
+
+.wp-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.wp-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wp-option-label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 9.5px;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.wp-option-label em {
+  font-style: normal;
+  font-weight: 400;
+  font-size: 8px;
+  color: var(--faint);
+}
+
+.wp-segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.wp-segmented button {
+  height: 24px;
+  padding: 0 11px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 9.5px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.wp-segmented button:hover {
+  color: var(--ink);
+}
+
+.wp-segmented button.is-active {
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 620;
+  box-shadow: var(--shadow-sm);
+}
+
+.wp-switch {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.wp-switch > span {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface-raised);
+  box-shadow: 0 1px 3px rgba(35, 28, 17, 0.18);
+  transition: transform 0.18s var(--ease);
+}
+
+.wp-switch.is-on {
+  background: var(--sage);
+  border-color: var(--sage);
+}
+
+.wp-switch.is-on > span {
+  transform: translateX(16px);
+  background: #fff;
+}
+
+.wp-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.wp-foot p {
+  margin: 0;
+  color: var(--faint);
+  font-size: 8.5px;
+  line-height: 1.7;
+}
+
+.wp-image-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.wp-image-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8.5px;
+  color: var(--muted);
+  transition: color 0.15s ease;
+}
+
+.wp-image-actions button:hover {
+  color: var(--ink);
+}
+
+.wp-file {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .wp-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .wp-sliders {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .wp-foot {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+}
+
+/* 手机上壳层始终铺满，留白开关没有意义，直接收起 */
+@media (max-width: 820px) {
+  .wp-option-frame {
+    display: none;
+  }
+}

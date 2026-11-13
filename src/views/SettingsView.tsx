@@ -43,6 +43,7 @@ import { FolderStorageSettings } from "../features/FolderStorageSettings";
 import { AgentAccessSettings } from "../features/AgentAccessSettings";
 import { FONT_SCALES } from "../lib/fontScale";
 import { LogseqImport } from "../features/LogseqImport";
+import { WallpaperSettings } from "../features/WallpaperSettings";
 import { mirrorAllToFolder, resumeAutoSync, suspendAutoSync } from "../lib/folderSync";
 
 type SettingsTab = "ai" | "appearance" | "data" | "agent" | "about";
@@ -605,6 +606,8 @@ export function SettingsView() {
                       })}
                     </div>
                   </div>
+
+                  <WallpaperSettings />
 
                   <div className="settings-block">
                     <div className="settings-block-head">

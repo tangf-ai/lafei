@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { Chat, ChatMessage, Note, Task, Tombstone } from "./types";
+import type { Chat, ChatMessage, Note, Task, Tombstone, WallpaperAsset } from "./types";
 import { seedData } from "./lib/seed";
 import { newId } from "./lib/util";
 
@@ -9,6 +9,7 @@ class LafeiDatabase extends Dexie {
   chats!: Table<Chat, string>;
   messages!: Table<ChatMessage, string>;
   tombstones!: Table<Tombstone, string>;
+  assets!: Table<WallpaperAsset, string>;
 
   constructor() {
     super("lafei");
@@ -67,6 +68,10 @@ class LafeiDatabase extends Dexie {
             }
           });
       });
+    // v5：桌面背景等本机素材（图片 blob），只存当前设备，不进入备份与文件夹同步
+    this.version(5).stores({
+      assets: "id, createdAt",
+    });
   }
 }
 

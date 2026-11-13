@@ -1,8 +1,18 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AISettings, AppView, FontScale, NoteMode, TaskFilter, TaskViewMode, ThemeMode } from "../types";
+import type {
+  AISettings,
+  AppView,
+  FontScale,
+  NoteMode,
+  TaskFilter,
+  TaskViewMode,
+  ThemeMode,
+  WallpaperSettings,
+} from "../types";
 import { DEFAULT_AI } from "../lib/ai";
 import { SYNC_INTERVAL_DEFAULT, normalizeSyncInterval } from "../lib/syncSchedule";
+import { WALLPAPER_DEFAULT, normalizeWallpaper } from "../lib/wallpaper";
 
 interface UIState {
   view: AppView;
@@ -20,6 +30,8 @@ interface UIState {
   /** 打字机模式：光标保持在视野中央 */
   typewriterMode: boolean;
   theme: ThemeMode;
+  /** 桌面背景：内置光雾预设、本机图片，或纯色 */
+  wallpaper: WallpaperSettings;
   fontScale: FontScale;
   sidebarCollapsed: boolean;
   /** 左侧栏宽度（px，拖动侧栏右边缘调整） */
@@ -55,6 +67,7 @@ interface UIState {
   setFocusMode: (enabled: boolean) => void;
   setTypewriterMode: (enabled: boolean) => void;
   setTheme: (theme: ThemeMode) => void;
+  setWallpaper: (patch: Partial<WallpaperSettings>) => void;
   setFontScale: (scale: FontScale) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setSidebarWidth: (width: number) => void;
@@ -106,6 +119,7 @@ export const useUI = create<UIState>()(
       focusMode: false,
       typewriterMode: false,
       theme: "light",
+      wallpaper: WALLPAPER_DEFAULT,
       fontScale: 1,
       sidebarCollapsed: false,
       sidebarWidth: 236,
@@ -142,6 +156,8 @@ export const useUI = create<UIState>()(
       setFocusMode: (focusMode) => set({ focusMode }),
       setTypewriterMode: (typewriterMode) => set({ typewriterMode }),
       setTheme: (theme) => set({ theme }),
+      setWallpaper: (patch) =>
+        set((state) => ({ wallpaper: normalizeWallpaper({ ...state.wallpaper, ...patch }) })),
       setFontScale: (fontScale) => set({ fontScale }),
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
       setSidebarWidth: (sidebarWidth) =>
@@ -174,6 +190,7 @@ export const useUI = create<UIState>()(
         focusMode: state.focusMode,
         typewriterMode: state.typewriterMode,
         theme: state.theme,
+        wallpaper: state.wallpaper,
         fontScale: state.fontScale,
         sidebarCollapsed: state.sidebarCollapsed,
         sidebarWidth: state.sidebarWidth,
@@ -216,6 +233,7 @@ export const useUI = create<UIState>()(
           contentWidth: clampContentWidth(saved.contentWidth ?? current.contentWidth),
           splitRatio: clampSplitRatio(saved.splitRatio ?? current.splitRatio),
           fontScale,
+          wallpaper: normalizeWallpaper(saved.wallpaper),
           syncIntervalMinutes: normalizeSyncInterval(saved.syncIntervalMinutes ?? current.syncIntervalMinutes),
           ai: { ...DEFAULT_AI, ...(saved.ai ?? {}) },
           agentAccessEnabled,

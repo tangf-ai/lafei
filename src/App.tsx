@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { CSSProperties } from "react";
 import { Sidebar } from "./components/Sidebar";
+import { WallpaperLayer } from "./components/Wallpaper";
 import { Topbar } from "./components/Topbar";
 import { MobileTopbar } from "./components/MobileTopbar";
 import { MobileNav } from "./components/MobileNav";
@@ -94,27 +95,30 @@ export default function App() {
   }, [setCommandOpen, setSettingsOpen, setTaskDetailId, setView, toggleQuickAssistant]);
 
   return (
-    <div
-      className={cn("app-shell", editorOpen && "editor-open", sidebarCollapsed && "wb-collapsed")}
-      style={{ "--wb-side-w": `${sidebarCollapsed ? 64 : sidebarWidth}px` } as CSSProperties}
-      data-tauri-drag-region
-    >
-      <Topbar />
-      <Sidebar />
-      <div className="app-main">
-        {!editorOpen && <MobileTopbar />}
-        {view === "today" && <TodayView />}
-        {view === "notes" && <NotesView />}
-        {view === "tasks" && <TasksView />}
-        {view === "tags" && <TagView />}
-        {view === "assistant" && <AssistantView />}
-        {!editorOpen && <MobileNav />}
+    <>
+      <WallpaperLayer />
+      <div
+        className={cn("app-shell", editorOpen && "editor-open", sidebarCollapsed && "wb-collapsed")}
+        style={{ "--wb-side-w": `${sidebarCollapsed ? 64 : sidebarWidth}px` } as CSSProperties}
+        data-tauri-drag-region
+      >
+        <Topbar />
+        <Sidebar />
+        <div className="app-main">
+          {!editorOpen && <MobileTopbar />}
+          {view === "today" && <TodayView />}
+          {view === "notes" && <NotesView />}
+          {view === "tasks" && <TasksView />}
+          {view === "tags" && <TagView />}
+          {view === "assistant" && <AssistantView />}
+          {!editorOpen && <MobileNav />}
+        </div>
+        <CommandPalette />
+        <SettingsView />
+        <TaskDetailModal />
+        <QuickAssistant />
+        <Toasts />
       </div>
-      <CommandPalette />
-      <SettingsView />
-      <TaskDetailModal />
-      <QuickAssistant />
-      <Toasts />
-    </div>
+    </>
   );
 }

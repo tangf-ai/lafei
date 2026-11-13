@@ -107,3 +107,32 @@ export interface BackupData {
   messages: ChatMessage[];
   tombstones?: Tombstone[];
 }
+
+/** 桌面背景：内置光雾预设、本机图片，或纯色 */
+export type WallpaperKind = "none" | "preset" | "custom";
+export type WallpaperPreset = "dawn" | "moss" | "dune" | "coast" | "ember" | "slate";
+/** 面板通透度：通透 / 平衡 / 沉稳 */
+export type WallpaperGlass = "clear" | "balanced" | "solid";
+/** 壳层留白：浮窗（四周露出背景）或铺满窗口 */
+export type WallpaperFrame = "float" | "edge";
+
+export interface WallpaperSettings {
+  kind: WallpaperKind;
+  preset: WallpaperPreset;
+  /** 本机图片素材 id（存于 IndexedDB assets 表，不参与备份） */
+  assetId: string | null;
+  /** 背景模糊，px */
+  blur: number;
+  /** 背景遮罩浓度，0 - 1 */
+  scrim: number;
+  glass: WallpaperGlass;
+  frame: WallpaperFrame;
+}
+
+export interface WallpaperAsset {
+  id: string;
+  blob: Blob;
+  width: number;
+  height: number;
+  createdAt: number;
+}
